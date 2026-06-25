@@ -334,7 +334,7 @@
       return '<tr>' +
         '<td class="thumb-cell"><img src="' + c.thumb + '" onerror="this.style.opacity=0.15"></td>' +
         '<td class="title-cell">' + c.name + '</td>' +
-        '<td class="num-cell">' + c.year + '년식</td>' +
+        '<td class="num-cell">' + (c.year != null ? c.year + '년식' : '-') + '</td>' +
         '<td class="num-cell">' + c.mileage.toLocaleString('ko-KR') + 'km</td>' +
         '<td class="num-cell">' + c.price.toLocaleString('ko-KR') + '만원</td>' +
         '<td><span class="chip ' + (c.status === '판매완료' ? 'muted' : 'ok') + '">' + c.status + '</span></td>' +
@@ -364,7 +364,11 @@
   }
 
   async function deleteUsedcar(id) {
-    if (!confirm('이 매물을 삭제하시겠습니까?')) return;
+    var item = usedcarsData.find(function (x) { return x.id === id; });
+    var msg = (item && item.syncSource === 'swautopia')
+      ? 'swautopia 동기화 매물입니다.\n사이트에서 숨기며, 이후 동기화에도 다시 등록되지 않습니다.\n계속하시겠습니까?'
+      : '이 매물을 삭제하시겠습니까?';
+    if (!confirm(msg)) return;
     try {
       await API.deleteUsedcar(id);
       usedcarsData = await API.listUsedcars();
@@ -611,15 +615,24 @@
 
     document.getElementById('btnSyncSwautopia').addEventListener('click', async function () {
       var btn = document.getElementById('btnSyncSwautopia');
-      if (!confirm('swautopia.co.kr 매물을 동기화하시겠습니까?\n판매완료·삭제된 매물은 목록에서 제외됩니다.')) return;
+      if (!confirm('swautopia.co.kr 매물을 동기화하시겠습니까?\n\n사진은 4:3(목록 800×600, 상세 1280×960)으로 리사이즈 후 Supabase에 저장됩니다.\n매물·사진 수에 따라 5~15분 정도 걸릴 수 있습니다.\n판매완료·삭제된 매물은 목록에서 제외됩니다.')) return;
       btn.disabled = true;
       var prev = btn.textContent;
       btn.textContent = '동기화 중…';
       try {
-        var result = await API.syncSwautopiaUsedCars();
+        var result = await API.syncSwautopiaUsedCars(function (p) {
+          if (p.phase === 'fetch') {
+            btn.textContent = '매물 ' + p.count + '대 불러옴…';
+          } else if (p.phase === 'image') {
+            btn.textContent = '사진 처리 ' + p.carIndex + '/' + p.carTotal;
+            if (p.photoIndex) btn.textContent += ' (' + p.photoIndex + '/' + p.photoTotal + ')';
+          } else if (p.phase === 'save') {
+            btn.textContent = 'DB 저장 중…';
+          }
+        });
         usedcarsData = await API.listUsedcars();
         renderUsedcarsTable();
-        alert('동기화 완료: ' + (result.count || 0) + '대 반영, 비활성 ' + (result.deactivated || 0) + '대');
+        alert('동기화 완료: ' + (result.count || 0) + '대 반영, 비활성 ' + (result.deactivated || 0) + '대\n사진 ' + (result.photosProcessed || 0) + '장 처리');
       } catch (err) {
         showError(err);
       } finally {

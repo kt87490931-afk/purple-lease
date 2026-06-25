@@ -465,10 +465,20 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     aspect-ratio: 4/3;
     background: linear-gradient(135deg, var(--surface-alt), #ECEAF6);
     position: relative;
-    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
   }
-  .usedcar-thumb svg { width: 46%; opacity: 0.45; }
-  .usedcar-thumb .badge { position: absolute; top: 8px; left: 8px; }
+  .usedcar-thumb img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center center;
+    display: block;
+  }
+  .usedcar-thumb .ph-icon { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+  .usedcar-thumb .ph-icon svg { width: 46%; opacity: 0.45; }
+  .usedcar-thumb .badge { position: absolute; top: 8px; left: 8px; z-index: 1; }
   .usedcar-body { padding: 10px 11px 12px; }
   .usedcar-body .uname { font-size: 13px; font-weight: 800; color: var(--ink-900); margin-bottom: 3px; line-height: 1.35; }
   .usedcar-body .umeta { font-size: 11px; color: var(--ink-500); }
@@ -916,13 +926,14 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     slot.innerHTML = `<div class="usedcar-grid">` + usedCarData.map(c => `
       <a href="${c.slug ? 'used-car-detail.html?id=' + encodeURIComponent(c.slug) : '#'}" class="usedcar-card">
         <div class="usedcar-thumb">
-          <span class="badge ${c.badgeClass}">${c.badge}</span>
-          ${carIconSvg}
+          <span class="badge ${c.badgeClass}">${escapeHtml(c.badge)}</span>
+          ${c.thumb ? `<img src="${escapeHtml(c.thumb)}" alt="${escapeHtml(c.name)}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : ''}
+          <div class="ph-icon" style="display:${c.thumb ? 'none' : 'flex'};">${carIconSvg}</div>
         </div>
         <div class="usedcar-body">
-          <div class="uname">${c.name}</div>
-          <div class="umeta">${c.meta}</div>
-          <div class="uprice">${c.price}</div>
+          <div class="uname">${escapeHtml(c.name)}</div>
+          <div class="umeta">${escapeHtml(c.meta)}</div>
+          <div class="uprice">${escapeHtml(c.price)}</div>
         </div>
       </a>`).join('') + `</div>`;
   }

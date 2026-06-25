@@ -7,6 +7,9 @@
  *
  * crontab (6시간마다):
  *   0 */6 * * * cd /var/www/purple-lease && /usr/bin/node scripts/sync-swautopia-cars.js >> /var/log/purple-swautopia-sync.log 2>&1
+ *
+ * 참고: 차량 사진 4:3 리사이즈는 어드민 「수동파싱 (swautopia)」에서 Supabase Storage로 업로드됩니다.
+ * 크론은 매물 메타·상태만 갱신하며, 이미 Storage에 있는 사진 URL은 DB에 그대로 유지됩니다.
  */
 'use strict';
 
@@ -39,13 +42,41 @@ async function sbFetch(tablePath, options) {
   return res.json();
 }
 
+function isPurpleStoredCarPhoto(url) {
+  return String(url || '').indexOf('/purple-uploads/usedcars/') >= 0;
+}
+
+function isAdminHiddenCar(row) {
+  return !!(row && row.detail_json && row.detail_json.admin_hidden);
+}
+
 async function main() {
   var started = new Date();
   console.log('[sync] start', started.toISOString());
 
   var cars = await SwautopiaSync.fetchAllCars();
   var rows = cars.map(function (c) { return SwautopiaSync.mapCarToRow(c); });
+
+  var existingRows = await sbFetch('used_cars?sync_source=eq.swautopia&select=listing_id,thumb_url,detail_json,photo_count,is_active') || [];
+  var existingMap = {};
+  var hiddenIds = {};
+  existingRows.forEach(function (r) {
+    existingMap[r.listing_id] = r;
+    if (isAdminHiddenCar(r)) hiddenIds[r.listing_id] = true;
+  });
+
+  rows = rows.filter(function (r) { return !hiddenIds[r.listing_id]; });
   var activeIds = rows.map(function (r) { return r.listing_id; });
+
+  rows.forEach(function (row) {
+    var prev = existingMap[row.listing_id];
+    var prevPhotos = (prev && prev.detail_json && prev.detail_json.photos) || [];
+    if (prevPhotos.length && prevPhotos.every(isPurpleStoredCarPhoto)) {
+      row.detail_json.photos = prevPhotos;
+      row.thumb_url = isPurpleStoredCarPhoto(prev.thumb_url) ? prev.thumb_url : prevPhotos[0];
+      row.photo_count = prevPhotos.length;
+    }
+  });
 
   for (var i = 0; i < rows.length; i += 40) {
     var batch = rows.slice(i, i + 40);
@@ -56,8 +87,7 @@ async function main() {
     });
   }
 
-  var existing = await sbFetch('used_cars?sync_source=eq.swautopia&select=listing_id') || [];
-  var deactivate = existing.map(function (r) { return r.listing_id; }).filter(function (id) {
+  var deactivate = existingRows.map(function (r) { return r.listing_id; }).filter(function (id) {
     return activeIds.indexOf(id) < 0;
   });
 

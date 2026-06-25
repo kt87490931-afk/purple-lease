@@ -143,7 +143,15 @@ input, select { font-family: inherit; }
   position: relative;
   overflow: hidden;
 }
-.usedcar-thumb img { width:100%; height:100%; object-fit:cover; }
+.usedcar-thumb img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  display: block;
+}
 .usedcar-thumb .ph-icon { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
 .usedcar-thumb .ph-icon svg { width:42%; opacity:.35; }
 .usedcar-thumb .status-chip {

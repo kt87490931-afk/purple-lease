@@ -74,26 +74,45 @@ p { margin:0; }
 .btn-block { width:100%; }
 
 /* ============ 레이아웃: 데스크톱 2단 / 모바일 1단 ============ */
-.detail-layout { display:flex; flex-direction:column; gap:24px; padding: 6px 0 40px; }
+.detail-layout { display:flex; flex-direction:column; gap:24px; padding: 6px 0 40px; width:100%; }
+.detail-main { min-width:0; width:100%; max-width:100%; }
+.detail-side { min-width:0; width:100%; }
 @media (min-width: 960px) {
-  .detail-layout { display:grid; grid-template-columns: 1.6fr 1fr; gap: 32px; align-items: start; }
+  .detail-layout { display:grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 32px; align-items: start; }
   .detail-side { position: sticky; top: 84px; }
 }
 
 /* ============ 이미지 갤러리 ============ */
-.gallery { position: relative; border-radius: var(--radius-lg); overflow:hidden; background: var(--surface-alt); }
-.gallery-main { aspect-ratio: 4/3; display:flex; align-items:center; justify-content:center; position:relative; }
-.gallery-main img { width:100%; height:100%; object-fit:cover; }
+.gallery-wrap { width:100%; max-width:100%; min-width:0; }
+.gallery { position: relative; border-radius: var(--radius-lg); overflow:hidden; background: var(--surface-alt); width:100%; max-width:100%; }
+.gallery-main {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  background: var(--surface-alt);
+}
+.gallery-main #mainPhoto {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  display: block;
+}
+.gallery-main .ph-icon { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; z-index:1; }
 .gallery-main .ph-icon svg { width:30%; opacity:.3; }
-.gallery-nav { position:absolute; top:50%; transform:translateY(-50%); width:34px; height:34px; border-radius:50%; background: rgba(255,255,255,0.85); display:flex; align-items:center; justify-content:center; box-shadow: var(--shadow-sm); }
+.gallery-nav { position:absolute; top:50%; transform:translateY(-50%); z-index:3; width:34px; height:34px; border-radius:50%; background: rgba(255,255,255,0.85); display:flex; align-items:center; justify-content:center; box-shadow: var(--shadow-sm); border:none; cursor:pointer; }
 .gallery-nav.prev { left:10px; } .gallery-nav.next { right:10px; }
 .gallery-nav svg { width:16px; height:16px; }
 .gallery-counter { position:absolute; bottom:10px; right:10px; background: rgba(20,20,30,0.6); color:#fff; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:100px; }
 .gallery-thumbs { display:flex; gap:7px; overflow-x:auto; padding-top:8px; scrollbar-width:none; }
 .gallery-thumbs::-webkit-scrollbar { display:none; }
-.gallery-thumbs .gthumb { flex-shrink:0; width:64px; height:48px; border-radius: var(--radius-sm); overflow:hidden; border:2px solid transparent; cursor:pointer; background: var(--surface-alt); }
+.gallery-thumbs .gthumb { flex-shrink:0; width:64px; aspect-ratio:4/3; border-radius: var(--radius-sm); overflow:hidden; border:2px solid transparent; cursor:pointer; background: var(--surface-alt); position:relative; }
 .gallery-thumbs .gthumb.active { border-color: var(--purple-600); }
-.gallery-thumbs .gthumb img { width:100%; height:100%; object-fit:cover; }
+.gallery-thumbs .gthumb img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; display:block; }
 
 /* ============ 섹션 공통 (선/박스 최소화하되, 섹션 전환은 여백으로 충분히 구분) ============ */
 .info-section { padding: 30px 0; border-bottom: 1px solid var(--line-soft); }
@@ -258,6 +277,7 @@ p { margin:0; }
       <!-- ============ 메인 컬럼 ============ -->
       <div class="detail-main">
 
+        <div class="gallery-wrap">
         <div class="gallery">
           <div class="gallery-main">
             <img id="mainPhoto" src="" alt="" onerror="this.style.display='none'; document.getElementById('mainPhPlaceholder').style.display='flex';">
@@ -274,6 +294,7 @@ p { margin:0; }
           </div>
         </div>
         <div class="gallery-thumbs" id="galleryThumbs"></div>
+        </div>
 
         <!-- 차량 정보 -->
         <section class="info-section">
@@ -898,6 +919,10 @@ p { margin:0; }
     const ph = document.getElementById('mainPhPlaceholder');
     img.style.display = 'block'; ph.style.display = 'none';
     img.src = photo;
+    img.removeAttribute('width');
+    img.removeAttribute('height');
+    img.style.maxWidth = '100%';
+    img.style.maxHeight = '100%';
     document.getElementById('photoCounter').textContent = `${photoIdx+1} / ${v.photos.length}`;
     document.querySelectorAll('.gthumb').forEach((t,i) => t.classList.toggle('active', i===photoIdx));
   }
