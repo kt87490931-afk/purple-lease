@@ -46,9 +46,18 @@
   async function signIn(email, password) {
     var c = getClient();
     if (!c) throw new Error('Supabase가 설정되지 않았습니다.');
-    var res = await c.auth.signInWithPassword({ email: email, password: password });
+    var normalized = normalizeAdminEmail(email);
+    var res = await c.auth.signInWithPassword({ email: normalized, password: password });
     if (res.error) throw res.error;
     return res.data;
+  }
+
+  function normalizeAdminEmail(input) {
+    var v = String(input || '').trim().toLowerCase();
+    if (!v) return '';
+    if (v === 'admin') return 'admin@purplelease.com';
+    if (v.indexOf('@') === -1) return v + '@purplelease.com';
+    return v;
   }
 
   async function signOut() {
@@ -69,6 +78,7 @@
     requireAuth: requireAuth,
     signIn: signIn,
     signOut: signOut,
+    normalizeAdminEmail: normalizeAdminEmail,
     getUserEmail: getUserEmail,
     isConfigured: function () { return !!getClient(); }
   };

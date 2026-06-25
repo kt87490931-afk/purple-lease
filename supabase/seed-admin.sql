@@ -21,5 +21,4 @@ SELECT b.id, 'avante', '아반떼', '1,833', '2,597', '/assets/vehicles/hyundai-
 FROM lease_brands b WHERE b.slug = 'hyundai'
 ON CONFLICT (brand_id, slug) DO NOTHING;
 
--- 운영자 allowlist 등록 예시 (Supabase Auth에서 사용자 생성 후 UUID로 교체)
--- INSERT INTO admin_allowlist (user_id, email) VALUES ('00000000-0000-0000-0000-000000000000', 'admin@purplelease.com');
+-- 운영자 계정은 supabase/seed-admin-user.sql 실행 (admin / 0000)
