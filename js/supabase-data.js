@@ -136,21 +136,26 @@
     if (!client) return null;
     var res = await client
       .from('used_cars')
-      .select('listing_id,origin,name,year,fuel,mileage,price_num,brand,segment,status,photo_count,thumb_url,tags,sort_order')
+      .select('listing_id,origin,name,year,fuel,mileage,price_num,brand,segment,status,photo_count,thumb_url,tags,sort_order,detail_json')
       .eq('is_active', true)
       .order('sort_order', { ascending: true });
     if (res.error) throw res.error;
+    var norm = (window.PurpleUsedCarFilters && window.PurpleUsedCarFilters.normalizeFilterFields)
+      ? window.PurpleUsedCarFilters.normalizeFilterFields.bind(window.PurpleUsedCarFilters)
+      : function (r) { return { brand: r.brand || '', fuel: r.fuel || '', segment: r.segment || '', origin: r.origin || 'domestic' }; };
+
     return (res.data || []).map(function (r) {
+      var f = norm(r);
       return {
         id: r.listing_id,
-        origin: r.origin || 'domestic',
+        origin: f.origin,
         name: r.name,
         year: r.year,
-        fuel: r.fuel,
+        fuel: f.fuel,
         mileage: r.mileage,
         price: r.price_num,
-        brand: r.brand,
-        segment: r.segment,
+        brand: f.brand,
+        segment: f.segment,
         status: r.status,
         photoCount: r.photo_count || 0,
         thumb: r.thumb_url,

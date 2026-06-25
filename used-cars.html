@@ -319,6 +319,7 @@ input, select { font-family: inherit; }
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="/js/supabase-config.js"></script>
+<script src="/js/used-car-filters.js"></script>
 <script src="/js/supabase-data.js"></script>
 <script>
 /* ============================================================
@@ -496,11 +497,11 @@ input, select { font-family: inherit; }
   });
   document.getElementById('btnReset').addEventListener('click', resetFilters);
 
-  async function initPage() {
+  async function reloadUsedCars() {
     if (window.PurpleLeaseData && window.PurpleLeaseData.isConfigured()) {
       try {
         const rows = await window.PurpleLeaseData.fetchUsedCarsList();
-        if (rows && rows.length) usedCarData = rows;
+        if (rows) usedCarData = rows;
       } catch (err) {
         console.warn('[PurpleLease] used cars load failed:', err);
       }
@@ -508,6 +509,17 @@ input, select { font-family: inherit; }
     populateFilterOptions();
     renderGrid();
   }
+
+  async function initPage() {
+    await reloadUsedCars();
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') reloadUsedCars();
+  });
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted) reloadUsedCars();
+  });
 
   initPage();
 </script>

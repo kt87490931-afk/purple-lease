@@ -411,6 +411,21 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
           <select id="ucStatus"><option value="판매중">판매중</option><option value="예약중">예약중</option><option value="판매완료">판매완료</option></select>
         </div>
       </div>
+      <div class="form-grid-2">
+        <div class="form-row"><label>분류</label>
+          <select id="ucOrigin">
+            <option value="domestic">국산차</option>
+            <option value="import">수입차</option>
+            <option value="export">수출차량</option>
+            <option value="other">기타</option>
+          </select>
+        </div>
+        <div class="form-row"><label>브랜드</label><input type="text" id="ucBrand" placeholder="예: 포르쉐, 기아"></div>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-row"><label>차군</label><input type="text" id="ucSegment" placeholder="예: 세단, SUV"></div>
+        <div class="form-row"><label>연료</label><input type="text" id="ucFuel" placeholder="예: 가솔린, 디젤, 전기"></div>
+      </div>
       <div class="form-row"><label>대표 이미지</label><input type="text" id="ucThumb" placeholder="/assets/usedcars/481-1.jpg"><div style="display:flex;gap:8px;align-items:center;margin-top:6px;"><input type="file" id="ucThumbFile" accept="image/jpeg,image/png,image/webp,image/gif"><button type="button" class="btn btn-outline btn-sm" id="btnUploadUcThumb">업로드</button></div></div>
     </div>
     <div class="modal-foot"><button class="btn btn-outline" data-close="modalUsedcar">취소</button><button class="btn btn-primary" id="btnSaveUsedcar">저장</button></div>
@@ -422,6 +437,7 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
 <script src="/js/youtube-utils.js"></script>
 <script src="/js/swautopia-sync.js"></script>
 <script src="/js/purple-image.js"></script>
+<script src="/js/used-car-filters.js"></script>
 <script src="/js/admin-auth.js"></script>
 <script src="/js/admin-api.js"></script>
 <script src="/js/admin-app.js"></script>

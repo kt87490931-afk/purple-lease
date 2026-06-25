@@ -355,11 +355,15 @@
     editingId = id;
     document.getElementById('modalUsedcarTitle').textContent = '매물 수정';
     document.getElementById('ucName').value = c.name;
-    document.getElementById('ucYear').value = c.year;
+    document.getElementById('ucYear').value = c.year || '';
     document.getElementById('ucMileage').value = c.mileage;
     document.getElementById('ucPrice').value = c.price;
     document.getElementById('ucStatus').value = c.status;
     document.getElementById('ucThumb').value = c.thumb;
+    document.getElementById('ucOrigin').value = c.origin || 'domestic';
+    document.getElementById('ucBrand').value = c.brand || '';
+    document.getElementById('ucSegment').value = c.segment || '';
+    document.getElementById('ucFuel').value = c.fuel || '';
     openModal('modalUsedcar');
   }
 
@@ -644,8 +648,9 @@
     document.getElementById('btnAddUsedcar').addEventListener('click', function () {
       editingId = null;
       document.getElementById('modalUsedcarTitle').textContent = '매물 등록';
-      ['ucName', 'ucYear', 'ucMileage', 'ucPrice', 'ucThumb'].forEach(function (id) { document.getElementById(id).value = ''; });
+      ['ucName', 'ucYear', 'ucMileage', 'ucPrice', 'ucThumb', 'ucBrand', 'ucSegment', 'ucFuel'].forEach(function (id) { document.getElementById(id).value = ''; });
       document.getElementById('ucStatus').value = '판매중';
+      document.getElementById('ucOrigin').value = 'domestic';
       openModal('modalUsedcar');
     });
     document.getElementById('btnSaveUsedcar').addEventListener('click', async function () {
@@ -656,7 +661,11 @@
           mileage: parseInt(document.getElementById('ucMileage').value, 10) || 0,
           price: parseInt(document.getElementById('ucPrice').value, 10),
           status: document.getElementById('ucStatus').value,
-          thumb: document.getElementById('ucThumb').value.trim()
+          thumb: document.getElementById('ucThumb').value.trim(),
+          origin: document.getElementById('ucOrigin').value,
+          brand: document.getElementById('ucBrand').value.trim(),
+          segment: document.getElementById('ucSegment').value.trim(),
+          fuel: document.getElementById('ucFuel').value.trim()
         }, editingId);
         closeModal('modalUsedcar');
         usedcarsData = await API.listUsedcars();

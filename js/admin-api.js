@@ -440,6 +440,9 @@
     var res = await db().from('used_cars').select('*').eq('is_active', true).order('sort_order', { ascending: true });
     if (res.error) throw res.error;
     return (res.data || []).map(function (r) {
+      var f = (window.PurpleUsedCarFilters && window.PurpleUsedCarFilters.normalizeFilterFields)
+        ? window.PurpleUsedCarFilters.normalizeFilterFields(r)
+        : { brand: r.brand || '', fuel: r.fuel || '', segment: r.segment || '', origin: r.origin || 'domestic' };
       return {
         id: r.listing_id || r.id,
         name: r.name,
@@ -448,7 +451,11 @@
         price: r.price_num || 0,
         status: r.status || '판매중',
         thumb: r.thumb_url || '',
-        syncSource: r.sync_source || ''
+        syncSource: r.sync_source || '',
+        brand: f.brand,
+        fuel: f.fuel,
+        segment: f.segment,
+        origin: f.origin
       };
     });
   }
@@ -467,6 +474,19 @@
     if (!payload.name || isNaN(payload.year) || isNaN(payload.price)) {
       throw new Error('차량명, 연식, 가격은 필수입니다.');
     }
+
+    var Filters = window.PurpleUsedCarFilters;
+    var origin = payload.origin || 'domestic';
+    var brand = String(payload.brand || '').trim();
+    var fuel = String(payload.fuel || '').trim();
+    var segment = String(payload.segment || '').trim();
+    if (!brand && Filters) brand = Filters.inferBrandFromName(payload.name);
+
+    var badgeInfo = Filters ? Filters.originBadge(origin) : { badge: '국산차', badge_class: 'badge-grad' };
+    var meta = Filters
+      ? Filters.buildMeta(payload.year, payload.mileage || 0, fuel)
+      : payload.year + '년 · ' + Math.round((payload.mileage || 0) / 10000 * 10) / 10 + '만km';
+
     var row = {
       name: payload.name,
       year: payload.year,
@@ -474,15 +494,21 @@
       price_num: payload.price,
       status: payload.status || '판매중',
       thumb_url: payload.thumb || '',
-      origin: 'domestic',
-      meta: payload.year + '년 · ' + Math.round((payload.mileage || 0) / 10000 * 10) / 10 + '만km',
+      origin: origin,
+      brand: brand,
+      fuel: fuel,
+      segment: segment,
+      meta: meta,
       price: payload.price.toLocaleString('ko-KR') + '만원',
+      badge: badgeInfo.badge,
+      badge_class: badgeInfo.badge_class,
       is_active: true
     };
     if (editingId) {
       var existing = await findUsedCarRow(editingId);
       if (!existing) throw new Error('매물을 찾을 수 없습니다.');
       row.detail_slug = existing.detail_slug || String(existing.listing_id || existing.id);
+      if (existing.sync_source) row.sync_source = existing.sync_source;
       var upQuery = existing.listing_id != null
         ? db().from('used_cars').update(row).eq('listing_id', existing.listing_id)
         : db().from('used_cars').update(row).eq('id', existing.id);
@@ -496,8 +522,7 @@
     row.listing_id = nextId;
     row.detail_slug = String(nextId);
     row.sort_order = nextId;
-    row.badge = '국산차';
-    row.badge_class = 'badge-grad';
+    row.sync_source = 'manual';
     var ins = await db().from('used_cars').insert([row]).select().single();
     if (ins.error) throw ins.error;
     return ins.data;
