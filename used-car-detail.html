@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>차량 상세 — PURPLE LEASE</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap');
+
+:root {
+  --grad-main: linear-gradient(135deg, #8B2FE0 0%, #5B2FD6 45%, #1A1E6E 100%);
+  --grad-text: linear-gradient(135deg, #8B2FE0 0%, #2030A0 100%);
+  --purple-600: #8B2FE0;
+  --purple-100: #F2E8FD;
+  --purple-50: #FAF6FE;
+  --navy-900: #11143A;
+  --white: #FFFFFF;
+  --surface: #FAFAFC;
+  --surface-alt: #F4F2FA;
+  --line: #E7E5F0;
+  --line-soft: #EFEDF6;
+  --ink-900: #15151D;
+  --ink-700: #383846;
+  --ink-500: #6B6B7B;
+  --ink-400: #9494A3;
+  --ok-600: #1AA15C;
+  --font-display: 'Sora', 'Noto Sans KR', sans-serif;
+  --font-body: 'Noto Sans KR', 'Pretendard', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --container: 1180px;
+  --shadow-sm: 0 1px 2px rgba(22,22,40,0.06);
+  --shadow-md: 0 8px 24px rgba(40,30,90,0.08);
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body { margin:0; background: var(--white); color: var(--ink-700); font-family: var(--font-body); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; padding-bottom: 90px; }
+img { max-width: 100%; display: block; }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; }
+h1,h2,h3,h4 { margin:0; font-family: var(--font-display); color: var(--ink-900); letter-spacing: -0.01em; }
+p { margin:0; }
+
+.wrap { max-width: var(--container); margin: 0 auto; padding: 0 18px; }
+
+/* --- Header --- */
+.site-header { position: sticky; top:0; z-index:100; background: rgba(255,255,255,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line-soft); }
+.header-inner { display:flex; align-items:center; justify-content:space-between; height:64px; gap:16px; }
+.logo { display:flex; align-items:baseline; gap:1px; flex-shrink:0; font-family: var(--font-display); }
+.logo .logo-p { font-size:22px; font-weight:800; background: var(--grad-main); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.logo .logo-rest { font-size:18px; font-weight:700; color: var(--navy-900); letter-spacing:-0.01em; }
+.header-call { display:flex; align-items:center; gap:8px; font-family: var(--font-mono); font-size:13px; color: var(--ink-900); font-weight:700; }
+.category-nav { background: var(--white); border-bottom: 1px solid var(--line-soft); overflow-x:auto; scrollbar-width:none; }
+.category-nav::-webkit-scrollbar { display:none; }
+.category-nav-inner { display:flex; min-width:max-content; }
+.category-nav a { display:flex; align-items:center; padding:14px 18px; font-size:13px; font-weight:700; color: var(--ink-500); border-bottom:2px solid transparent; white-space:nowrap; }
+.category-nav a.active { color: var(--navy-900); border-bottom-color: var(--purple-600); }
+
+.crumb { font-size:12px; color: var(--ink-400); padding: 12px 0; display:flex; align-items:center; gap:6px; }
+.crumb a { color: var(--ink-400); }
+.crumb .sep { opacity:.6; }
+.crumb .cur { color: var(--ink-700); font-weight:600; }
+
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:13px 18px; border-radius: var(--radius-md); font-weight:700; font-size:14px; border:1px solid transparent; transition: all .15s ease; white-space:nowrap; }
+.btn-primary { background: var(--grad-main); color:#fff; box-shadow: var(--shadow-md); }
+.btn-primary:hover { opacity:.92; }
+.btn-outline { background: var(--white); border-color: var(--line); color: var(--ink-900); }
+.btn-outline:hover { border-color: var(--purple-600); color: var(--purple-600); }
+.btn-block { width:100%; }
+
+/* ============ 레이아웃: 데스크톱 2단 / 모바일 1단 ============ */
+.detail-layout { display:flex; flex-direction:column; gap:24px; padding: 6px 0 40px; }
+@media (min-width: 960px) {
+  .detail-layout { display:grid; grid-template-columns: 1.6fr 1fr; gap: 32px; align-items: start; }
+  .detail-side { position: sticky; top: 84px; }
+}
+
+/* ============ 이미지 갤러리 ============ */
+.gallery { position: relative; border-radius: var(--radius-lg); overflow:hidden; background: var(--surface-alt); }
+.gallery-main { aspect-ratio: 4/3; display:flex; align-items:center; justify-content:center; position:relative; }
+.gallery-main img { width:100%; height:100%; object-fit:cover; }
+.gallery-main .ph-icon svg { width:30%; opacity:.3; }
+.gallery-nav { position:absolute; top:50%; transform:translateY(-50%); width:34px; height:34px; border-radius:50%; background: rgba(255,255,255,0.85); display:flex; align-items:center; justify-content:center; box-shadow: var(--shadow-sm); }
+.gallery-nav.prev { left:10px; } .gallery-nav.next { right:10px; }
+.gallery-nav svg { width:16px; height:16px; }
+.gallery-counter { position:absolute; bottom:10px; right:10px; background: rgba(20,20,30,0.6); color:#fff; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:100px; }
+.gallery-thumbs { display:flex; gap:7px; overflow-x:auto; padding-top:8px; scrollbar-width:none; }
+.gallery-thumbs::-webkit-scrollbar { display:none; }
+.gallery-thumbs .gthumb { flex-shrink:0; width:64px; height:48px; border-radius: var(--radius-sm); overflow:hidden; border:2px solid transparent; cursor:pointer; background: var(--surface-alt); }
+.gallery-thumbs .gthumb.active { border-color: var(--purple-600); }
+.gallery-thumbs .gthumb img { width:100%; height:100%; object-fit:cover; }
+
+/* ============ 섹션 공통 (선/박스 최소화하되, 섹션 전환은 여백으로 충분히 구분) ============ */
+.info-section { padding: 30px 0; border-bottom: 1px solid var(--line-soft); }
+.info-section:first-of-type { padding-top: 26px; }
+.info-section:last-child { border-bottom: none; }
+.info-section-title { display:flex; align-items:center; gap:8px; font-size:15px; font-weight:800; color: var(--ink-900); margin-bottom: 18px; }
+.info-section-title .bar { width:3px; height:13px; background: var(--purple-600); border-radius:2px; }
+.info-section-sub { font-size:12px; color: var(--ink-400); margin-top:-12px; margin-bottom:16px; }
+
+/* 정보 표(테두리 없이 행 구분선만) */
+.info-table { display:grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+.info-table .it { display:flex; flex-direction:column; gap:3px; }
+.info-table .it .it-label { font-size:11.5px; color: var(--ink-400); }
+.info-table .it .it-value { font-size:13.5px; font-weight:700; color: var(--ink-900); }
+
+/* 총 구입비용 */
+.cost-table { width:100%; }
+.cost-table .row { display:flex; align-items:center; justify-content:space-between; padding: 10px 0; border-bottom: 1px solid var(--line-soft); font-size: 13.5px; }
+.cost-table .row .c-label { color: var(--ink-500); }
+.cost-table .row .c-value { font-family: var(--font-mono); font-weight:700; color: var(--ink-900); }
+.cost-table .row.total { border-bottom:none; padding-top:13px; }
+.cost-table .row.total .c-label { font-size:14px; font-weight:800; color: var(--ink-900); }
+.cost-table .row.total .c-value { font-size:19px; font-weight:800; background: var(--grad-text); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.cost-note { font-size:11px; color: var(--ink-400); line-height:1.7; margin-top:10px; }
+
+/* 차량 설명 */
+.desc-text { font-size: 13.5px; color: var(--ink-700); line-height:1.85; white-space: pre-line; }
+
+/* 옵션 그룹 (칩 — 컬러 절제) */
+.opt-group { margin-bottom: 14px; }
+.opt-group:last-child { margin-bottom:0; }
+.opt-group-label { font-size:12px; font-weight:700; color: var(--ink-500); margin-bottom:8px; }
+.opt-chips { display:flex; flex-wrap:wrap; gap:7px; }
+.opt-chip { font-size:12px; font-weight:600; color: var(--ink-700); background: var(--surface); border:1px solid var(--line); padding:6px 11px; border-radius:100px; }
+
+/* 성능점검/하체사진/배터리 — 단순 카드 */
+.simple-doc-card { display:flex; align-items:center; gap:12px; padding: 16px; background: var(--surface); border-radius: var(--radius-md); cursor:pointer; }
+.simple-doc-card svg { width:26px; height:26px; color: var(--ink-500); flex-shrink:0; }
+.simple-doc-card .sd-title { font-size:13.5px; font-weight:700; color: var(--ink-900); }
+.simple-doc-card .sd-sub { font-size:11.5px; color: var(--ink-400); margin-top:1px; }
+.simple-doc-card .sd-arrow { margin-left:auto; color: var(--ink-400); }
+
+.empty-mini { text-align:center; padding: 28px 0; color: var(--ink-400); font-size:12.5px; }
+
+/* ============ 사이드 — 가격/판매자/액션 ============ */
+.price-box { padding: 4px 0 18px; border-bottom: 1px solid var(--line-soft); margin-bottom: 18px; }
+.price-box .status-row { display:flex; gap:6px; margin-bottom:10px; }
+.status-pill { font-size:11px; font-weight:700; padding:3px 9px; border-radius:5px; }
+.status-pill.selling { background: var(--purple-100); color: var(--purple-600); }
+.status-pill.origin { background: var(--surface-alt); color: var(--ink-700); }
+.price-box h1 { font-size: 19px; line-height:1.4; margin-bottom: 6px; }
+.price-box .p-meta { font-size:12.5px; color: var(--ink-500); margin-bottom: 14px; }
+.price-box .p-amount { font-family: var(--font-mono); font-size: 28px; font-weight: 800; color: var(--navy-900); }
+.tag-row { display:flex; gap:6px; flex-wrap:wrap; margin-top:12px; }
+.tag-row .utag { font-size:11px; font-weight:700; color: var(--ink-500); background: var(--surface); padding:4px 9px; border-radius:5px; }
+
+.seller-box { display:flex; align-items:center; gap:11px; padding: 14px 0; margin-bottom: 16px; }
+.seller-avatar { width:42px; height:42px; border-radius:50%; background: var(--surface-alt); display:flex; align-items:center; justify-content:center; font-weight:800; color: var(--ink-400); flex-shrink:0; }
+.seller-info .s-name { font-size:13.5px; font-weight:700; color: var(--ink-900); }
+.seller-info .s-phone { font-size:12px; color: var(--ink-500); font-family: var(--font-mono); }
+
+.action-stack { display:none; flex-direction:column; gap:8px; }
+@media (min-width: 960px) {
+  .action-stack { display:flex; }
+}
+.share-row { display:flex; justify-content:center; margin-top:12px; }
+.share-row button { display:flex; align-items:center; gap:6px; font-size:12px; color: var(--ink-500); background:none; border:none; }
+.share-row button:hover { color: var(--purple-600); }
+
+/* 모바일 하단 고정 액션 */
+.mobile-cta { position:fixed; left:0; right:0; bottom:0; z-index:92; background: rgba(255,255,255,0.97); backdrop-filter: blur(10px); border-top:1px solid var(--line-soft); padding: 12px 18px calc(12px + env(safe-area-inset-bottom)); display:flex; gap:8px; }
+.mobile-cta .price-mini { display:flex; flex-direction:column; margin-right:auto; }
+.mobile-cta .price-mini .pm-label { font-size:10.5px; color: var(--ink-500); }
+.mobile-cta .price-mini .pm-value { font-family: var(--font-mono); font-size:16px; font-weight:800; color: var(--navy-900); }
+
+@media (min-width: 960px) {
+  .mobile-cta { display:none; }
+  body { padding-bottom: 0; }
+}
+
+/* ============ 첨부자료 모달 ============ */
+.doc-modal-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(15,15,25,0.6);
+  display: none;
+  align-items: center; justify-content: center;
+  padding: 20px;
+}
+.doc-modal-overlay.open { display: flex; }
+.doc-modal {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  width: 100%; max-width: 560px;
+  max-height: 86vh;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.doc-modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 14px; font-weight: 800; color: var(--ink-900);
+  flex-shrink: 0;
+}
+.doc-modal-close { background: var(--surface); border: none; width: 30px; height: 30px; border-radius: 50%; display:flex; align-items:center; justify-content:center; color: var(--ink-500); }
+.doc-modal-close:hover { color: var(--ink-900); }
+.doc-modal-body {
+  flex: 1;
+  overflow: auto;
+  background: var(--surface-alt);
+  display: flex; align-items: center; justify-content: center;
+  min-height: 280px;
+}
+.doc-modal-body img { width: 100%; height: auto; display: block; }
+.doc-modal-empty { display:none; flex-direction:column; align-items:center; gap:10px; color: var(--ink-400); font-size:12.5px; padding: 50px 0; }
+.doc-modal-nav {
+  display: flex; align-items: center; justify-content: center; gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line-soft);
+  flex-shrink: 0;
+}
+.doc-modal-arrow { width: 32px; height: 32px; border-radius: 50%; background: var(--surface); border: none; display:flex; align-items:center; justify-content:center; color: var(--ink-700); }
+.doc-modal-arrow:hover { background: var(--purple-100); color: var(--purple-600); }
+.doc-modal-counter { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-500); min-width: 50px; text-align:center; }
+
+/* Footer */
+.site-footer { background: var(--surface-alt); border-top: 1px solid var(--line-soft); padding: 32px 0 40px; margin-top: 24px; }
+.footer-logo img { height:24px; margin-bottom:12px; }
+.footer-meta { font-size: 12.5px; color: var(--ink-500); line-height:1.8; }
+.footer-links { display:flex; gap:14px; margin:16px 0; flex-wrap:wrap; }
+.footer-links a { font-size:12.5px; color: var(--ink-700); font-weight:600; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a href="index.html" class="logo"><span class="logo-p">P</span><span class="logo-rest">URPLE LEASE</span></a>
+    <a href="tel:1555-6362" class="header-call">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6C3CE0" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      <span>1555-6362</span>
+    </a>
+  </div>
+  <nav class="category-nav">
+    <div class="wrap category-nav-inner">
+      <a href="index.html">신차·리스·장기렌트카</a>
+      <a href="used-cars.html" class="active">중고차</a>
+      <a href="parts-register.html">수입차부품</a>
+      <a href="reviews.html">후기</a>
+    </div>
+  </nav>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="crumb">
+      <a href="index.html">홈</a><span class="sep">›</span><a href="used-cars.html">중고차 매물</a><span class="sep">›</span>
+      <span class="cur" id="crumbName">상세</span>
+    </div>
+
+    <div class="detail-layout">
+      <!-- ============ 메인 컬럼 ============ -->
+      <div class="detail-main">
+
+        <div class="gallery">
+          <div class="gallery-main">
+            <img id="mainPhoto" src="" alt="" onerror="this.style.display='none'; document.getElementById('mainPhPlaceholder').style.display='flex';">
+            <div class="ph-icon" id="mainPhPlaceholder" style="display:none; position:absolute; inset:0; align-items:center; justify-content:center;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#9494A3" stroke-width="1.5"><path d="M5 11l1.5-4h11L19 11M3 11h18v6H3z"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>
+            </div>
+            <button class="gallery-nav prev" id="btnPrevPhoto" aria-label="이전 사진">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#15151D" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <button class="gallery-nav next" id="btnNextPhoto" aria-label="다음 사진">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#15151D" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <span class="gallery-counter" id="photoCounter">1 / 1</span>
+          </div>
+        </div>
+        <div class="gallery-thumbs" id="galleryThumbs"></div>
+
+        <!-- 차량 정보 -->
+        <section class="info-section">
+          <div class="info-section-title"><span class="bar"></span>차량 정보</div>
+          <div class="info-table" id="infoTable"></div>
+        </section>
+
+        <!-- 총 구입비용 -->
+        <section class="info-section">
+          <div class="info-section-title"><span class="bar"></span>총 구입비용</div>
+          <div class="cost-table" id="costTable"></div>
+          <div class="cost-note">
+            취득세는 차량금액 기준 7.5%로 자동 계산되며, 전기차는 1,400,000원 감면이 자동 반영됩니다.<br>
+            취득세와 자동차보험료를 제외한 모든 비용은 현금영수증 또는 세금계산서로 발행됩니다.<br>
+            취득세는 영수증을 발급하며 남는 금액은 매수인에게 돌려드립니다.
+          </div>
+        </section>
+
+        <!-- 차량 설명 -->
+        <section class="info-section">
+          <div class="info-section-title"><span class="bar"></span>차량 설명</div>
+          <div class="desc-text" id="descText"></div>
+        </section>
+
+        <!-- 옵션 -->
+        <section class="info-section">
+          <div class="info-section-title"><span class="bar"></span>옵션</div>
+          <div id="optionGroups"></div>
+        </section>
+
+        <!-- 성능점검기록부 / 하체사진 — 등록된 자료가 없으면 섹션 전체를 숨깁니다 -->
+        <section class="info-section" id="perfDocSection">
+          <div class="info-section-title"><span class="bar"></span>성능점검기록부</div>
+          <div id="perfDocSlot"></div>
+        </section>
+
+        <section class="info-section" id="underbodySection">
+          <div class="info-section-title"><span class="bar"></span>하체 사진</div>
+          <div id="underbodySlot"></div>
+        </section>
+
+        <!-- 배터리 정보 (전기/하이브리드 차량에서만 표시) -->
+        <section class="info-section" id="batterySection" style="display:none;">
+          <div class="info-section-title"><span class="bar"></span>배터리 정보</div>
+          <div class="info-table" id="batteryTable" style="margin-bottom:14px;"></div>
+          <div id="batteryDocSlot"></div>
+        </section>
+
+      </div>
+
+      <!-- ============ 사이드 컬럼 ============ -->
+      <aside class="detail-side">
+        <div class="price-box">
+          <div class="status-row">
+            <span class="status-pill selling" id="statusPill">판매중</span>
+            <span class="status-pill origin" id="originPill">국산차</span>
+          </div>
+          <h1 id="vehicleTitle"></h1>
+          <div class="p-meta" id="vehicleMeta"></div>
+          <div class="p-amount" id="vehiclePrice"></div>
+          <div class="tag-row" id="vehicleTags"></div>
+        </div>
+
+        <div class="seller-box">
+          <div class="seller-avatar" id="sellerAvatar">?</div>
+          <div class="seller-info">
+            <div class="s-name" id="sellerName">판매자 정보</div>
+            <div class="s-phone" id="sellerPhone"></div>
+          </div>
+        </div>
+
+        <div class="action-stack">
+          <button type="button" class="btn btn-primary btn-block" id="btnChat">💬 채팅 문의하기</button>
+          <button type="button" class="btn btn-outline btn-block" id="btnVisit">📅 방문 예약하기</button>
+        </div>
+
+        <div class="share-row">
+          <button type="button" id="btnCopyLink">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.07 0l1.41-1.41a5 5 0 0 0-7.07-7.07L10 6"/><path d="M14 11a5 5 0 0 0-7.07 0L5.5 12.4a5 5 0 0 0 7.07 7.07L14 18"/></svg>
+            링크 복사
+          </button>
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-logo"><span class="logo-p" style="font-size:20px;">P</span><span class="logo-rest" style="font-size:17px;">URPLE LEASE</span></div>
+    <div class="footer-links">
+      <a href="index.html">신차·리스·렌트</a>
+      <a href="used-cars.html">중고차 매물</a>
+      <a href="parts-register.html">수입차부품</a>
+      <a href="reviews.html">후기관리</a>
+    </div>
+    <div class="footer-meta">
+      퍼플리스 | 오토리스&amp;장기렌트 승계매입전문업체<br>
+      대표 : 이호준 | 주소 : 경기도 용인시 기흥구 강남서로9, 7층 703호<br>
+      사업자등록번호 : 885-68-00449<br>
+      대표번호 : 1555-6362 | 평일 09:00~18:00<br>
+      © 2026 PURPLE LEASE. All rights reserved. (프로토타입 샘플 — 실제 서비스 아님)
+    </div>
+  </div>
+</footer>
+
+<!-- 모바일 하단 고정 액션 -->
+<div class="mobile-cta">
+  <div class="price-mini">
+    <span class="pm-label">판매가</span>
+    <span class="pm-value" id="mobilePrice">-</span>
+  </div>
+  <button type="button" class="btn btn-outline" id="btnVisitMobile">방문예약</button>
+  <button type="button" class="btn btn-primary" id="btnChatMobile">채팅문의</button>
+</div>
+
+<!-- 첨부자료 모달 (성능점검기록부 / 하체사진 / 배터리진단서 공용) -->
+<div class="doc-modal-overlay" id="docModalOverlay">
+  <div class="doc-modal">
+    <div class="doc-modal-head">
+      <span id="docModalTitle">성능점검기록부</span>
+      <button type="button" class="doc-modal-close" id="docModalClose" aria-label="닫기">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="doc-modal-body">
+      <img id="docModalImage" src="" alt="첨부 이미지" onerror="this.style.display='none'; document.getElementById('docModalEmpty').style.display='flex';">
+      <div class="doc-modal-empty" id="docModalEmpty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#9494A3" stroke-width="1.5" width="34" height="34"><path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1z"/><rect x="5" y="5" width="14" height="16" rx="2"/></svg>
+        <span>첨부된 이미지를 불러올 수 없습니다.</span>
+      </div>
+    </div>
+    <div class="doc-modal-nav" id="docModalNav" style="display:none;">
+      <button type="button" class="doc-modal-arrow" id="docModalPrev" aria-label="이전">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="doc-modal-counter" id="docModalCounter">1 / 1</span>
+      <button type="button" class="doc-modal-arrow" id="docModalNext" aria-label="다음">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   데이터 정의부 — 운영자가 등록한 매물 상세 데이터.
+   실제 운영시 URL의 ?id= 값으로 서버 API(/api/usedcars/{id})를 호출해 채웁니다.
+   사진(photos)은 운영자가 업로드한 자체 서버 경로를 그대로 사용합니다.
+   ============================================================ */
+  const vehicleDB = {
+    481: {
+      name: '기아 더 뉴 K3 1.6 가솔린 트렌디',
+      origin: 'domestic',
+      status: '판매중',
+      year: 2022,
+      mileage: 66926,
+      fuel: '가솔린',
+      color: '흰색',
+      plate: '258너5425',
+      parkLocation: '고색동 221-3',
+      registeredDate: '2026.06.24',
+      price: 1350,
+      tags: ['세이프6','무사고','짧은주행','최저가'],
+      photos: [
+        '/assets/usedcars/481-1.jpg',
+        '/assets/usedcars/481-2.jpg',
+        '/assets/usedcars/481-3.jpg',
+      ],
+      cost: [
+        { label:'차량금액', value: 13500000 },
+        { label:'매도비', value: 440000 },
+        { label:'취득세 (7.5%)', value: 1012500 },
+        { label:'성능보험료', value: 80630 },
+      ],
+      description: `★외부주차장 차량 미리 전화주시면 단지로 이동해 드립니다★
+★실내주차장 차량 미리 전화주시면 차량 앞으로 빼드립니다★
+
+==최근 정비내역 및 특이사항
+▶상품화 공정이 완료된 차량입니다
+
+===차량정보
+▶차명 : EJ 뉴 K3 1.6 가솔린
+▶신차가 : 2,130만원
+▶연식 : 2022년
+▶사고 : (무) 단순 교환
+▶색상 : 미색
+▶주행 : 66,967Km
+▶중요옵션 : 드라이브 와이즈, 16인치 휠, 크루즈컨트롤, 차선이탈방지, 후측방경보
+▶추가옵션 : 10.25 UVO 내비게이션, 버튼시동 팩
+
+[장점1] 컨디션 가성비!
+[장점2] 엔진 상태양호!
+[장점3] 내외관 상태양호!
+[장점4] 등급대비 옵션좋습니다!`,
+      options: {
+        '외관': ['LED램프','전동접이사이드미러','알루미늄휠'],
+        '내장': ['가죽시트','열선시트(앞)'],
+        '안전': ['운전석에어백','동승석에어백','사이드에어백','커튼에어백','후방카메라'],
+        '편의': ['풀오토에어컨','MP3','USB','내비게이션','스마트키','버튼시동','크루즈컨트롤','핸즈프리'],
+      },
+      // 각 자료는 "등록된 이미지 배열"입니다. 빈 배열([])이면 해당 섹션 전체가 화면에서 숨겨집니다.
+      perfDocs: [
+        '/assets/usedcars/481-perf-1.jpg',
+        '/assets/usedcars/481-perf-2.jpg',
+      ],
+      underbodyDocs: [],
+      isEV: false,
+      battery: null,
+      batteryDocs: [],
+      seller: { name: '이호준 대표', phone: '010-0000-0000' }
+    },
+    482: {
+      name: '현대 스타리아 2.2 디젤 라운지 9인승',
+      origin: 'domestic',
+      status: '판매중',
+      year: 2022,
+      mileage: 131191,
+      fuel: '디젤',
+      color: '크림화이트',
+      plate: '12다3456',
+      parkLocation: '고색동 221-3',
+      registeredDate: '2026.06.20',
+      price: 2650,
+      tags: ['세이프6','무사고','풀옵션'],
+      photos: [
+        '/assets/usedcars/482-1.jpg',
+        '/assets/usedcars/482-2.jpg',
+      ],
+      cost: [
+        { label:'차량금액', value: 26500000 },
+        { label:'매도비', value: 440000 },
+        { label:'취득세 (7.5%)', value: 1987500 },
+        { label:'성능보험료', value: 80630 },
+      ],
+      description: `===차량정보
+▶차명 : 스타리아 2.2 디젤 라운지 9인승
+▶연식 : 2022년
+▶사고 : (무) 단순 교환
+▶색상 : 크림화이트
+▶주행 : 131,191Km
+▶중요옵션 : 어라운드뷰, 스마트크루즈, 통풍시트, 파워슬라이딩도어
+
+[장점1] 9인승 라운지 풀옵션!
+[장점2] 패밀리카로 최적!`,
+      options: {
+        '외관': ['LED램프','파워슬라이딩도어','알루미늄휠'],
+        '내장': ['가죽시트','통풍시트','열선시트(전석)'],
+        '안전': ['운전석에어백','동승석에어백','사이드에어백','커튼에어백','어라운드뷰','스마트크루즈'],
+        '편의': ['풀오토에어컨','내비게이션','스마트키','버튼시동','3열독립시트'],
+      },
+      perfDocs: [
+        '/assets/usedcars/482-perf-1.jpg',
+      ],
+      underbodyDocs: [],
+      isEV: false,
+      battery: null,
+      batteryDocs: [],
+      seller: { name: '이호준 대표', phone: '010-0000-0000' }
+    },
+    483: {
+      name: '기아 더 뉴쏘렌토 하이브리드(MQ4) 1.6 HEV 2WD 프레스티지',
+      origin: 'domestic',
+      status: '판매중',
+      year: 2025,
+      mileage: 18257,
+      fuel: '하이브리드',
+      color: '실버',
+      plate: '34라5678',
+      parkLocation: '고색동 221-3',
+      registeredDate: '2026.06.22',
+      price: 3550,
+      tags: ['제작사A/S','세이프6','무사고','풀옵션'],
+      photos: [
+        '/assets/usedcars/483-1.jpg',
+        '/assets/usedcars/483-2.jpg',
+      ],
+      cost: [
+        { label:'차량금액', value: 35500000 },
+        { label:'매도비', value: 440000 },
+        { label:'취득세 (7.5%)', value: 2662500 },
+        { label:'성능보험료', value: 80630 },
+      ],
+      description: `===차량정보
+▶차명 : 더 뉴쏘렌토 하이브리드(MQ4) 1.6 HEV 2WD 프레스티지
+▶연식 : 2025년
+▶사고 : 무사고
+▶색상 : 실버
+▶주행 : 18,257Km
+▶중요옵션 : 제작사 정품 A/S, 어댑티브크루즈, 후측방모니터, 통풍시트
+
+[장점1] 신차급 컨디션!
+[장점2] 제작사 A/S 보증 가능!`,
+      options: {
+        '외관': ['LED램프','전동접이사이드미러','알루미늄휠'],
+        '내장': ['가죽시트','통풍시트','열선시트(앞)'],
+        '안전': ['운전석에어백','동승석에어백','사이드에어백','커튼에어백','후방카메라','어댑티브크루즈'],
+        '편의': ['풀오토에어컨','내비게이션','스마트키','버튼시동','무선충전'],
+      },
+      perfDocs: [
+        '/assets/usedcars/483-perf-1.jpg',
+      ],
+      underbodyDocs: [
+        '/assets/usedcars/483-underbody-1.jpg',
+      ],
+      isEV: false,
+      battery: null,
+      batteryDocs: [],
+      seller: { name: '이호준 대표', phone: '010-0000-0000' }
+    },
+    484: {
+      name: '기아 디 올뉴니로EV 에어',
+      origin: 'domestic',
+      status: '판매중',
+      year: 2023,
+      mileage: 5214,
+      fuel: '전기',
+      color: '화이트',
+      plate: '56마7890',
+      parkLocation: '고색동 221-3',
+      registeredDate: '2026.06.23',
+      price: 2950,
+      tags: ['제작사A/S','세이프6','무사고','풀옵션','짧은주행'],
+      photos: [
+        '/assets/usedcars/484-1.jpg',
+        '/assets/usedcars/484-2.jpg',
+      ],
+      cost: [
+        { label:'차량금액', value: 29500000 },
+        { label:'매도비', value: 440000 },
+        { label:'취득세 (7.5%, 전기차 감면 적용)', value: 1012500 },
+        { label:'성능보험료', value: 80630 },
+      ],
+      description: `===차량정보
+▶차명 : 디 올뉴니로EV 에어
+▶연식 : 2023년
+▶사고 : 무사고
+▶색상 : 화이트
+▶주행 : 5,214Km
+▶중요옵션 : 어라운드뷰, V2L, 디지털센터미러
+
+[장점1] 초저주행 신차급!
+[장점2] 완충 기준 1회 충전 장거리 주행 가능!`,
+      options: {
+        '외관': ['LED램프','전동접이사이드미러','알루미늄휠'],
+        '내장': ['가죽시트','열선시트(전석)'],
+        '안전': ['운전석에어백','동승석에어백','사이드에어백','커튼에어백','어라운드뷰'],
+        '편의': ['풀오토에어컨','내비게이션','스마트키','버튼시동','V2L','디지털센터미러'],
+      },
+      perfDocs: [
+        '/assets/usedcars/484-perf-1.jpg',
+      ],
+      underbodyDocs: [],
+      isEV: true,
+      battery: { soh: 98, capacity: '64.8kWh' },
+      batteryDocs: [
+        '/assets/usedcars/484-battery-1.jpg',
+      ],
+      seller: { name: '이호준 대표', phone: '010-0000-0000' }
+    }
+  };
+
+  function priceFmt(n) { return n.toLocaleString('ko-KR') + '만원'; }
+  function wonFmt(n) { return n.toLocaleString('ko-KR') + '원'; }
+  function kmFmt(n) { return n.toLocaleString('ko-KR') + 'km'; }
+
+  const params = new URLSearchParams(window.location.search);
+  const id = parseInt(params.get('id'), 10);
+  const v = vehicleDB[id];
+
+  let photoIdx = 0;
+
+  function renderNotFound() {
+    document.querySelector('.detail-layout').innerHTML = `
+      <div style="grid-column:1/-1; text-align:center; padding:80px 0;">
+        <p style="font-size:14px; color:var(--ink-500); margin-bottom:16px;">해당 매물 정보를 찾을 수 없습니다.</p>
+        <a href="used-cars.html" class="btn btn-outline">매물 목록으로</a>
+      </div>`;
+    document.querySelector('.mobile-cta').style.display = 'none';
+  }
+
+  /* ============================================================
+     첨부자료 섹션 공통 렌더러
+     - docs 배열이 비어있으면(=[]) 해당 섹션을 통째로 숨깁니다 (제목까지 포함).
+     - docs가 있으면 "보기" 카드를 표시하고, 클릭 시 모달로 첨부 이미지를 보여줍니다.
+     - sectionId가 null이면 섹션 숨김 처리는 호출부(배터리 등)에서 별도로 담당합니다.
+     ============================================================ */
+  function renderDocSection(sectionId, slotId, docs, opt) {
+    const slot = document.getElementById(slotId);
+    const section = sectionId ? document.getElementById(sectionId) : null;
+    const hasDocs = docs && docs.length > 0;
+
+    if (section) section.style.display = hasDocs ? 'block' : 'none';
+    if (!hasDocs) { slot.innerHTML = ''; return; }
+
+    slot.innerHTML = `
+      <div class="simple-doc-card" data-docs='${JSON.stringify(docs)}' data-title="${opt.modalTitle}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">${opt.icon}</svg>
+        <div><div class="sd-title">${opt.title}</div><div class="sd-sub">${opt.sub} (${docs.length}장)</div></div>
+        <svg class="sd-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>`;
+
+    slot.querySelector('.simple-doc-card').addEventListener('click', (e) => {
+      const card = e.currentTarget;
+      openDocModal(JSON.parse(card.dataset.docs), card.dataset.title);
+    });
+  }
+
+  /* ---- 모달 컨트롤 ---- */
+  let modalDocs = [];
+  let modalIdx = 0;
+
+  function openDocModal(docs, title) {
+    modalDocs = docs;
+    modalIdx = 0;
+    document.getElementById('docModalTitle').textContent = title;
+    document.getElementById('docModalNav').style.display = docs.length > 1 ? 'flex' : 'none';
+    renderModalImage();
+    document.getElementById('docModalOverlay').classList.add('open');
+  }
+
+  function closeDocModal() {
+    document.getElementById('docModalOverlay').classList.remove('open');
+  }
+
+  function renderModalImage() {
+    const img = document.getElementById('docModalImage');
+    const empty = document.getElementById('docModalEmpty');
+    img.style.display = 'block'; empty.style.display = 'none';
+    img.src = modalDocs[modalIdx];
+    document.getElementById('docModalCounter').textContent = `${modalIdx+1} / ${modalDocs.length}`;
+  }
+
+  document.getElementById('docModalClose').addEventListener('click', closeDocModal);
+  document.getElementById('docModalOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'docModalOverlay') closeDocModal();
+  });
+  document.getElementById('docModalPrev').addEventListener('click', () => {
+    modalIdx = (modalIdx - 1 + modalDocs.length) % modalDocs.length;
+    renderModalImage();
+  });
+  document.getElementById('docModalNext').addEventListener('click', () => {
+    modalIdx = (modalIdx + 1) % modalDocs.length;
+    renderModalImage();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (!document.getElementById('docModalOverlay').classList.contains('open')) return;
+    if (e.key === 'Escape') closeDocModal();
+    if (e.key === 'ArrowLeft') document.getElementById('docModalPrev').click();
+    if (e.key === 'ArrowRight') document.getElementById('docModalNext').click();
+  });
+
+  function render() {
+    if (!v) { renderNotFound(); return; }
+
+    document.getElementById('crumbName').textContent = v.name;
+    document.title = v.name + ' — PURPLE LEASE';
+
+    // 갤러리
+    renderPhoto();
+    document.getElementById('galleryThumbs').innerHTML = v.photos.map((p,i) => `
+      <div class="gthumb${i===0?' active':''}" data-idx="${i}">
+        <img src="${p}" onerror="this.style.opacity=0.15">
+      </div>`).join('');
+    document.querySelectorAll('.gthumb').forEach(t => {
+      t.addEventListener('click', () => { photoIdx = parseInt(t.dataset.idx,10); renderPhoto(); });
+    });
+    document.getElementById('btnPrevPhoto').addEventListener('click', () => {
+      photoIdx = (photoIdx - 1 + v.photos.length) % v.photos.length; renderPhoto();
+    });
+    document.getElementById('btnNextPhoto').addEventListener('click', () => {
+      photoIdx = (photoIdx + 1) % v.photos.length; renderPhoto();
+    });
+
+    // 차량 정보 표
+    document.getElementById('infoTable').innerHTML = `
+      <div class="it"><span class="it-label">브랜드</span><span class="it-value">${v.name.split(' ')[0]}</span></div>
+      <div class="it"><span class="it-label">모델</span><span class="it-value">${v.name}</span></div>
+      <div class="it"><span class="it-label">차량번호</span><span class="it-value">${v.plate}</span></div>
+      <div class="it"><span class="it-label">연식</span><span class="it-value">${v.year}년식</span></div>
+      <div class="it"><span class="it-label">주행거리</span><span class="it-value">${kmFmt(v.mileage)}</span></div>
+      <div class="it"><span class="it-label">연료</span><span class="it-value">${v.fuel}</span></div>
+      <div class="it"><span class="it-label">색상</span><span class="it-value">${v.color}</span></div>
+      <div class="it"><span class="it-label">주차위치</span><span class="it-value">${v.parkLocation}</span></div>
+      <div class="it"><span class="it-label">등록일</span><span class="it-value">${v.registeredDate}</span></div>
+      <div class="it"><span class="it-label">상태</span><span class="it-value">${v.status}</span></div>
+    `;
+
+    // 총 구입비용
+    const total = v.cost.reduce((s,c) => s + c.value, 0);
+    document.getElementById('costTable').innerHTML =
+      v.cost.map(c => `<div class="row"><span class="c-label">${c.label}</span><span class="c-value">${wonFmt(c.value)}</span></div>`).join('') +
+      `<div class="row total"><span class="c-label">총 합계</span><span class="c-value">${wonFmt(total)}</span></div>`;
+
+    // 차량 설명
+    document.getElementById('descText').textContent = v.description;
+
+    // 옵션
+    document.getElementById('optionGroups').innerHTML = Object.entries(v.options).map(([group, items]) => `
+      <div class="opt-group">
+        <div class="opt-group-label">${group}</div>
+        <div class="opt-chips">${items.map(i => `<span class="opt-chip">${i}</span>`).join('')}</div>
+      </div>
+    `).join('');
+
+    // 성능점검기록부 — 등록된 자료가 없으면 섹션 전체를 숨깁니다
+    renderDocSection('perfDocSection', 'perfDocSlot', v.perfDocs, {
+      icon: '<path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1z"/><rect x="5" y="5" width="14" height="16" rx="2"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="15" y2="15"/>',
+      title: '성능보기',
+      sub: '성능점검기록부 확인',
+      modalTitle: '성능점검기록부'
+    });
+
+    // 하체사진 — 등록된 자료가 없으면 섹션 전체를 숨깁니다
+    renderDocSection('underbodySection', 'underbodySlot', v.underbodyDocs, {
+      icon: '<circle cx="12" cy="12" r="9"/>',
+      title: '하체 사진 보기',
+      sub: '차량 하부 점검 사진',
+      modalTitle: '하체 사진'
+    });
+
+    // 배터리 정보 (전기/하이브리드만 — 해당 안 되면 섹션 전체를 숨깁니다)
+    if (v.isEV && v.battery) {
+      document.getElementById('batterySection').style.display = 'block';
+      document.getElementById('batteryTable').innerHTML = `
+        <div class="it"><span class="it-label">배터리 SOH 측정값</span><span class="it-value">${v.battery.soh}%</span></div>
+        <div class="it"><span class="it-label">배터리 용량</span><span class="it-value">${v.battery.capacity}</span></div>
+      `;
+      renderDocSection(null, 'batteryDocSlot', v.batteryDocs, {
+        icon: '<rect x="2" y="7" width="18" height="10" rx="2"/><line x1="22" y1="11" x2="22" y2="13"/>',
+        title: '배터리 진단서',
+        sub: '상세 진단 결과 확인',
+        modalTitle: '배터리 진단서'
+      });
+    } else {
+      document.getElementById('batterySection').style.display = 'none';
+    }
+
+    // 사이드 패널
+    document.getElementById('statusPill').textContent = v.status;
+    document.getElementById('originPill').textContent = v.origin === 'domestic' ? '국산차' : '수입차';
+    document.getElementById('vehicleTitle').textContent = v.name;
+    document.getElementById('vehicleMeta').textContent = `${v.origin==='domestic'?'국산차':'수입차'} · ${v.name} · ${v.year}년식`;
+    document.getElementById('vehiclePrice').textContent = priceFmt(v.price);
+    document.getElementById('vehicleTags').innerHTML = v.tags.map(t => `<span class="utag">${t}</span>`).join('');
+    document.getElementById('mobilePrice').textContent = priceFmt(v.price);
+
+    document.getElementById('sellerName').textContent = v.seller.name;
+    document.getElementById('sellerPhone').textContent = v.seller.phone;
+    document.getElementById('sellerAvatar').textContent = v.seller.name.charAt(0);
+  }
+
+  function renderPhoto() {
+    const photo = v.photos[photoIdx];
+    const img = document.getElementById('mainPhoto');
+    const ph = document.getElementById('mainPhPlaceholder');
+    img.style.display = 'block'; ph.style.display = 'none';
+    img.src = photo;
+    document.getElementById('photoCounter').textContent = `${photoIdx+1} / ${v.photos.length}`;
+    document.querySelectorAll('.gthumb').forEach((t,i) => t.classList.toggle('active', i===photoIdx));
+  }
+
+  render();
+
+  // 액션 버튼 (데모: 알림으로 대체)
+  ['btnChat','btnChatMobile'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('click', () => alert('채팅 문의 기능은 준비 중입니다.'));
+  });
+  ['btnVisit','btnVisitMobile'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('click', () => alert('방문 예약 기능은 준비 중입니다.'));
+  });
+  const copyBtn = document.getElementById('btnCopyLink');
+  if (copyBtn) copyBtn.addEventListener('click', () => {
+    navigator.clipboard?.writeText(window.location.href);
+    alert('링크가 복사되었습니다.');
+  });
+</script>
+
+</body>
+</html>

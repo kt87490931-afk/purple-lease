@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>간편견적 — PURPLE LEASE</title>
+<style>
+/* ===== base.css (inlined, 메인페이지와 동일 토큰) ===== */
+@import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap');
+
+:root {
+  --grad-main: linear-gradient(135deg, #8B2FE0 0%, #5B2FD6 45%, #1A1E6E 100%);
+  --grad-main-soft: linear-gradient(135deg, rgba(139,47,224,0.12) 0%, rgba(26,30,110,0.12) 100%);
+  --grad-text: linear-gradient(135deg, #8B2FE0 0%, #2030A0 100%);
+
+  --purple-600: #8B2FE0;
+  --purple-500: #9D4AEF;
+  --purple-100: #F2E8FD;
+  --purple-50: #FAF6FE;
+  --navy-900: #11143A;
+  --navy-700: #1A1E6E;
+  --navy-500: #2030A0;
+
+  --white: #FFFFFF;
+  --surface: #FAFAFC;
+  --surface-alt: #F4F2FA;
+  --line: #E7E5F0;
+  --line-soft: #EFEDF6;
+  --ink-900: #15151D;
+  --ink-700: #383846;
+  --ink-500: #6B6B7B;
+  --ink-400: #9494A3;
+
+  --ok-600: #1AA15C;
+  --warn-600: #D88A00;
+  --danger-600: #E0395B;
+
+  --font-display: 'Sora', 'Noto Sans KR', sans-serif;
+  --font-body: 'Noto Sans KR', 'Pretendard', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --container: 1180px;
+
+  --shadow-sm: 0 1px 2px rgba(22,22,40,0.06);
+  --shadow-md: 0 8px 24px rgba(40,30,90,0.08);
+  --shadow-lg: 0 16px 40px rgba(40,30,90,0.14);
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--white);
+  color: var(--ink-700);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: 100px;
+}
+img { max-width: 100%; display: block; }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; }
+ul { margin: 0; padding: 0; list-style: none; }
+h1,h2,h3,h4 { margin: 0; font-family: var(--font-display); color: var(--ink-900); letter-spacing: -0.01em; }
+p { margin: 0; }
+input, select { font-family: inherit; }
+
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--purple-600);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
+
+.wrap { max-width: var(--container); margin: 0 auto; padding: 0 18px; }
+
+.grad-text {
+  background: var(--grad-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--purple-600);
+}
+.eyebrow::before {
+  content: '';
+  width: 6px; height: 6px;
+  background: var(--grad-main);
+  border-radius: 50%;
+}
+
+/* --- Buttons --- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 22px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 14px;
+  border: 1px solid transparent;
+  transition: transform .15s ease, opacity .15s ease, border-color .15s ease, background .15s ease;
+  white-space: nowrap;
+}
+.btn:active { transform: translateY(1px); }
+.btn-primary {
+  background: var(--grad-main);
+  color: #fff;
+  box-shadow: var(--shadow-md);
+}
+.btn-primary:hover { opacity: 0.92; }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+.btn-outline {
+  background: var(--white);
+  border-color: var(--line);
+  color: var(--ink-900);
+}
+.btn-outline:hover { border-color: var(--purple-600); color: var(--purple-600); }
+.btn-ghost { background: var(--purple-50); color: var(--navy-700); }
+.btn-ghost:hover { background: var(--purple-100); }
+.btn-block { width: 100%; }
+.btn-sm { padding: 9px 14px; font-size: 13px; border-radius: var(--radius-sm); }
+
+/* --- Header --- */
+.site-header {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line-soft);
+}
+.header-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 64px; gap: 16px;
+}
+.logo { display: flex; align-items: baseline; gap: 1px; flex-shrink: 0; font-family: var(--font-display); }
+.logo .logo-p { font-size: 22px; font-weight: 800; background: var(--grad-main); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.logo .logo-rest { font-size: 18px; font-weight: 700; color: var(--navy-900); letter-spacing: -0.01em; }
+.header-call {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--font-mono); font-size: 13px; color: var(--ink-900); font-weight: 700;
+}
+.icon-btn {
+  width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-sm);
+  background: var(--surface-alt);
+  flex-shrink: 0;
+}
+
+/* --- Step progress header --- */
+.step-header {
+  background: var(--white);
+  border-bottom: 1px solid var(--line-soft);
+}
+.step-bar { display: flex; align-items: center; padding: 14px 0; gap: 0; }
+.step-bar .step-item {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 12.5px; font-weight: 700; color: var(--ink-400);
+  flex: 1;
+  position: relative;
+}
+.step-bar .step-item .num {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-size: 11.5px; font-weight: 700;
+  background: var(--surface-alt); color: var(--ink-400);
+  flex-shrink: 0;
+  transition: all .2s ease;
+}
+.step-bar .step-item.active .num { background: var(--grad-main); color: #fff; }
+.step-bar .step-item.active { color: var(--ink-900); }
+.step-bar .step-item.done .num { background: var(--purple-100); color: var(--purple-600); }
+.step-bar .step-item.done { color: var(--ink-700); }
+.step-bar .step-item:not(:last-child)::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+  margin: 0 8px;
+}
+.step-bar .step-item span.label { display: none; }
+@media (min-width: 540px) {
+  .step-bar .step-item span.label { display: inline; }
+}
+
+.crumb {
+  font-size: 12px; color: var(--ink-400); padding: 10px 0;
+  display: flex; align-items: center; gap: 6px;
+}
+.crumb a { color: var(--ink-400); }
+.crumb .sep { opacity: .6; }
+.crumb .cur { color: var(--purple-600); font-weight: 700; }
+
+/* --- Section frame --- */
+.section { padding: 28px 0; position: relative; }
+.section-title { font-size: 19px; margin-bottom: 4px; }
+.section-sub { font-size: 12.5px; color: var(--ink-500); margin-bottom: 16px; }
+
+/* ============ STEP 1: 차량 선택 ============ */
+.origin-toggle {
+  display: flex; gap: 8px; margin-bottom: 16px;
+}
+.origin-toggle button {
+  flex: 1;
+  padding: 13px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+  background: var(--white);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink-500);
+  transition: all .15s ease;
+}
+.origin-toggle button.active {
+  border-color: var(--purple-600);
+  color: var(--purple-600);
+  background: var(--purple-50);
+}
+
+.brand-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+@media (min-width: 540px) { .brand-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 860px) { .brand-grid { grid-template-columns: repeat(6, 1fr); } }
+
+.brand-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  padding: 14px 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  cursor: pointer;
+  transition: all .15s ease;
+  text-align: center;
+}
+.brand-card:hover { border-color: var(--purple-500); }
+.brand-card.selected { border-color: var(--purple-600); background: var(--purple-50); box-shadow: var(--shadow-sm); }
+.brand-card .logo-wrap {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  background: var(--surface-alt);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.brand-card .logo-wrap img { width: 100%; height: 100%; object-fit: contain; padding: 6px; }
+.brand-card .bname { font-size: 12.5px; font-weight: 700; color: var(--ink-900); }
+
+.section-label {
+  font-size: 14px; font-weight: 800; color: var(--ink-900);
+  margin: 22px 0 12px;
+  padding-left: 10px;
+  border-left: 3px solid var(--purple-600);
+}
+
+.model-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (min-width: 640px) { .model-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 960px) { .model-grid { grid-template-columns: repeat(4, 1fr); } }
+
+.model-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all .15s ease;
+  box-shadow: var(--shadow-sm);
+}
+.model-card:hover { border-color: var(--purple-500); transform: translateY(-1px); }
+.model-card.selected { border-color: var(--purple-600); box-shadow: 0 0 0 2px var(--purple-100); }
+.model-thumb {
+  aspect-ratio: 4/3;
+  background: linear-gradient(135deg, var(--purple-50), var(--surface-alt));
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.model-thumb img { width: 78%; object-fit: contain; }
+.model-thumb .brand-chip {
+  position: absolute; top: 8px; left: 8px;
+  width: 22px; height: 22px; border-radius: 6px;
+  background: rgba(255,255,255,0.9);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-sm);
+}
+.model-thumb .brand-chip img { width: 70%; }
+.model-body { padding: 10px 11px 12px; }
+.model-body .mname { font-size: 13.5px; font-weight: 800; color: var(--ink-900); margin-bottom: 3px; }
+.model-body .mprice { font-size: 11.5px; color: var(--ink-500); }
+.model-body .mprice b { color: var(--navy-900); font-family: var(--font-mono); font-weight: 700; }
+
+.sticky-next {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 92;
+  background: rgba(255,255,255,0.97);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--line-soft);
+  padding: 12px 18px calc(12px + env(safe-area-inset-bottom));
+  box-shadow: 0 -4px 16px rgba(40,30,90,0.06);
+}
+.sticky-next .wrap { padding: 0; }
+.sticky-next .price-preview { display: flex; flex-direction: column; }
+.sticky-next .price-preview .pp-label { font-size: 11px; color: var(--ink-500); }
+.sticky-next .price-preview .pp-value { font-family: var(--font-mono); font-size: 17px; font-weight: 800; color: var(--navy-900); }
+.sticky-next-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+
+/* ============ STEP 2: 옵션 및 조건 선택 ============ */
+.vehicle-summary {
+  display: flex; gap: 14px; align-items: center;
+  background: var(--surface-alt);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 22px;
+}
+.vehicle-summary .vs-thumb {
+  width: 96px; height: 72px; flex-shrink: 0;
+  background: var(--white);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.vehicle-summary .vs-thumb img { width: 90%; object-fit: contain; }
+.vehicle-summary .vs-info .vs-brand { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--ink-500); font-weight: 700; margin-bottom: 2px; }
+.vehicle-summary .vs-brand img { width: 16px; height: 16px; object-fit: contain; }
+.vehicle-summary .vs-name { font-size: 17px; font-weight: 800; color: var(--ink-900); }
+.vehicle-summary .vs-meta { font-size: 11.5px; color: var(--ink-500); margin-top: 2px; }
+.vehicle-summary .vs-change { margin-left: auto; flex-shrink: 0; }
+
+.swatch-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.swatch {
+  width: 38px; height: 38px; border-radius: 50%;
+  border: 2px solid var(--line);
+  cursor: pointer;
+  position: relative;
+  transition: all .15s ease;
+}
+.swatch.selected { border-color: var(--purple-600); box-shadow: 0 0 0 3px var(--purple-100); }
+.swatch.selected::after {
+  content: '✓'; position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 14px; font-weight: 800;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+.swatch-note { font-size: 11.5px; color: var(--ink-400); margin-top: 8px; display: flex; align-items: center; gap: 5px; }
+
+.trim-group { margin-bottom: 10px; border: 1px solid var(--line); border-radius: var(--radius-md); overflow: hidden; }
+.trim-group-head {
+  padding: 13px 14px;
+  font-size: 13px; font-weight: 700; color: var(--ink-900);
+  background: var(--surface);
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer;
+}
+.trim-group-head .chev { transition: transform .2s ease; color: var(--ink-400); }
+.trim-group.open .trim-group-head .chev { transform: rotate(180deg); }
+.trim-list { display: none; }
+.trim-group.open .trim-list { display: block; }
+.trim-option {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px;
+  border-top: 1px solid var(--line-soft);
+  cursor: pointer;
+  font-size: 13px;
+}
+.trim-option:hover { background: var(--purple-50); }
+.trim-option.selected { background: var(--purple-50); color: var(--purple-600); font-weight: 800; }
+.trim-option .t-price { font-family: var(--font-mono); font-weight: 700; color: var(--ink-900); }
+.trim-option.selected .t-price { color: var(--purple-600); }
+
+.option-card {
+  display: flex; align-items: flex-start; gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 13px 14px;
+  margin-bottom: 9px;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.option-card:hover { border-color: var(--purple-500); }
+.option-card.checked { border-color: var(--purple-600); background: var(--purple-50); }
+.option-card input[type="checkbox"] { margin-top: 2px; width: 17px; height: 17px; accent-color: var(--purple-600); flex-shrink: 0; }
+.option-card .opt-body { flex: 1; }
+.option-card .opt-name { font-size: 13px; font-weight: 700; color: var(--ink-900); line-height: 1.4; }
+.option-card .opt-price { font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--navy-900); flex-shrink: 0; }
+
+.cond-block { margin-bottom: 20px; }
+.cond-label { font-size: 13px; font-weight: 700; color: var(--ink-900); margin-bottom: 9px; }
+.cond-options { display: flex; gap: 8px; flex-wrap: wrap; }
+.cond-pill {
+  flex: 1; min-width: 70px;
+  text-align: center;
+  padding: 11px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--white);
+  font-size: 13px; font-weight: 700; color: var(--ink-500);
+  transition: all .15s ease;
+}
+.cond-pill.selected { border-color: var(--purple-600); color: var(--purple-600); background: var(--purple-50); }
+.cond-input {
+  margin-top: 8px;
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 11px 12px;
+  font-size: 13.5px;
+  color: var(--ink-900);
+}
+.cond-input:focus { border-color: var(--purple-600); }
+
+.price-summary-card {
+  background: var(--surface-alt);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  margin-top: 6px;
+}
+.price-row { display: flex; align-items: center; justify-content: space-between; font-size: 13px; padding: 6px 0; }
+.price-row .pr-label { color: var(--ink-500); }
+.price-row .pr-value { font-family: var(--font-mono); font-weight: 700; color: var(--ink-900); }
+.price-row.total { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 12px; }
+.price-row.total .pr-label { font-size: 14px; font-weight: 800; color: var(--ink-900); }
+.price-row.total .pr-value { font-size: 20px; font-weight: 800; }
+.price-row.total .pr-value { background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+.consent-row { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--ink-500); margin: 14px 0; }
+.consent-row a { color: var(--purple-600); text-decoration: underline; }
+
+/* ============ Footer (메인과 동일) ============ */
+.site-footer {
+  background: var(--surface-alt);
+  border-top: 1px solid var(--line-soft);
+  padding: 32px 0 40px;
+  margin-top: 24px;
+}
+.footer-meta { font-size: 12.5px; color: var(--ink-500); line-height: 1.8; }
+.footer-links { display: flex; gap: 14px; margin: 16px 0; flex-wrap: wrap; }
+.footer-links a { font-size: 12.5px; color: var(--ink-700); font-weight: 600; }
+
+/* 데스크톱에서는 하단 고정바 대신, 콘텐츠 영역 안에 중앙 정렬된 일반 버튼으로 표시합니다.
+   (참고사이트도 모바일 전용 sticky bar 없이, 카드 바로 아래 중앙 버튼 형태입니다) */
+@media (min-width: 860px) {
+  body { padding-bottom: 0; }
+  .sticky-next {
+    position: static;
+    box-shadow: none;
+    border-top: none;
+    background: none;
+    backdrop-filter: none;
+    padding: 0;
+    margin: 28px 0 40px;
+  }
+  .sticky-next-row { justify-content: center; }
+  #stickyNextStep1 .sticky-next-row { justify-content: center; }
+  #stickyNextStep1 .sticky-next-row > div:first-child { display: none; }
+  #stickyNextStep2 .sticky-next-row { justify-content: center; flex-direction: column; gap: 14px; }
+  #stickyNextStep2 .price-preview { align-items: center; }
+  #btnGoStep2 { min-width: 220px; }
+  #stickyNextStep2 .sticky-next-row > div:last-child { display: flex; gap: 10px; }
+}
+
+.helper-note {
+  display: flex; gap: 8px; align-items: flex-start;
+  background: var(--purple-50);
+  border: 1px solid var(--purple-100);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  font-size: 12px;
+  color: var(--navy-700);
+  margin-bottom: 18px;
+}
+.helper-note svg { flex-shrink: 0; margin-top: 1px; width: 15px; height: 15px; }
+
+/* step page toggle */
+.step-page { display: none; }
+.step-page.active { display: block; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a href="index.html" class="logo"><span class="logo-p">P</span><span class="logo-rest">URPLE LEASE</span></a>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <a href="tel:1555-6362" class="header-call">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6C3CE0" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        <span class="label">1555-6362</span>
+      </a>
+    </div>
+  </div>
+  <div class="step-header">
+    <div class="wrap">
+      <div class="step-bar" id="stepBar">
+        <div class="step-item active" data-step="1"><span class="num">1</span><span class="label">차량선택</span></div>
+        <div class="step-item" data-step="2"><span class="num">2</span><span class="label">옵션·조건</span></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="crumb">
+      <a href="index.html">홈</a><span class="sep">›</span><span>비대면 간편 견적</span><span class="sep">›</span>
+      <span class="cur" id="crumbCur">① 차량선택</span>
+    </div>
+  </div>
+
+  <!-- ============ STEP 1: 차량 선택 ============ -->
+  <section class="section step-page active" id="page1">
+    <div class="wrap">
+      <h2 class="section-title">차량을 선택해주세요</h2>
+      <p class="section-sub">국산차·수입차 중 브랜드를 먼저 선택하시면 해당 모델이 표시됩니다.</p>
+
+      <div class="origin-toggle">
+        <button type="button" class="active" data-origin="domestic">국산차</button>
+        <button type="button" data-origin="import">수입차</button>
+      </div>
+
+      <div class="brand-grid" id="brandGrid"><!-- JS 렌더 --></div>
+
+      <div id="modelSection" style="display:none;">
+        <div class="section-label" id="modelSectionLabel">차량선택</div>
+        <div class="model-grid" id="modelGrid"><!-- JS 렌더 --></div>
+      </div>
+    </div>
+
+    <!-- STEP 1 다음으로 버튼: 모바일은 화면 하단 고정, 데스크톱은 콘텐츠 중앙 정렬 -->
+    <div class="sticky-next" id="stickyNextStep1">
+      <div class="wrap sticky-next-row">
+        <div></div>
+        <button type="button" class="btn btn-primary" id="btnGoStep2" disabled>다음으로</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STEP 2: 옵션 및 조건 선택 ============ -->
+  <section class="section step-page" id="page2">
+    <div class="wrap">
+
+      <div class="vehicle-summary" id="vehicleSummary"><!-- JS 렌더 --></div>
+
+      <h2 class="section-title">외장색상 선택</h2>
+      <div class="swatch-row" id="swatchRow"><!-- JS 렌더 --></div>
+      <div class="swatch-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        일부 외장색상은 추가요금이 발생할 수 있어 별도 확인이 필요합니다.
+      </div>
+
+      <h2 class="section-title" style="margin-top:26px;">세부모델(트림) 선택</h2>
+      <div id="trimGroups"><!-- JS 렌더 --></div>
+
+      <h2 class="section-title" style="margin-top:26px;">옵션 추가하기</h2>
+      <p class="section-sub">선택사항 · 중복선택 가능 (운영자가 등록한 옵션만 표시됩니다)</p>
+      <div id="optionList"><!-- JS 렌더 --></div>
+
+      <h2 class="section-title" style="margin-top:26px;">이용조건 선택</h2>
+      <p class="section-sub">장기렌트·리스 이용 시 아래 조건은 필수로 선택해주세요.</p>
+
+      <div class="cond-block">
+        <div class="cond-label">이용방법</div>
+        <div class="cond-options" data-cond="method">
+          <div class="cond-pill selected" data-value="장기렌트">장기렌트</div>
+          <div class="cond-pill" data-value="리스">리스</div>
+        </div>
+      </div>
+
+      <div class="cond-block">
+        <div class="cond-label">이용기간</div>
+        <div class="cond-options" data-cond="period">
+          <div class="cond-pill" data-value="36">36개월</div>
+          <div class="cond-pill selected" data-value="48">48개월</div>
+          <div class="cond-pill" data-value="60">60개월</div>
+        </div>
+      </div>
+
+      <div class="cond-block">
+        <div class="cond-label">보증금</div>
+        <div class="cond-options" data-cond="deposit">
+          <div class="cond-pill selected" data-value="0">없음</div>
+          <div class="cond-pill" data-value="10">10%</div>
+          <div class="cond-pill" data-value="20">20%</div>
+          <div class="cond-pill" data-value="30">30%</div>
+          <div class="cond-pill" data-value="40">40%</div>
+        </div>
+        <input type="text" class="cond-input" id="depositAmount" placeholder="보증금(원) — 자동 계산되며 직접 수정 가능합니다" inputmode="numeric">
+      </div>
+
+      <div class="cond-block">
+        <div class="cond-label">선납금</div>
+        <div class="cond-options" data-cond="prepay">
+          <div class="cond-pill" data-value="0">없음</div>
+          <div class="cond-pill" data-value="10">10%</div>
+          <div class="cond-pill" data-value="20">20%</div>
+          <div class="cond-pill selected" data-value="30">30%</div>
+          <div class="cond-pill" data-value="40">40%</div>
+        </div>
+        <input type="text" class="cond-input" id="prepayAmount" placeholder="선납금(원) — 자동 계산되며 직접 수정 가능합니다" inputmode="numeric">
+      </div>
+
+      <div class="cond-block">
+        <div class="cond-label">보험연령</div>
+        <div class="cond-options" data-cond="insAge">
+          <div class="cond-pill" data-value="21">만 21세이상</div>
+          <div class="cond-pill selected" data-value="26">만 26세이상</div>
+        </div>
+      </div>
+
+      <div class="cond-block">
+        <div class="cond-label">자동차세</div>
+        <div class="cond-options" data-cond="carTax">
+          <div class="cond-pill selected" data-value="included">포함</div>
+          <div class="cond-pill" data-value="excluded">미포함</div>
+        </div>
+      </div>
+
+      <div class="cond-block">
+        <div class="cond-label">연간 주행거리</div>
+        <div class="cond-options" data-cond="mileage">
+          <div class="cond-pill" data-value="10000">연 1만km</div>
+          <div class="cond-pill selected" data-value="20000">연 2만km</div>
+          <div class="cond-pill" data-value="30000">연 3만km</div>
+          <div class="cond-pill" data-value="unlimited">무제한</div>
+        </div>
+      </div>
+
+      <div class="cond-block">
+        <div class="cond-label">신용도</div>
+        <div class="cond-options" data-cond="credit">
+          <div class="cond-pill" data-value="under700">700점 미만</div>
+          <div class="cond-pill" data-value="over700">700점 이상</div>
+          <div class="cond-pill selected" data-value="unknown">잘 모르겠어요</div>
+        </div>
+      </div>
+
+      <div class="price-summary-card">
+        <div class="price-row"><span class="pr-label">기본가격</span><span class="pr-value" id="sumBase">0원</span></div>
+        <div class="price-row"><span class="pr-label">색상 옵션</span><span class="pr-value" id="sumColor">+0원</span></div>
+        <div class="price-row"><span class="pr-label">추가옵션 (<span id="sumOptCount">0</span>개)</span><span class="pr-value" id="sumOpt">+0원</span></div>
+        <div class="price-row total"><span class="pr-label">합계 (월 환산 견적은 상담 시 안내)</span><span class="pr-value" id="sumTotal">0원</span></div>
+      </div>
+
+      <label class="consent-row">
+        <input type="checkbox" id="consentCheck" checked style="accent-color:#6C3CE0; width:15px; height:15px;">
+        개인정보 수집·이용·제공에 동의합니다 <a href="#">[보기]</a>
+      </label>
+
+      <div class="helper-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        표시된 가격은 차량 기본가 기준 참고용이며, 실제 월 렌트/리스료는 보증금·선납금·신용도 등에 따라 상담을 통해 최종 안내됩니다.
+      </div>
+    </div>
+
+    <!-- STEP 2 견적제출 버튼: 모바일은 화면 하단 고정, 데스크톱은 콘텐츠 중앙 정렬 -->
+    <div class="sticky-next" id="stickyNextStep2" style="display:none;">
+      <div class="wrap sticky-next-row">
+        <div class="price-preview">
+          <span class="pp-label">합계</span>
+          <span class="pp-value" id="stickyTotal">0원</span>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn btn-outline" id="btnBackStep1">이전</button>
+          <button type="button" class="btn btn-primary" id="btnSubmit">최종 견적서 제출</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-logo"><span class="logo-p" style="font-size:20px;">P</span><span class="logo-rest" style="font-size:17px;">URPLE LEASE</span></div>
+    <div class="footer-links">
+      <a href="index.html">신차·리스·렌트</a>
+      <a href="used-cars.html">중고차 매물</a>
+      <a href="parts-register.html">수입차부품</a>
+      <a href="reviews.html">후기관리</a>
+    </div>
+    <div class="footer-meta">
+      퍼플리스 | 오토리스&amp;장기렌트 승계매입전문업체<br>
+      대표 : 이호준 | 주소 : 경기도 용인시 기흥구 강남서로9, 7층 703호<br>
+      사업자등록번호 : 885-68-00449<br>
+      대표번호 : 1555-6362 | 평일 09:00~18:00<br>
+      © 2026 PURPLE LEASE. All rights reserved. (프로토타입 샘플 — 실제 서비스 아님)
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ============================================================
+   데이터 정의부 — 운영자 관리자페이지에서 등록/수정하는 영역.
+   - 브랜드/모델 이미지는 "brandLogo" / "img" 필드에 자체 서버 경로(/assets/...)를 넣습니다.
+   - 실제 운영 시에는 이 객체들을 서버 API(/api/brands, /api/models 등) 응답으로 교체하세요.
+   ============================================================ */
+
+  // 브랜드 목록 (로고는 관리자페이지에서 업로드한 자체 호스팅 파일 경로를 사용)
+  const brandData = {
+    domestic: [
+      { id: 'hyundai',  name: '현대',     logo: '/assets/brand-logos/hyundai.png' },
+      { id: 'kia',      name: '기아',     logo: '/assets/brand-logos/kia.png' },
+      { id: 'genesis',  name: '제네시스', logo: '/assets/brand-logos/genesis.png' },
+      { id: 'chevrolet',name: '쉐보레',   logo: '/assets/brand-logos/chevrolet.png' },
+      { id: 'renault',  name: '르노코리아', logo: '/assets/brand-logos/renault.png' },
+      { id: 'kgm',      name: 'KGM',      logo: '/assets/brand-logos/kgm.png' },
+    ],
+    import: [
+      { id: 'bmw',      name: 'BMW',      logo: '/assets/brand-logos/bmw.png' },
+      { id: 'benz',     name: '벤츠',     logo: '/assets/brand-logos/benz.png' },
+      { id: 'audi',     name: '아우디',   logo: '/assets/brand-logos/audi.png' },
+      { id: 'polestar', name: '폴스타',   logo: '/assets/brand-logos/polestar.png' },
+      { id: 'volvo',    name: '볼보',     logo: '/assets/brand-logos/volvo.png' },
+      { id: 'vw',       name: '폭스바겐', logo: '/assets/brand-logos/vw.png' },
+      { id: 'toyota',   name: '토요타',   logo: '/assets/brand-logos/toyota.png' },
+      { id: 'lexus',    name: '렉서스',   logo: '/assets/brand-logos/lexus.png' },
+      { id: 'ford',     name: '포드',     logo: '/assets/brand-logos/ford.png' },
+      { id: 'mini',     name: '미니',     logo: '/assets/brand-logos/mini.png' },
+      { id: 'porsche',  name: '포르쉐',   logo: '/assets/brand-logos/porsche.png' },
+      { id: 'tesla',    name: '테슬라',   logo: '/assets/brand-logos/tesla.png' },
+    ]
+  };
+
+  // 모델 목록 — 브랜드ID별. 이미지(img)는 관리자가 업로드한 차량사진 경로.
+  const modelData = {
+    genesis: [
+      { id: 'g70',  name: 'G70',  priceFrom: '4,438', priceTo: '6,130', img: '/assets/vehicles/genesis-g70.png' },
+      { id: 'g80',  name: 'G80',  priceFrom: '5,899', priceTo: '8,666', img: '/assets/vehicles/genesis-g80.png' },
+      { id: 'g80e', name: 'Electrified G80', priceFrom: '8,787', priceTo: '8,787', img: '/assets/vehicles/genesis-g80-electrified.png' },
+      { id: 'g90',  name: 'G90',  priceFrom: '9,617', priceTo: '17,767', img: '/assets/vehicles/genesis-g90.png' },
+      { id: 'gv60', name: 'GV60', priceFrom: '6,735', priceTo: '7,559', img: '/assets/vehicles/genesis-gv60.png' },
+      { id: 'gv60m',name: 'GV60 MAGMA', priceFrom: '9,657', priceTo: '9,657', img: '/assets/vehicles/genesis-gv60-magma.png' },
+      { id: 'gv70', name: 'GV70', priceFrom: '5,318', priceTo: '6,485', img: '/assets/vehicles/genesis-gv70.png' },
+      { id: 'gv70e',name: 'Electrified GV70', priceFrom: '7,866', priceTo: '7,866', img: '/assets/vehicles/genesis-gv70-electrified.png' },
+      { id: 'gv80', name: 'GV80', priceFrom: '6,790', priceTo: '10,902', img: '/assets/vehicles/genesis-gv80.png' },
+    ],
+    hyundai: [
+      { id: 'avante', name: '아반떼', priceFrom: '1,833', priceTo: '2,597', img: '/assets/vehicles/hyundai-avante.png' },
+      { id: 'sonata', name: '소나타', priceFrom: '2,659', priceTo: '3,602', img: '/assets/vehicles/hyundai-sonata.png' },
+      { id: 'grandeur', name: '그랜저', priceFrom: '3,640', priceTo: '4,650', img: '/assets/vehicles/hyundai-grandeur.png' },
+      { id: 'tucson', name: '투싼', priceFrom: '2,653', priceTo: '3,757', img: '/assets/vehicles/hyundai-tucson.png' },
+    ],
+    kia: [
+      { id: 'k5', name: 'K5', priceFrom: '2,440', priceTo: '3,357', img: '/assets/vehicles/kia-k5.png' },
+      { id: 'k8', name: 'K8', priceFrom: '3,335', priceTo: '4,489', img: '/assets/vehicles/kia-k8.png' },
+      { id: 'sportage', name: '스포티지', priceFrom: '2,569', priceTo: '3,632', img: '/assets/vehicles/kia-sportage.png' },
+    ],
+    bmw: [
+      { id: '3series', name: '3시리즈', priceFrom: '5,420', priceTo: '7,200', img: '/assets/vehicles/bmw-3series.png' },
+      { id: '5series', name: '5시리즈', priceFrom: '6,990', priceTo: '9,800', img: '/assets/vehicles/bmw-5series.png' },
+    ],
+    benz: [
+      { id: 'eclass', name: 'E-Class', priceFrom: '7,200', priceTo: '9,500', img: '/assets/vehicles/benz-eclass.png' },
+    ],
+  };
+
+  // 차량별 상세 데이터(색상/트림/옵션) — 운영자가 직접 등록한 항목만 표시됩니다.
+  // colors의 swatch는 색상 미리보기용 hex, name은 제조사 공식 색상명을 그대로 표기합니다.
+  const vehicleDetail = {
+    g80: {
+      brandName: '제네시스',
+      brandLogo: '/assets/brand-logos/genesis.png',
+      modelName: 'G80',
+      img: '/assets/vehicles/genesis-g80.png',
+      meta: '2023.12 · 준대형 · 가솔린 · 2,497~3,470cc · 복합연비 8.2~10.6km/L',
+      colors: [
+        { name: '베르비에 화이트(NA3)', hex: '#F2F2F0', surcharge: 0 },
+        { name: '카본 메탈(N2A)', hex: '#2B2D33', surcharge: 0 },
+        { name: '문스톤 그레이(N5)', hex: '#B9BABD', surcharge: 0 },
+        { name: '카브리스 그레이(K6S)', hex: '#7C7E83', surcharge: 690000 },
+        { name: '바르나 레드(R2N)', hex: '#7A1F2B', surcharge: 690000 },
+        { name: '서울 그레이(SG2)', hex: '#3C4047', surcharge: 690000 },
+        { name: '문라이트 블루(N9P)', hex: '#1F2B3D', surcharge: 690000 },
+      ],
+      trimGroups: [
+        {
+          label: 'G80 2026년형 가솔린 터보 2.5 개별소비세 인하',
+          trims: [
+            { name: '2WD (A/T)', price: 59780000 },
+            { name: 'AWD (A/T)', price: 62540000 },
+            { name: '스포츠 패키지 2WD (A/T)', price: 63720000 },
+            { name: '스포츠 패키지 AWD (A/T)', price: 66480000 },
+            { name: 'BLACK AWD (A/T)', price: 82430000 },
+          ]
+        },
+        {
+          label: 'G80 2026년형 가솔린 터보 3.5 개별소비세 인하',
+          trims: [
+            { name: '2WD (A/T)', price: 66280000 },
+            { name: 'AWD (A/T)', price: 69040000 },
+            { name: '스포츠 패키지 2WD (A/T)', price: 71790000 },
+            { name: '스포츠 패키지 AWD (A/T)', price: 74550000 },
+            { name: 'BLACK AWD (A/T)', price: 86660000 },
+          ]
+        },
+      ],
+      // 운영자가 등록한 옵션만 노출 (제조사 정식 옵션 패키지명을 그대로 사용)
+      options: [
+        { name: '무광 마칼루 그레이 외장컬러', price: 690000 },
+        { name: '245/45R19(앞) + 275/40R19(뒤) 콘티넨탈 타이어 + 하이퍼 실버 휠(A)', price: 1180000 },
+        { name: '245/45R19(앞) + 275/40R19(뒤) 콘티넨탈 타이어 + 다이아몬드 컷팅 휠(B)', price: 1180000 },
+        { name: '시그니처 디자인 셀렉션Ⅰ', price: 1480000 },
+        { name: '시그니처 디자인 셀렉션Ⅱ', price: 2950000 },
+        { name: '파퓰러 패키지', price: 4230000 },
+      ]
+    }
+  };
+
+  // ============================================================
+  // 상태 관리
+  // ============================================================
+  const state = {
+    origin: 'domestic',
+    brandId: null,
+    modelId: null,
+    colorIdx: null,
+    trimGroupIdx: null,
+    trimIdx: null,
+    selectedOptions: new Set(),
+    cond: { method: '장기렌트', period: '48', deposit: '0', prepay: '30', insAge: '26', carTax: 'included', mileage: '20000', credit: 'unknown' }
+  };
+
+  const fmt = (n) => n.toLocaleString('ko-KR');
+
+  // ---- 브랜드 렌더 ----
+  function renderBrands() {
+    const grid = document.getElementById('brandGrid');
+    const list = brandData[state.origin] || [];
+    grid.innerHTML = list.map(b => `
+      <div class="brand-card${state.brandId===b.id?' selected':''}" data-brand="${b.id}">
+        <div class="logo-wrap"><img src="${b.logo}" alt="${b.name} 로고" onerror="this.style.opacity=0.15"></div>
+        <div class="bname">${b.name}</div>
+      </div>
+    `).join('');
+    grid.querySelectorAll('.brand-card').forEach(el => {
+      el.addEventListener('click', () => selectBrand(el.dataset.brand));
+    });
+  }
+
+  function selectBrand(brandId) {
+    state.brandId = brandId;
+    state.modelId = null;
+    renderBrands();
+    renderModels();
+    updateStep1NextButton();
+  }
+
+  // ---- 모델 렌더 ----
+  function renderModels() {
+    const section = document.getElementById('modelSection');
+    const grid = document.getElementById('modelGrid');
+    const label = document.getElementById('modelSectionLabel');
+    const list = modelData[state.brandId] || [];
+
+    if (!state.brandId || list.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+    section.style.display = 'block';
+    label.textContent = '차량선택';
+
+    const brandLogo = (brandData.domestic.concat(brandData.import)).find(b => b.id === state.brandId)?.logo || '';
+
+    grid.innerHTML = list.map(m => `
+      <div class="model-card${state.modelId===m.id?' selected':''}" data-model="${m.id}">
+        <div class="model-thumb">
+          <span class="brand-chip"><img src="${brandLogo}" alt="" onerror="this.style.opacity=0.15"></span>
+          <img src="${m.img}" alt="${m.name}" onerror="this.style.opacity=0.2">
+        </div>
+        <div class="model-body">
+          <div class="mname">${m.name}</div>
+          <div class="mprice">신차가 <b>${m.priceFrom}~${m.priceTo}만원</b></div>
+        </div>
+      </div>
+    `).join('');
+
+    grid.querySelectorAll('.model-card').forEach(el => {
+      el.addEventListener('click', () => selectModel(el.dataset.model));
+    });
+  }
+
+  function selectModel(modelId) {
+    state.modelId = modelId;
+    renderModels();
+    updateStep1NextButton();
+  }
+
+  function updateStep1NextButton() {
+    document.getElementById('btnGoStep2').disabled = !(state.brandId && state.modelId);
+  }
+
+  // ---- origin 토글 ----
+  document.querySelectorAll('.origin-toggle button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.origin-toggle button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.origin = btn.dataset.origin;
+      state.brandId = null;
+      state.modelId = null;
+      renderBrands();
+      renderModels();
+      updateStep1NextButton();
+    });
+  });
+
+  // ============================================================
+  // STEP 2 렌더링
+  // ============================================================
+  function getDetail() {
+    return vehicleDetail[state.modelId] || null;
+  }
+
+  function renderStep2() {
+    const detail = getDetail();
+    const summary = document.getElementById('vehicleSummary');
+
+    if (!detail) {
+      summary.innerHTML = `
+        <div class="vs-info">
+          <div class="vs-name">선택하신 차량의 상세 정보가 아직 등록되지 않았습니다</div>
+          <div class="vs-meta">관리자페이지에서 색상·트림·옵션을 등록하면 이곳에 표시됩니다.</div>
+        </div>`;
+      document.getElementById('swatchRow').innerHTML = '';
+      document.getElementById('trimGroups').innerHTML = '';
+      document.getElementById('optionList').innerHTML = '';
+      updateSummaryPrice();
+      return;
+    }
+
+    summary.innerHTML = `
+      <div class="vs-thumb"><img src="${detail.img}" alt="${detail.modelName}" onerror="this.style.opacity=0.2"></div>
+      <div class="vs-info">
+        <div class="vs-brand"><img src="${detail.brandLogo}" alt="" onerror="this.style.opacity=0.15">${detail.brandName}</div>
+        <div class="vs-name">${detail.modelName}</div>
+        <div class="vs-meta">${detail.meta}</div>
+      </div>
+      <button type="button" class="btn btn-outline btn-sm vs-change" id="btnChangeVehicle">차량변경</button>`;
+    document.getElementById('btnChangeVehicle').addEventListener('click', goToStep1);
+
+    // 색상
+    state.colorIdx = state.colorIdx === null ? 0 : state.colorIdx;
+    renderSwatches(detail);
+
+    // 트림
+    state.trimGroupIdx = state.trimGroupIdx === null ? 0 : state.trimGroupIdx;
+    state.trimIdx = state.trimIdx === null ? 0 : state.trimIdx;
+    renderTrimGroups(detail);
+
+    // 옵션
+    renderOptions(detail);
+
+    updateSummaryPrice();
+  }
+
+  function renderSwatches(detail) {
+    const row = document.getElementById('swatchRow');
+    row.innerHTML = detail.colors.map((c, i) => `
+      <div class="swatch${state.colorIdx===i?' selected':''}" style="background:${c.hex};" data-idx="${i}" title="${c.name}${c.surcharge>0?' (+'+fmt(c.surcharge)+'원)':''}"></div>
+    `).join('');
+    row.querySelectorAll('.swatch').forEach(el => {
+      el.addEventListener('click', () => {
+        state.colorIdx = parseInt(el.dataset.idx, 10);
+        renderSwatches(detail);
+        updateSummaryPrice();
+      });
+    });
+  }
+
+  function renderTrimGroups(detail) {
+    const wrap = document.getElementById('trimGroups');
+    wrap.innerHTML = detail.trimGroups.map((g, gi) => `
+      <div class="trim-group${gi===state.trimGroupIdx?' open':''}" data-gi="${gi}">
+        <div class="trim-group-head">
+          <span>${g.label}</span>
+          <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="trim-list">
+          ${g.trims.map((t, ti) => `
+            <div class="trim-option${gi===state.trimGroupIdx && ti===state.trimIdx?' selected':''}" data-gi="${gi}" data-ti="${ti}">
+              <span>${t.name}</span><span class="t-price">${fmt(t.price)}원</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+
+    wrap.querySelectorAll('.trim-group-head').forEach(head => {
+      head.addEventListener('click', () => {
+        const group = head.closest('.trim-group');
+        const isOpen = group.classList.contains('open');
+        wrap.querySelectorAll('.trim-group').forEach(g => g.classList.remove('open'));
+        if (!isOpen) group.classList.add('open');
+      });
+    });
+
+    wrap.querySelectorAll('.trim-option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        state.trimGroupIdx = parseInt(opt.dataset.gi, 10);
+        state.trimIdx = parseInt(opt.dataset.ti, 10);
+        renderTrimGroups(detail);
+        updateSummaryPrice();
+      });
+    });
+  }
+
+  function renderOptions(detail) {
+    const wrap = document.getElementById('optionList');
+    if (!detail.options || detail.options.length === 0) {
+      wrap.innerHTML = `<div class="helper-note" style="margin-bottom:0;">등록된 추가옵션이 없습니다.</div>`;
+      return;
+    }
+    wrap.innerHTML = detail.options.map((o, i) => `
+      <label class="option-card${state.selectedOptions.has(i)?' checked':''}" data-idx="${i}">
+        <input type="checkbox" ${state.selectedOptions.has(i)?'checked':''}>
+        <div class="opt-body"><div class="opt-name">${o.name}</div></div>
+        <div class="opt-price">+${fmt(o.price)}원</div>
+      </label>
+    `).join('');
+    wrap.querySelectorAll('.option-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        e.preventDefault();
+        const idx = parseInt(card.dataset.idx, 10);
+        if (state.selectedOptions.has(idx)) state.selectedOptions.delete(idx);
+        else state.selectedOptions.add(idx);
+        renderOptions(detail);
+        updateSummaryPrice();
+      });
+    });
+  }
+
+  // ---- 이용조건 pill 토글 ----
+  document.querySelectorAll('.cond-options').forEach(group => {
+    group.addEventListener('click', (e) => {
+      const pill = e.target.closest('.cond-pill');
+      if (!pill) return;
+      group.querySelectorAll('.cond-pill').forEach(p => p.classList.remove('selected'));
+      pill.classList.add('selected');
+      state.cond[group.dataset.cond] = pill.dataset.value;
+      if (group.dataset.cond === 'deposit' || group.dataset.cond === 'prepay') {
+        updateDepositPrepayAmounts();
+      }
+    });
+  });
+
+  function updateDepositPrepayAmounts() {
+    const detail = getDetail();
+    const base = detail ? (detail.trimGroups[state.trimGroupIdx]?.trims[state.trimIdx]?.price || 0) : 0;
+    const depositPct = parseInt(state.cond.deposit, 10) || 0;
+    const prepayPct = parseInt(state.cond.prepay, 10) || 0;
+    document.getElementById('depositAmount').value = base ? fmt(Math.round(base * depositPct / 100)) + '원' : '';
+    document.getElementById('prepayAmount').value = base ? fmt(Math.round(base * prepayPct / 100)) + '원' : '';
+  }
+
+  // ---- 가격 합산 ----
+  function updateSummaryPrice() {
+    const detail = getDetail();
+    let base = 0, colorPrice = 0, optPrice = 0;
+
+    if (detail) {
+      base = detail.trimGroups[state.trimGroupIdx]?.trims[state.trimIdx]?.price || 0;
+      colorPrice = detail.colors[state.colorIdx]?.surcharge || 0;
+      state.selectedOptions.forEach(i => { optPrice += detail.options[i]?.price || 0; });
+    }
+
+    const total = base + colorPrice + optPrice;
+
+    document.getElementById('sumBase').textContent = fmt(base) + '원';
+    document.getElementById('sumColor').textContent = '+' + fmt(colorPrice) + '원';
+    document.getElementById('sumOptCount').textContent = state.selectedOptions.size;
+    document.getElementById('sumOpt').textContent = '+' + fmt(optPrice) + '원';
+    document.getElementById('sumTotal').textContent = fmt(total) + '원';
+    document.getElementById('stickyTotal').textContent = fmt(total) + '원';
+
+    updateDepositPrepayAmounts();
+  }
+
+  // ============================================================
+  // 스텝 전환
+  // ============================================================
+  function goToStep1() {
+    document.getElementById('page1').classList.add('active');
+    document.getElementById('page2').classList.remove('active');
+    document.getElementById('stickyNextStep1').style.display = 'block';
+    document.getElementById('stickyNextStep2').style.display = 'none';
+    document.getElementById('crumbCur').textContent = '① 차량선택';
+    setStepBar(1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function goToStep2() {
+    if (!(state.brandId && state.modelId)) return;
+    document.getElementById('page1').classList.remove('active');
+    document.getElementById('page2').classList.add('active');
+    document.getElementById('stickyNextStep1').style.display = 'none';
+    document.getElementById('stickyNextStep2').style.display = 'block';
+    document.getElementById('crumbCur').textContent = '② 옵션 및 조건 선택';
+    setStepBar(2);
+    renderStep2();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function setStepBar(step) {
+    document.querySelectorAll('#stepBar .step-item').forEach(item => {
+      const n = parseInt(item.dataset.step, 10);
+      item.classList.remove('active', 'done');
+      if (n === step) item.classList.add('active');
+      else if (n < step) item.classList.add('done');
+    });
+  }
+
+  document.getElementById('btnGoStep2').addEventListener('click', goToStep2);
+  document.getElementById('btnBackStep1').addEventListener('click', goToStep1);
+
+  // ---- 최종 견적서 제출 ----
+  document.getElementById('btnSubmit').addEventListener('click', () => {
+    if (!document.getElementById('consentCheck').checked) {
+      alert('개인정보 수집·이용·제공 동의가 필요합니다.');
+      return;
+    }
+    const detail = getDetail();
+    const payload = {
+      origin: state.origin,
+      brandId: state.brandId,
+      modelId: state.modelId,
+      color: detail ? detail.colors[state.colorIdx]?.name : null,
+      trim: detail ? detail.trimGroups[state.trimGroupIdx]?.trims[state.trimIdx]?.name : null,
+      options: detail ? Array.from(state.selectedOptions).map(i => detail.options[i].name) : [],
+      condition: state.cond,
+      total: document.getElementById('sumTotal').textContent
+    };
+    console.log('견적 제출 payload', payload);
+    alert('최저가 견적서 요청이 접수되었습니다.\n담당 플래너가 곧 연락드리겠습니다.');
+  });
+
+  // ---- 최초 렌더 ----
+  renderBrands();
+</script>
+
+</body>
+</html>
