@@ -302,7 +302,8 @@
         title: r.title,
         url: r.external_url,
         thumb: r.thumb_url,
-        date: fmtDate(r.published_at)
+        date: fmtDate(r.published_at),
+        viewCount: r.view_count || 0
       };
     });
   }
@@ -315,6 +316,7 @@
       thumb_url: payload.thumb || '',
       excerpt: payload.title,
       published_at: parseDotDate(payload.date),
+      view_count: parseInt(payload.viewCount, 10) || 0,
       is_active: true
     };
     if (editingId) {

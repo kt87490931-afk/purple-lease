@@ -238,7 +238,7 @@ p { margin:0; }
       return;
     }
     grid.innerHTML = blogData.map(b => `
-      <a class="blog-card" href="${b.url}" target="_blank" rel="noopener noreferrer">
+      <a class="blog-card" href="${b.url}" data-blog-id="${b.id || ''}">
         <div class="blog-thumb">
           <img src="${b.thumb}" alt="${b.title}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
           <div class="ph-icon" style="display:none; position:absolute; inset:0; align-items:center; justify-content:center;">${carIconSvg}</div>
@@ -251,6 +251,17 @@ p { margin:0; }
         </div>
       </a>
     `).join('');
+    grid.querySelectorAll('[data-blog-id]').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        var url = a.href;
+        var id = parseInt(a.dataset.blogId, 10);
+        if (id && window.PurpleLeaseData && window.PurpleLeaseData.incrementBlogViews) {
+          window.PurpleLeaseData.incrementBlogViews(id).catch(function () {});
+        }
+        window.open(url, '_blank', 'noopener,noreferrer');
+      });
+    });
   }
 
   async function initPage() {

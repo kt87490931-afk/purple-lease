@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS blog_posts (
   thumb_url     TEXT NOT NULL DEFAULT '',
   external_url  TEXT NOT NULL DEFAULT '',
   published_at  DATE,
+  view_count    INT NOT NULL DEFAULT 0,
   sort_order    INT NOT NULL DEFAULT 0,
   is_active     BOOLEAN NOT NULL DEFAULT true,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),

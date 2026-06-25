@@ -197,7 +197,7 @@
     var body = document.getElementById('blogTableBody');
     document.getElementById('blogCount').textContent = blogData.length;
     if (!blogData.length) {
-      body.innerHTML = '<tr><td colspan="5"><div class="empty-row">등록된 블로그 글이 없습니다.</div></td></tr>';
+      body.innerHTML = '<tr><td colspan="6"><div class="empty-row">등록된 블로그 글이 없습니다.</div></td></tr>';
       return;
     }
     body.innerHTML = blogData.map(function (b) {
@@ -206,6 +206,7 @@
         '<td class="title-cell">' + b.title + '</td>' +
         '<td><a href="' + b.url + '" target="_blank" rel="noopener" style="color:var(--purple-600);text-decoration:underline;">바로가기</a></td>' +
         '<td class="num-cell">' + b.date + '</td>' +
+        '<td class="num-cell">' + (b.viewCount || 0).toLocaleString('ko-KR') + '</td>' +
         '<td class="row-actions"><button class="btn btn-outline btn-sm" data-edit-blog="' + b.id + '">수정</button>' +
         '<button class="btn-danger-text" data-del-blog="' + b.id + '">삭제</button></td></tr>';
     }).join('');
@@ -226,6 +227,7 @@
     document.getElementById('blogUrl').value = b.url;
     document.getElementById('blogThumb').value = b.thumb;
     document.getElementById('blogDate').value = b.date;
+    document.getElementById('blogViewCount').value = b.viewCount || 0;
     openModal('modalBlog');
   }
 
@@ -563,7 +565,8 @@
     document.getElementById('btnAddBlog').addEventListener('click', function () {
       editingId = null;
       document.getElementById('modalBlogTitle').textContent = '블로그 글 등록';
-      ['blogTitle', 'blogUrl', 'blogThumb', 'blogDate'].forEach(function (id) { document.getElementById(id).value = ''; });
+      ['blogTitle', 'blogUrl', 'blogThumb', 'blogDate', 'blogViewCount'].forEach(function (id) { document.getElementById(id).value = ''; });
+      document.getElementById('blogViewCount').value = '0';
       openModal('modalBlog');
     });
     document.getElementById('btnSaveBlog').addEventListener('click', async function () {
@@ -572,7 +575,8 @@
           title: document.getElementById('blogTitle').value.trim(),
           url: document.getElementById('blogUrl').value.trim(),
           thumb: document.getElementById('blogThumb').value.trim(),
-          date: document.getElementById('blogDate').value.trim()
+          date: document.getElementById('blogDate').value.trim(),
+          viewCount: document.getElementById('blogViewCount').value.trim()
         }, editingId);
         closeModal('modalBlog');
         blogData = await API.listBlog();

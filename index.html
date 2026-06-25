@@ -487,6 +487,94 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   @media (min-width: 640px) {
     .usedcar-grid { grid-template-columns: repeat(4,1fr); }
   }
+
+  /* ============ 6. 퍼플오토 블로그 (메인) ============ */
+  .blog-home-block { margin-bottom: 28px; }
+  .blog-home-block:last-child { margin-bottom: 0; }
+  .blog-sub-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--ink-900);
+    margin: 0 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .blog-sub-title::before {
+    content: '';
+    width: 3px;
+    height: 12px;
+    background: var(--purple-600);
+    border-radius: 2px;
+  }
+  .blog-home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .blog-home-card {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow .15s ease, transform .15s ease;
+  }
+  .blog-home-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+  .blog-home-thumb {
+    aspect-ratio: 4/3;
+    background: var(--surface-alt);
+    position: relative;
+    overflow: hidden;
+  }
+  .blog-home-thumb img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center center;
+    display: block;
+  }
+  .blog-home-thumb .ph-icon { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+  .blog-home-thumb .ext-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 1;
+    background: rgba(255,255,255,0.92);
+    color: var(--ink-700);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 7px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .blog-home-thumb .ext-badge svg { width: 11px; height: 11px; }
+  .blog-home-body { padding: 10px 11px 12px; }
+  .blog-home-body .blog-source { font-size: 10.5px; font-weight: 700; color: var(--purple-600); margin-bottom: 4px; }
+  .blog-home-body .blog-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--ink-900);
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 35px;
+  }
+  .blog-home-body .blog-meta {
+    font-size: 11px;
+    color: var(--ink-400);
+    margin-top: 6px;
+    font-family: var(--font-mono);
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  @media (min-width: 640px) {
+    .blog-home-grid { grid-template-columns: repeat(4,1fr); }
+  }
+
   @media (min-width: 860px) {
     .hero-slide { min-height: 380px; }
     .hero-slide h1 { font-size: 36px; max-width: 540px; }
@@ -689,6 +777,24 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     </div>
   </section>
 
+  <!-- ============ 6. 퍼플오토 블로그 ============ -->
+  <section class="section" id="blogHome">
+    <div class="wrap">
+      <div class="section-head">
+        <div><span class="eyebrow">PURPLE AUTO BLOG</span><h2 class="section-title">퍼플오토 블로그</h2></div>
+        <a href="reviews-blog.html" class="section-more">전체보기 →</a>
+      </div>
+      <div class="blog-home-block">
+        <h3 class="blog-sub-title">최신 글</h3>
+        <div id="blogLatestSlot"></div>
+      </div>
+      <div class="blog-home-block">
+        <h3 class="blog-sub-title">인기 글</h3>
+        <div id="blogPopularSlot"></div>
+      </div>
+    </div>
+  </section>
+
 </main>
 
 <footer class="site-footer">
@@ -745,8 +851,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   let currentPlaying = null;
   let dealData = [];
   let usedCarData = [];
+  let blogLatestData = [];
+  let blogPopularData = [];
 
   const carIconSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="#6C3CE0" stroke-width="1.5"><path d="M5 11l1.5-4h11L19 11M3 11h18v6H3z"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>`;
+  const extLinkSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
 
   function emptyStateHTML(title, sub, iconPath) {
     return `<div class="empty-state">
@@ -935,23 +1044,76 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
           <div class="umeta">${escapeHtml(c.meta)}</div>
           <div class="uprice">${escapeHtml(c.price)}</div>
         </div>
-      </a>`).join('') + `</div>`;
+      </a>    `).join('') + `</div>`;
+  }
+
+  function bindBlogCardClicks(root) {
+    if (!root) return;
+    root.querySelectorAll('[data-blog-id]').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        var url = a.href;
+        var id = parseInt(a.dataset.blogId, 10);
+        if (id && window.PurpleLeaseData && window.PurpleLeaseData.incrementBlogViews) {
+          window.PurpleLeaseData.incrementBlogViews(id).catch(function () {});
+        }
+        window.open(url, '_blank', 'noopener,noreferrer');
+      });
+    });
+  }
+
+  function renderBlogCards(list, slotId, emptyTitle) {
+    var slot = document.getElementById(slotId);
+    if (!slot) return;
+    if (!list || !list.length) {
+      slot.innerHTML = emptyStateHTML(
+        emptyTitle || '등록된 블로그 글이 없습니다',
+        '어드민에서 블로그 글을 등록하면 이곳에 표시됩니다.',
+        '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>'
+      );
+      return;
+    }
+    slot.innerHTML = '<div class="blog-home-grid">' + list.map(function (b) {
+      return `
+      <a class="blog-home-card" href="${escapeHtml(b.url)}" data-blog-id="${b.id}">
+        <div class="blog-home-thumb">
+          ${b.thumb ? `<img src="${escapeHtml(b.thumb)}" alt="${escapeHtml(b.title)}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : ''}
+          <div class="ph-icon" style="display:${b.thumb ? 'none' : 'flex'};">${carIconSvg}</div>
+          <span class="ext-badge">${extLinkSvg} 블로그</span>
+        </div>
+        <div class="blog-home-body">
+          <div class="blog-source">퍼플오토 블로그</div>
+          <div class="blog-title">${escapeHtml(b.title)}</div>
+          <div class="blog-meta"><span>${escapeHtml(b.date || '')}</span><span>조회 ${(b.viewCount || 0).toLocaleString('ko-KR')}</span></div>
+        </div>
+      </a>`;
+    }).join('') + '</div>';
+    bindBlogCardClicks(slot);
+  }
+
+  function renderBlogHome() {
+    renderBlogCards(blogLatestData, 'blogLatestSlot', '최신 블로그 글이 없습니다');
+    renderBlogCards(blogPopularData, 'blogPopularSlot', '인기 블로그 글이 없습니다');
   }
 
   async function loadSupabaseData() {
     if (!window.PurpleLeaseData || !window.PurpleLeaseData.isConfigured()) return;
     try {
-      const [mainV, featuredV, deals, cars] = await Promise.all([
+      const [mainV, featuredV, deals, cars, latestB, popularB] = await Promise.all([
         window.PurpleLeaseData.fetchYoutubeHomeMain(),
         window.PurpleLeaseData.fetchYoutubeHomeFeatured(),
         window.PurpleLeaseData.fetchTimeDeals(),
-        window.PurpleLeaseData.fetchUsedCars()
+        window.PurpleLeaseData.fetchUsedCars(),
+        window.PurpleLeaseData.fetchBlogHomeLatest(4),
+        window.PurpleLeaseData.fetchBlogHomePopular(4)
       ]);
       mainVideo = mainV || null;
       featuredVideos = featuredV || [];
       currentPlaying = mainVideo || (featuredVideos[0] || null);
       if (deals) dealData = deals;
       if (cars) usedCarData = cars;
+      if (latestB) blogLatestData = latestB;
+      if (popularB) blogPopularData = popularB;
     } catch (err) {
       console.warn('[PurpleLease] Supabase load failed:', err);
     }
@@ -962,6 +1124,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     renderVideo();
     renderDeals();
     renderUsedCars();
+    renderBlogHome();
     bindQuickEstimateForm();
   }
 

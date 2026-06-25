@@ -370,24 +370,64 @@
     return { domestic: domestic, import: imported };
   }
 
+  function mapBlogRow(r) {
+    return {
+      id: r.id,
+      title: r.title,
+      excerpt: r.excerpt,
+      thumb: r.thumb_url,
+      url: r.external_url,
+      date: fmtDate(r.published_at),
+      viewCount: r.view_count || 0,
+      publishedAt: r.published_at || null
+    };
+  }
+
   async function fetchBlogPosts() {
     var client = getClient();
     if (!client) return null;
     var res = await client
       .from('blog_posts')
-      .select('title,excerpt,thumb_url,external_url,published_at,sort_order')
+      .select('id,title,excerpt,thumb_url,external_url,published_at,view_count,sort_order')
       .eq('is_active', true)
       .order('sort_order', { ascending: true });
     if (res.error) throw res.error;
-    return (res.data || []).map(function (r) {
-      return {
-        title: r.title,
-        excerpt: r.excerpt,
-        thumb: r.thumb_url,
-        url: r.external_url,
-        date: fmtDate(r.published_at)
-      };
-    });
+    return (res.data || []).map(mapBlogRow);
+  }
+
+  async function fetchBlogHomeLatest(limit) {
+    var client = getClient();
+    if (!client) return null;
+    var res = await client
+      .from('blog_posts')
+      .select('id,title,excerpt,thumb_url,external_url,published_at,view_count')
+      .eq('is_active', true)
+      .order('published_at', { ascending: false, nullsFirst: false })
+      .limit(limit || 4);
+    if (res.error) throw res.error;
+    return (res.data || []).map(mapBlogRow);
+  }
+
+  async function fetchBlogHomePopular(limit) {
+    var client = getClient();
+    if (!client) return null;
+    var res = await client
+      .from('blog_posts')
+      .select('id,title,excerpt,thumb_url,external_url,published_at,view_count')
+      .eq('is_active', true)
+      .order('view_count', { ascending: false })
+      .order('published_at', { ascending: false, nullsFirst: false })
+      .limit(limit || 4);
+    if (res.error) throw res.error;
+    return (res.data || []).map(mapBlogRow);
+  }
+
+  async function incrementBlogViews(id) {
+    var client = getClient();
+    if (!client) return null;
+    var res = await client.rpc('increment_blog_views', { p_id: id });
+    if (res.error) throw res.error;
+    return res.data;
   }
 
   async function submitInquiry(payload) {
@@ -425,6 +465,9 @@
     incrementReviewViews: incrementReviewViews,
     fetchLeaseCatalog: fetchLeaseCatalog,
     fetchBlogPosts: fetchBlogPosts,
+    fetchBlogHomeLatest: fetchBlogHomeLatest,
+    fetchBlogHomePopular: fetchBlogHomePopular,
+    incrementBlogViews: incrementBlogViews,
     submitInquiry: submitInquiry,
     isConfigured: function () { return !!getClient(); }
   };
