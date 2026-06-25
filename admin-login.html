@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>어드민 로그인 — PURPLE LEASE</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=Noto+Sans+KR:wght@400;600;700&display=swap');
+:root {
+  --grad-main: linear-gradient(135deg, #8B2FE0 0%, #5B2FD6 45%, #1A1E6E 100%);
+  --navy-900: #11143A;
+  --ink-900: #15151D;
+  --ink-500: #6B6B7B;
+  --line: #E7E5F0;
+  --radius-md: 12px;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(160deg, #F4F2FA 0%, #FAFAFC 50%, #EDE8FA 100%);
+  font-family: 'Noto Sans KR', sans-serif; color: var(--ink-900);
+}
+.login-card {
+  width: 100%; max-width: 400px; background: #fff; border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(40,30,90,0.08); padding: 32px 28px;
+}
+.login-logo { font-family: 'Sora', 'Noto Sans KR', sans-serif; font-weight: 800; font-size: 20px; margin-bottom: 6px; }
+.login-logo .p { background: linear-gradient(135deg,#8B2FE0,#2030A0); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.login-sub { font-size: 13px; color: var(--ink-500); margin-bottom: 24px; }
+.form-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.form-row label { font-size: 12px; font-weight: 700; }
+.form-row input {
+  border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 14px;
+}
+.form-row input:focus { outline: none; border-color: #8B2FE0; }
+.btn {
+  width: 100%; border: none; border-radius: 8px; padding: 12px; font-weight: 700; font-size: 14px;
+  background: var(--grad-main); color: #fff; cursor: pointer; margin-top: 8px;
+}
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.error { color: #E0395B; font-size: 12px; min-height: 18px; margin-top: 8px; }
+.back { display: block; text-align: center; margin-top: 18px; font-size: 12.5px; color: var(--ink-500); text-decoration: none; }
+</style>
+</head>
+<body>
+  <div class="login-card">
+    <div class="login-logo"><span class="p">P</span>URPLE ADMIN</div>
+    <p class="login-sub">운영자 계정으로 로그인하세요.</p>
+    <form id="loginForm">
+      <div class="form-row">
+        <label for="email">이메일</label>
+        <input type="email" id="email" autocomplete="username" required placeholder="admin@example.com">
+      </div>
+      <div class="form-row">
+        <label for="password">비밀번호</label>
+        <input type="password" id="password" autocomplete="current-password" required placeholder="비밀번호">
+      </div>
+      <button class="btn" type="submit" id="btnLogin">로그인</button>
+      <div class="error" id="loginError"></div>
+    </form>
+    <a href="/index.html" class="back">← 홈페이지로 돌아가기</a>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="/js/supabase-config.js"></script>
+  <script src="/js/admin-auth.js"></script>
+  <script>
+    (async function () {
+      if (!window.PurpleAdminAuth || !window.PurpleAdminAuth.isConfigured()) {
+        document.getElementById('loginError').textContent = 'Supabase 설정을 확인하세요.';
+        return;
+      }
+      var session = await window.PurpleAdminAuth.getSession();
+      if (session) {
+        window.location.href = '/admin.html';
+        return;
+      }
+      document.getElementById('loginForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        var btn = document.getElementById('btnLogin');
+        var errEl = document.getElementById('loginError');
+        errEl.textContent = '';
+        btn.disabled = true;
+        try {
+          await window.PurpleAdminAuth.signIn(
+            document.getElementById('email').value.trim(),
+            document.getElementById('password').value
+          );
+          window.location.href = '/admin.html';
+        } catch (err) {
+          errEl.textContent = (err && err.message) ? err.message : '로그인에 실패했습니다.';
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

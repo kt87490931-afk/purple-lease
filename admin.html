@@ -1,0 +1,388 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>어드민 — PURPLE LEASE</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap');
+
+:root {
+  --grad-main: linear-gradient(135deg, #8B2FE0 0%, #5B2FD6 45%, #1A1E6E 100%);
+  --grad-text: linear-gradient(135deg, #8B2FE0 0%, #2030A0 100%);
+  --purple-600: #8B2FE0;
+  --purple-100: #F2E8FD;
+  --purple-50: #FAF6FE;
+  --navy-900: #11143A;
+  --white: #FFFFFF;
+  --surface: #FAFAFC;
+  --surface-alt: #F4F2FA;
+  --line: #E7E5F0;
+  --line-soft: #EFEDF6;
+  --ink-900: #15151D;
+  --ink-700: #383846;
+  --ink-500: #6B6B7B;
+  --ink-400: #9494A3;
+  --ok-600: #1AA15C;
+  --danger-600: #E0395B;
+  --font-display: 'Sora', 'Noto Sans KR', sans-serif;
+  --font-body: 'Noto Sans KR', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --shadow-sm: 0 1px 2px rgba(22,22,40,0.06);
+  --shadow-md: 0 8px 24px rgba(40,30,90,0.08);
+}
+
+* { box-sizing: border-box; }
+body { margin:0; background: var(--surface); color: var(--ink-700); font-family: var(--font-body); font-size: 14px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+img { max-width: 100%; display: block; }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; }
+h1,h2,h3,h4 { margin:0; font-family: var(--font-display); color: var(--ink-900); letter-spacing: -0.01em; }
+p { margin:0; }
+input, select, textarea { font-family: inherit; font-size: 13.5px; }
+
+.gate-banner {
+  background: var(--navy-900); color:#fff; font-size:12px; text-align:center;
+  padding:9px 14px; line-height:1.6;
+}
+.gate-banner b { color:#C9A8FF; }
+
+.admin-shell { display:flex; min-height:100vh; }
+.admin-sidebar {
+  width: 220px; flex-shrink:0;
+  background: var(--navy-900); color:#fff;
+  display:flex; flex-direction:column;
+  position: sticky; top:0; height:100vh;
+}
+.admin-logo { padding: 20px 18px; display:flex; align-items:baseline; gap:1px; font-family: var(--font-display); font-weight:800; font-size:17px; border-bottom:1px solid rgba(255,255,255,0.1); }
+.admin-logo .p { background: linear-gradient(135deg,#C9A8FF,#8B2FE0); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.admin-nav { flex:1; padding: 10px 10px; display:flex; flex-direction:column; gap:2px; overflow-y:auto; }
+.admin-nav-item {
+  display:flex; align-items:center; gap:10px;
+  padding: 10px 12px; border-radius: var(--radius-sm);
+  font-size:13px; font-weight:600; color: rgba(255,255,255,0.65);
+}
+.admin-nav-item svg { width:16px; height:16px; flex-shrink:0; }
+.admin-nav-item:hover { background: rgba(255,255,255,0.06); color:#fff; }
+.admin-nav-item.active { background: var(--grad-main); color:#fff; }
+.admin-sidebar-foot { padding: 14px 18px; font-size:11px; color: rgba(255,255,255,0.4); border-top:1px solid rgba(255,255,255,0.1); }
+
+.admin-main { flex:1; min-width:0; }
+.admin-topbar {
+  height:56px; background:#fff; border-bottom:1px solid var(--line-soft);
+  display:flex; align-items:center; justify-content:space-between; padding:0 22px;
+  position:sticky; top:0; z-index:10;
+}
+.admin-topbar h1 { font-size:16px; }
+.admin-topbar .topbar-right { display:flex; align-items:center; gap:10px; font-size:12.5px; color: var(--ink-500); }
+
+.admin-content { padding: 22px; max-width: 1100px; }
+.panel { display:none; }
+.panel.active { display:block; }
+
+.toolbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; gap:10px; flex-wrap:wrap; }
+.toolbar-left { font-size:12.5px; color: var(--ink-500); }
+.toolbar-left b { color: var(--ink-900); }
+
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:9px 15px; border-radius: var(--radius-sm); font-weight:700; font-size:12.5px; border:1px solid transparent; transition: all .15s ease; white-space:nowrap; }
+.btn-primary { background: var(--grad-main); color:#fff; box-shadow: var(--shadow-sm); }
+.btn-primary:hover { opacity:.92; }
+.btn-outline { background:#fff; border-color: var(--line); color: var(--ink-900); }
+.btn-outline:hover { border-color: var(--purple-600); color: var(--purple-600); }
+.btn-danger-text { background:none; border:none; color: var(--danger-600); font-weight:700; font-size:12px; padding:6px 8px; }
+.btn-danger-text:hover { text-decoration: underline; }
+.btn-sm { padding:6px 10px; font-size:11.5px; }
+
+.data-table { width:100%; border-collapse: collapse; background:#fff; border-radius: var(--radius-md); overflow:hidden; box-shadow: var(--shadow-sm); }
+.data-table th { text-align:left; font-size:11.5px; color: var(--ink-500); font-weight:700; padding:11px 14px; background: var(--surface); border-bottom:1px solid var(--line); white-space:nowrap; }
+.data-table td { padding:11px 14px; border-bottom:1px solid var(--line-soft); font-size:13px; vertical-align:middle; }
+.data-table tr:last-child td { border-bottom:none; }
+.data-table .thumb-cell img { width:48px; height:36px; object-fit:cover; border-radius:5px; background: var(--surface-alt); }
+.data-table .num-cell { font-family: var(--font-mono); color: var(--ink-500); }
+.data-table .title-cell { max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; color: var(--ink-900); }
+.row-actions { display:flex; gap:6px; }
+
+.chip { font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:5px; }
+.chip.ok { background:#E7F8EE; color: var(--ok-600); }
+.chip.out { background:#FCE6EA; color: var(--danger-600); }
+.chip.muted { background: var(--surface); color: var(--ink-500); }
+
+.empty-row { text-align:center; padding:50px 0; color: var(--ink-400); font-size:13px; }
+
+.modal-overlay { position:fixed; inset:0; background:rgba(15,15,25,.5); display:none; align-items:flex-start; justify-content:center; padding:40px 16px; overflow-y:auto; z-index:200; }
+.modal-overlay.open { display:flex; }
+.modal-box { background:#fff; border-radius: var(--radius-lg); width:100%; max-width:560px; overflow:hidden; }
+.modal-head { display:flex; align-items:center; justify-content:space-between; padding:18px 20px; border-bottom:1px solid var(--line-soft); }
+.modal-head h3 { font-size:15px; }
+.modal-close { width:28px; height:28px; border-radius:50%; background: var(--surface); border:none; display:flex; align-items:center; justify-content:center; color: var(--ink-500); }
+.modal-body { padding: 20px; display:flex; flex-direction:column; gap:14px; max-height:70vh; overflow-y:auto; }
+.form-row { display:flex; flex-direction:column; gap:6px; }
+.form-row label { font-size:12px; font-weight:700; color: var(--ink-700); }
+.form-row .hint { font-size:11px; color: var(--ink-400); font-weight:400; margin-top:2px; }
+.form-row input, .form-row select, .form-row textarea {
+  border:1px solid var(--line); border-radius: var(--radius-sm); padding:9px 11px; color: var(--ink-900); background:#fff;
+}
+.form-row input:focus, .form-row select:focus, .form-row textarea:focus { outline:none; border-color: var(--purple-600); }
+.form-row textarea { resize:vertical; min-height:90px; font-family: inherit; }
+.form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.modal-foot { display:flex; justify-content:flex-end; gap:8px; padding:16px 20px; border-top:1px solid var(--line-soft); }
+
+.kpi-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-bottom:22px; }
+@media (min-width:760px){ .kpi-grid{ grid-template-columns:repeat(5,1fr); } }
+.kpi-card { background:#fff; border-radius: var(--radius-md); padding:16px; box-shadow: var(--shadow-sm); }
+.kpi-card .kpi-label { font-size:11.5px; color: var(--ink-500); font-weight:700; }
+.kpi-card .kpi-value { font-family: var(--font-mono); font-size:22px; font-weight:800; color: var(--ink-900); margin-top:6px; }
+
+.tree-cols { display:grid; grid-template-columns: 220px 1fr; gap:16px; align-items:start; }
+.tree-list { background:#fff; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow:hidden; }
+.tree-item { padding:11px 14px; font-size:13px; font-weight:600; border-bottom:1px solid var(--line-soft); cursor:pointer; color: var(--ink-700); }
+.tree-item:hover { background: var(--surface); }
+.tree-item.active { background: var(--purple-50); color: var(--purple-600); }
+.tree-item:last-child { border-bottom:none; }
+
+@media (max-width: 860px) {
+  .admin-sidebar { position:fixed; left:-220px; transition: left .2s ease; z-index:150; }
+  .admin-sidebar.open { left:0; }
+  .form-grid-2 { grid-template-columns:1fr; }
+  .tree-cols { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="gate-banner">
+  <b>운영자 전용</b> — 메인페이지 로고 5회 클릭 후 로그인하여 접속합니다. 데이터는 Supabase에 저장되며 홈페이지에 즉시 반영됩니다.
+</div>
+
+<div class="admin-shell">
+  <aside class="admin-sidebar" id="adminSidebar">
+    <div class="admin-logo"><span class="p">P</span>URPLE ADMIN</div>
+    <nav class="admin-nav" id="adminNav">
+      <a class="admin-nav-item active" data-panel="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        대시보드
+      </a>
+      <a class="admin-nav-item" data-panel="youtube">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        유튜브 영상
+      </a>
+      <a class="admin-nav-item" data-panel="blog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
+        블로그
+      </a>
+      <a class="admin-nav-item" data-panel="customer-review">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+        고객후기
+      </a>
+      <a class="admin-nav-item" data-panel="parts">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M3 17V9l3-5h9l4 5v8"/></svg>
+        수입차부품
+      </a>
+      <a class="admin-nav-item" data-panel="lease">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="6" rx="1"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/><path d="M5 11l1.5-4h11L19 11"/></svg>
+        신차리스 관리
+      </a>
+      <a class="admin-nav-item" data-panel="usedcars">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        중고차 매물
+      </a>
+    </nav>
+    <div class="admin-sidebar-foot">PURPLE LEASE Admin v1.0<br>Supabase 연동</div>
+  </aside>
+
+  <main class="admin-main">
+    <div class="admin-topbar">
+      <h1 id="topbarTitle">대시보드</h1>
+      <div class="topbar-right">
+        <span id="adminUserEmail">운영자</span>
+        <button class="btn btn-outline btn-sm" id="btnLogout" type="button">로그아웃</button>
+      </div>
+    </div>
+
+    <div class="admin-content">
+
+      <section class="panel active" id="panel-dashboard">
+        <div class="kpi-grid">
+          <div class="kpi-card"><div class="kpi-label">등록된 유튜브 영상</div><div class="kpi-value" id="kpiYoutube">0</div></div>
+          <div class="kpi-card"><div class="kpi-label">등록된 블로그 글</div><div class="kpi-value" id="kpiBlog">0</div></div>
+          <div class="kpi-card"><div class="kpi-label">등록된 고객후기</div><div class="kpi-value" id="kpiReview">0</div></div>
+          <div class="kpi-card"><div class="kpi-label">등록된 부품</div><div class="kpi-value" id="kpiParts">0</div></div>
+          <div class="kpi-card"><div class="kpi-label">등록된 중고차</div><div class="kpi-value" id="kpiUsedcars">0</div></div>
+        </div>
+        <div style="background:#fff; border-radius:var(--radius-md); padding:18px 20px; box-shadow:var(--shadow-sm); font-size:13px; color:var(--ink-700); line-height:1.8;">
+          <b>안내:</b> 등록·수정·삭제한 내용은 Supabase DB에 저장되며, 메인·후기·부품·중고차·간편견적 페이지에 반영됩니다.
+          최초 사용 전 <code>supabase/schema-admin.sql</code> 실행 및 운영자 계정 allowlist 등록이 필요합니다.
+        </div>
+      </section>
+
+      <section class="panel" id="panel-youtube">
+        <div class="toolbar">
+          <div class="toolbar-left">등록된 영상 <b id="ytCount">0</b>개 — 메인페이지 캐러셀 및 후기 &gt; 퍼플리스 유튜브에 동일하게 표시됩니다.</div>
+          <button class="btn btn-primary" id="btnAddYoutube">+ 영상 등록</button>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>썸네일</th><th>제목</th><th>영상 URL</th><th>재생시간</th><th>등록일</th><th></th></tr></thead>
+          <tbody id="ytTableBody"></tbody>
+        </table>
+      </section>
+
+      <section class="panel" id="panel-blog">
+        <div class="toolbar">
+          <div class="toolbar-left">등록된 글 <b id="blogCount">0</b>개 — 제목·썸네일을 직접 입력합니다. 클릭 시 새 탭으로 이동합니다. (RSS 자동 연동 아님)</div>
+          <button class="btn btn-primary" id="btnAddBlog">+ 블로그 글 등록</button>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>썸네일</th><th>제목</th><th>블로그 URL</th><th>등록일</th><th></th></tr></thead>
+          <tbody id="blogTableBody"></tbody>
+        </table>
+      </section>
+
+      <section class="panel" id="panel-customer-review">
+        <div class="toolbar">
+          <div class="toolbar-left">등록된 후기 <b id="reviewCount">0</b>개 — 고객이 직접 작성할 수 없으며, 운영자만 작성합니다.</div>
+          <button class="btn btn-primary" id="btnAddReview">+ 후기 작성</button>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>번호</th><th>제목</th><th>날짜</th><th>조회수</th><th></th></tr></thead>
+          <tbody id="reviewTableBody"></tbody>
+        </table>
+      </section>
+
+      <section class="panel" id="panel-parts">
+        <div class="toolbar">
+          <div class="toolbar-left">등록된 부품 <b id="partsCount">0</b>개</div>
+          <button class="btn btn-primary" id="btnAddPart">+ 부품 등록</button>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>썸네일</th><th>부품명</th><th>브랜드</th><th>분류</th><th>가격</th><th>재고</th><th></th></tr></thead>
+          <tbody id="partsTableBody"></tbody>
+        </table>
+      </section>
+
+      <section class="panel" id="panel-lease">
+        <div class="toolbar">
+          <div class="toolbar-left">간편견적(estimate.html)에 노출되는 브랜드·모델·트림·옵션을 관리합니다.</div>
+          <button class="btn btn-primary" id="btnAddLeaseBrand" type="button">+ 브랜드 추가</button>
+        </div>
+        <div class="tree-cols">
+          <div class="tree-list" id="leaseBrandList"></div>
+          <div id="leaseModelArea">
+            <div class="empty-row">왼쪽에서 브랜드를 선택하세요.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-usedcars">
+        <div class="toolbar">
+          <div class="toolbar-left">등록된 매물 <b id="usedcarsCount">0</b>대</div>
+          <button class="btn btn-primary" id="btnAddUsedcar">+ 매물 등록</button>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>썸네일</th><th>차량명</th><th>연식</th><th>주행거리</th><th>가격</th><th>상태</th><th></th></tr></thead>
+          <tbody id="usedcarsTableBody"></tbody>
+        </table>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="modalYoutube">
+  <div class="modal-box">
+    <div class="modal-head"><h3 id="modalYoutubeTitle">영상 등록</h3><button class="modal-close" data-close="modalYoutube">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><label>영상 제목</label><input type="text" id="ytTitle" placeholder="예: 장기렌트 vs 리스, 5분 정리"></div>
+      <div class="form-row"><label>유튜브 영상 URL</label><input type="text" id="ytUrl" placeholder="https://www.youtube.com/watch?v=..."></div>
+      <div class="form-row"><label>썸네일 이미지</label><input type="text" id="ytThumb" placeholder="/assets/youtube/yt-1.jpg"><span class="hint">경로 직접 입력 또는 파일 업로드</span><div style="display:flex;gap:8px;align-items:center;margin-top:6px;"><input type="file" id="ytThumbFile" accept="image/jpeg,image/png,image/webp,image/gif"><button type="button" class="btn btn-outline btn-sm" id="btnUploadYtThumb">업로드</button></div></div>
+      <div class="form-grid-2">
+        <div class="form-row"><label>재생시간</label><input type="text" id="ytDuration" placeholder="5:42"></div>
+        <div class="form-row"><label>등록일</label><input type="text" id="ytDate" placeholder="2026.06.25"></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" data-close="modalYoutube">취소</button><button class="btn btn-primary" id="btnSaveYoutube">저장</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalBlog">
+  <div class="modal-box">
+    <div class="modal-head"><h3 id="modalBlogTitle">블로그 글 등록</h3><button class="modal-close" data-close="modalBlog">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><label>글 제목</label><input type="text" id="blogTitle" placeholder="예: 장기렌트 계약 전 확인할 약관 5가지"></div>
+      <div class="form-row"><label>네이버 블로그 글 URL</label><input type="text" id="blogUrl" placeholder="https://blog.naver.com/..."></div>
+      <div class="form-row"><label>썸네일 이미지</label><input type="text" id="blogThumb" placeholder="/assets/blog/blog-1.jpg"><div style="display:flex;gap:8px;align-items:center;margin-top:6px;"><input type="file" id="blogThumbFile" accept="image/jpeg,image/png,image/webp,image/gif"><button type="button" class="btn btn-outline btn-sm" id="btnUploadBlogThumb">업로드</button></div></div>
+      <div class="form-row"><label>등록일</label><input type="text" id="blogDate" placeholder="2026.06.25"></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" data-close="modalBlog">취소</button><button class="btn btn-primary" id="btnSaveBlog">저장</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalReview">
+  <div class="modal-box">
+    <div class="modal-head"><h3 id="modalReviewTitle">후기 작성</h3><button class="modal-close" data-close="modalReview">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><label>제목</label><input type="text" id="reviewTitle" placeholder="예: 재계약 시에도 신경써서 챙겨주셔서 좋았어요"></div>
+      <div class="form-row"><label>본문</label><textarea id="reviewBody" placeholder="후기 본문 내용을 입력합니다."></textarea></div>
+      <div class="form-row"><label>날짜</label><input type="text" id="reviewDate" placeholder="2026.06.25"></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" data-close="modalReview">취소</button><button class="btn btn-primary" id="btnSaveReview">저장</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalPart">
+  <div class="modal-box">
+    <div class="modal-head"><h3 id="modalPartTitle">부품 등록</h3><button class="modal-close" data-close="modalPart">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><label>부품명</label><input type="text" id="partName" placeholder="예: 모델3/Y 전용 무소음 와이퍼"></div>
+      <div class="form-grid-2">
+        <div class="form-row"><label>브랜드</label>
+          <select id="partBrand"><option value="tesla">테슬라</option><option value="benz">벤츠</option><option value="bmw">BMW</option><option value="audi">아우디</option></select>
+        </div>
+        <div class="form-row"><label>분류</label><input type="text" id="partCategory" placeholder="예: 와이퍼, 타이어, 브레이크"><span class="hint">현재는 자유 입력, 추후 카테고리 목록으로 분리 예정</span></div>
+      </div>
+      <div class="form-row"><label>적용 차종</label><input type="text" id="partCompatible" placeholder="예: 모델3, 모델Y (2021년식 이후)"></div>
+      <div class="form-grid-2">
+        <div class="form-row"><label>가격(원)</label><input type="number" id="partPrice" placeholder="89000"></div>
+        <div class="form-row"><label>재고 상태</label>
+          <select id="partStock"><option value="재고있음">재고있음</option><option value="품절">품절</option></select>
+        </div>
+      </div>
+      <div class="form-row"><label>대표 이미지</label><input type="text" id="partThumb" placeholder="/assets/parts/part-1.jpg"><div style="display:flex;gap:8px;align-items:center;margin-top:6px;"><input type="file" id="partThumbFile" accept="image/jpeg,image/png,image/webp,image/gif"><button type="button" class="btn btn-outline btn-sm" id="btnUploadPartThumb">업로드</button></div></div>
+      <div class="form-row"><label>상품 설명</label><textarea id="partDesc" placeholder="부품 상세 설명을 입력합니다."></textarea></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" data-close="modalPart">취소</button><button class="btn btn-primary" id="btnSavePart">저장</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalUsedcar">
+  <div class="modal-box">
+    <div class="modal-head"><h3 id="modalUsedcarTitle">매물 등록</h3><button class="modal-close" data-close="modalUsedcar">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><label>차량명</label><input type="text" id="ucName" placeholder="예: 기아 더 뉴 K3 1.6 가솔린 트렌디"></div>
+      <div class="form-grid-2">
+        <div class="form-row"><label>연식</label><input type="number" id="ucYear" placeholder="2022"></div>
+        <div class="form-row"><label>주행거리(km)</label><input type="number" id="ucMileage" placeholder="66926"></div>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-row"><label>가격(만원)</label><input type="number" id="ucPrice" placeholder="1350"></div>
+        <div class="form-row"><label>상태</label>
+          <select id="ucStatus"><option value="판매중">판매중</option><option value="예약중">예약중</option><option value="판매완료">판매완료</option></select>
+        </div>
+      </div>
+      <div class="form-row"><label>대표 이미지</label><input type="text" id="ucThumb" placeholder="/assets/usedcars/481-1.jpg"><div style="display:flex;gap:8px;align-items:center;margin-top:6px;"><input type="file" id="ucThumbFile" accept="image/jpeg,image/png,image/webp,image/gif"><button type="button" class="btn btn-outline btn-sm" id="btnUploadUcThumb">업로드</button></div></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" data-close="modalUsedcar">취소</button><button class="btn btn-primary" id="btnSaveUsedcar">저장</button></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/js/supabase-config.js"></script>
+<script src="/js/admin-auth.js"></script>
+<script src="/js/admin-api.js"></script>
+<script src="/js/admin-app.js"></script>
+<script>PurpleAdminApp.init();</script>
+
+</body>
+</html>

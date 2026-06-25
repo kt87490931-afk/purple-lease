@@ -711,6 +711,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/js/supabase-config.js"></script>
+<script src="/js/supabase-data.js"></script>
 <script>
 /* ============================================================
    데이터 정의부 — 운영자 관리자페이지에서 등록/수정하는 영역.
@@ -1156,7 +1159,27 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   });
 
   // ---- 최초 렌더 ----
-  renderBrands();
+  async function initEstimatePage() {
+    if (window.PurpleLeaseData && window.PurpleLeaseData.isConfigured()) {
+      try {
+        const catalog = await window.PurpleLeaseData.fetchLeaseCatalog();
+        if (catalog) {
+          if (catalog.domestic && catalog.domestic.length) {
+            brandData.domestic.splice(0, brandData.domestic.length);
+            catalog.domestic.forEach(function (b) { brandData.domestic.push(b); });
+          }
+          if (catalog.import && catalog.import.length) {
+            brandData.import.splice(0, brandData.import.length);
+            catalog.import.forEach(function (b) { brandData.import.push(b); });
+          }
+        }
+      } catch (err) {
+        console.warn('[PurpleLease] lease catalog load failed:', err);
+      }
+    }
+    renderBrands();
+  }
+  initEstimatePage();
 </script>
 
 </body>

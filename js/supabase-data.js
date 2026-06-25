@@ -246,6 +246,61 @@
     };
   }
 
+  async function incrementReviewViews(listingId) {
+    var client = getClient();
+    if (!client) return null;
+    var res = await client.rpc('increment_review_views', { p_listing_id: listingId });
+    if (res.error) throw res.error;
+    return res.data;
+  }
+
+  async function fetchLeaseCatalog() {
+    var client = getClient();
+    if (!client) return null;
+    var brandsRes = await client
+      .from('lease_brands')
+      .select('id,slug,name,origin,logo_url,sort_order')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
+    if (brandsRes.error) throw brandsRes.error;
+    if (!brandsRes.data || !brandsRes.data.length) return null;
+
+    var modelsRes = await client
+      .from('lease_models')
+      .select('brand_id,slug,name,price_from,price_to,img_url,config_json,sort_order')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
+    if (modelsRes.error) throw modelsRes.error;
+
+    var modelsByBrand = {};
+    (modelsRes.data || []).forEach(function (m) {
+      if (!modelsByBrand[m.brand_id]) modelsByBrand[m.brand_id] = [];
+      modelsByBrand[m.brand_id].push({
+        id: m.slug,
+        name: m.name,
+        priceFrom: m.price_from,
+        priceTo: m.price_to,
+        img: m.img_url,
+        config: m.config_json || {}
+      });
+    });
+
+    var domestic = [];
+    var imported = [];
+    (brandsRes.data || []).forEach(function (b) {
+      var item = {
+        id: b.slug,
+        name: b.name,
+        logo: b.logo_url,
+        models: modelsByBrand[b.id] || []
+      };
+      if (b.origin === 'import') imported.push(item);
+      else domestic.push(item);
+    });
+
+    return { domestic: domestic, import: imported };
+  }
+
   async function fetchBlogPosts() {
     var client = getClient();
     if (!client) return null;
@@ -285,6 +340,8 @@
     fetchPartDetail: fetchPartDetail,
     fetchCustomerReviews: fetchCustomerReviews,
     fetchCustomerReviewDetail: fetchCustomerReviewDetail,
+    incrementReviewViews: incrementReviewViews,
+    fetchLeaseCatalog: fetchLeaseCatalog,
     fetchBlogPosts: fetchBlogPosts,
     submitInquiry: submitInquiry,
     isConfigured: function () { return !!getClient(); }

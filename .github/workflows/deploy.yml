@@ -18,7 +18,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "*.html,js,assets"
+          source: "*.html,js,assets,robots.txt"
           target: /var/www/purple-lease
           strip_components: 0
           overwrite: true
@@ -31,5 +31,6 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             rm -f /var/www/purple-lease/used-cars_1.html /var/www/purple-lease/Easyquote.html
+            chmod 644 /var/www/purple-lease/robots.txt 2>/dev/null || true
             chown -R www-data:www-data /var/www/purple-lease
             chmod -R 755 /var/www/purple-lease

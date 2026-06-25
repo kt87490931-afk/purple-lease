@@ -252,6 +252,8 @@ p { margin:0; }
       try {
         const row = await window.PurpleLeaseData.fetchCustomerReviewDetail(id);
         if (row) review = row;
+        const views = await window.PurpleLeaseData.incrementReviewViews(id);
+        if (views) review.views = views;
       } catch (err) {
         console.warn('[PurpleLease] review detail load failed:', err);
       }
