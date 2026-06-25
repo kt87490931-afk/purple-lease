@@ -354,12 +354,24 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     display: flex; gap: 12px;
     overflow-x: auto; scroll-behavior: smooth;
     scrollbar-width: none; padding-bottom: 2px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
   }
   .video-carousel-track::-webkit-scrollbar { display: none; }
   .vc-thumb {
-    flex-shrink: 0; width: 168px; cursor: pointer;
+    flex: 0 0 calc((100% - 36px) / 4);
+    min-width: 140px;
+    cursor: pointer;
     border-radius: var(--radius-md); overflow: hidden;
     border: 2px solid transparent;
+    scroll-snap-align: start;
+  }
+  @media (max-width: 900px) {
+    .vc-thumb { flex: 0 0 calc((100% - 24px) / 3); }
+  }
+  @media (max-width: 560px) {
+    .vc-thumb { flex: 0 0 calc((100% - 12px) / 2); }
   }
   .vc-thumb.active { border-color: var(--purple-600); }
   .vc-thumb-img { position: relative; aspect-ratio: 16/9; background: var(--surface-alt); overflow: hidden; }
@@ -714,11 +726,13 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 <script src="/js/logo-gate.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="/js/supabase-config.js"></script>
+<script src="/js/youtube-utils.js"></script>
 <script src="/js/supabase-data.js"></script>
 <script>
-  // Supabase 연동 — 설정 전이거나 데이터 없으면 빈 상태 UI 표시
-  let videoPlaylist = [];
-  let currentVideoIndex = 0;
+  // Supabase 연동 — 메인영상 1개 + 추천영상 캐러셀 (index 전용)
+  let mainVideo = null;
+  let featuredVideos = [];
+  let currentPlaying = null;
   let dealData = [];
   let usedCarData = [];
 
@@ -732,26 +746,41 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     </div>`;
   }
 
-  // --- 1) 영상 렌더링 (메인 영상 + 썸네일 캐러셀) ---
+  function escapeHtml(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+  }
+
+  function getCarouselList() {
+    var mainId = mainVideo && mainVideo.videoId;
+    return featuredVideos.filter(function (v) { return v.videoId !== mainId; });
+  }
+
   function renderVideo() {
     const slot = document.getElementById('videoSlot');
     const carousel = document.getElementById('videoCarousel');
+    const hasMain = !!mainVideo;
+    const carouselList = getCarouselList();
 
-    if (!videoPlaylist || videoPlaylist.length === 0) {
+    if (!hasMain && carouselList.length === 0) {
       slot.innerHTML = emptyStateHTML(
         '등록된 영상이 없습니다',
-        '메인 영상이 등록되면 이곳에 표시됩니다.',
+        '어드민에서 메인·추천 영상을 설정하거나 채널 동기화를 실행하세요.',
         '<polygon points="5 3 19 12 5 21 5 3"/>'
       );
       carousel.style.display = 'none';
+      currentPlaying = null;
       return;
+    }
+
+    if (!currentPlaying) {
+      currentPlaying = mainVideo || carouselList[0];
     }
 
     renderMainVideo();
 
-    if (videoPlaylist.length > 1) {
+    if (carouselList.length > 0) {
       carousel.style.display = 'block';
-      renderVideoThumbs();
+      renderVideoThumbs(carouselList);
     } else {
       carousel.style.display = 'none';
     }
@@ -759,51 +788,93 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
   function renderMainVideo() {
     const slot = document.getElementById('videoSlot');
-    const v = videoPlaylist[currentVideoIndex];
+    const v = currentPlaying;
+    if (!v) return;
     slot.innerHTML = `
       <div class="video-frame">
-        <iframe src="https://www.youtube.com/embed/${v.videoId}" title="${v.title}"
+        <iframe src="https://www.youtube.com/embed/${escapeHtml(v.videoId)}" title="${escapeHtml(v.title)}"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowfullscreen loading="lazy"></iframe>
       </div>
       <div class="video-caption">
-        <div><h3>${v.title}</h3><p>${v.desc}</p></div>
-        <a href="reviews-youtube.html" class="section-more" style="flex-shrink:0;">채널 구독 →</a>
+        <div><h3>${escapeHtml(v.title)}</h3><p>${escapeHtml(v.desc || '')}</p></div>
+        <a href="reviews-youtube.html" class="section-more" style="flex-shrink:0;">전체 영상 보기 →</a>
       </div>`;
   }
 
-  function renderVideoThumbs() {
+  function renderVideoThumbs(list) {
     const track = document.getElementById('videoCarouselTrack');
-    track.innerHTML = videoPlaylist.map((v, i) => `
-      <div class="vc-thumb${i===currentVideoIndex?' active':''}" data-idx="${i}">
+    const playingId = currentPlaying && currentPlaying.videoId;
+    track.innerHTML = list.map(function (v) {
+      var active = v.videoId === playingId ? ' active' : '';
+      return `
+      <div class="vc-thumb${active}" data-vid="${escapeHtml(v.videoId)}">
         <div class="vc-thumb-img">
-          <img src="${v.thumb}" alt="${v.title}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <img src="${escapeHtml(v.thumb)}" alt="${escapeHtml(v.title)}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
           <div class="vc-ph" style="display:none;">${carIconSvg}</div>
           <div class="vc-play"><span class="vc-play-circle"><svg viewBox="0 0 24 24" fill="#fff"><polygon points="6 4 20 12 6 20 6 4"/></svg></span></div>
-          <span class="vc-duration">${v.duration || ''}</span>
+          <span class="vc-duration">${escapeHtml(v.duration || '')}</span>
         </div>
-        <div class="vc-thumb-title">${v.title}</div>
-      </div>
-    `).join('');
+        <div class="vc-thumb-title">${escapeHtml(v.title)}</div>
+      </div>`;
+    }).join('');
 
-    track.querySelectorAll('.vc-thumb').forEach(el => {
-      el.addEventListener('click', () => {
-        currentVideoIndex = parseInt(el.dataset.idx, 10);
+    track.querySelectorAll('.vc-thumb').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var vid = el.dataset.vid;
+        var picked = list.find(function (x) { return x.videoId === vid; });
+        if (!picked) return;
+        currentPlaying = picked;
         renderMainVideo();
-        track.querySelectorAll('.vc-thumb').forEach(t => t.classList.remove('active'));
+        track.querySelectorAll('.vc-thumb').forEach(function (t) { t.classList.remove('active'); });
         el.classList.add('active');
         document.querySelector('.video-frame')?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
       });
     });
+    updateCarouselArrows();
   }
 
-  // 썸네일 트랙 좌우 넘기기
-  document.getElementById('vcPrev')?.addEventListener('click', () => {
-    document.getElementById('videoCarouselTrack').scrollBy({ left: -360, behavior: 'smooth' });
-  });
-  document.getElementById('vcNext')?.addEventListener('click', () => {
-    document.getElementById('videoCarouselTrack').scrollBy({ left: 360, behavior: 'smooth' });
-  });
+  function carouselPageWidth() {
+    var track = document.getElementById('videoCarouselTrack');
+    return track ? track.clientWidth : 360;
+  }
+
+  function updateCarouselArrows() {
+    var track = document.getElementById('videoCarouselTrack');
+    var prev = document.getElementById('vcPrev');
+    var next = document.getElementById('vcNext');
+    if (!track || !prev || !next) return;
+    prev.disabled = track.scrollLeft <= 2;
+    next.disabled = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
+  }
+
+  (function bindCarouselNav() {
+    var track = document.getElementById('videoCarouselTrack');
+    var prev = document.getElementById('vcPrev');
+    var next = document.getElementById('vcNext');
+    if (!track) return;
+
+    prev?.addEventListener('click', function () {
+      track.scrollBy({ left: -carouselPageWidth(), behavior: 'smooth' });
+    });
+    next?.addEventListener('click', function () {
+      track.scrollBy({ left: carouselPageWidth(), behavior: 'smooth' });
+    });
+    track.addEventListener('scroll', updateCarouselArrows, { passive: true });
+
+    var startX = 0, scrollStart = 0, dragging = false;
+    track.addEventListener('touchstart', function (e) {
+      if (!e.touches.length) return;
+      dragging = true;
+      startX = e.touches[0].clientX;
+      scrollStart = track.scrollLeft;
+    }, { passive: true });
+    track.addEventListener('touchmove', function (e) {
+      if (!dragging || !e.touches.length) return;
+      track.scrollLeft = scrollStart + (startX - e.touches[0].clientX);
+    }, { passive: true });
+    track.addEventListener('touchend', function () { dragging = false; updateCarouselArrows(); });
+  })();
 
   // --- 2) 타임특가 렌더링 ---
   function renderDeals() {
@@ -859,12 +930,15 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   async function loadSupabaseData() {
     if (!window.PurpleLeaseData || !window.PurpleLeaseData.isConfigured()) return;
     try {
-      const [videos, deals, cars] = await Promise.all([
-        window.PurpleLeaseData.fetchYoutubeVideos(),
+      const [mainV, featuredV, deals, cars] = await Promise.all([
+        window.PurpleLeaseData.fetchYoutubeHomeMain(),
+        window.PurpleLeaseData.fetchYoutubeHomeFeatured(),
         window.PurpleLeaseData.fetchTimeDeals(),
         window.PurpleLeaseData.fetchUsedCars()
       ]);
-      if (videos) videoPlaylist = videos;
+      mainVideo = mainV || null;
+      featuredVideos = featuredV || [];
+      currentPlaying = mainVideo || (featuredVideos[0] || null);
       if (deals) dealData = deals;
       if (cars) usedCarData = cars;
     } catch (err) {

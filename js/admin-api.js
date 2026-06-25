@@ -60,19 +60,133 @@
   }
 
   /* ---------- YouTube ---------- */
+  var CHANNEL_HANDLE = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.youtubeChannelHandle) || 'purplelease';
+
+  function mapYoutubeAdminRow(r) {
+    var vid = r.video_id;
+    var thumb = (window.YoutubeUtils && window.YoutubeUtils.resolveThumb)
+      ? window.YoutubeUtils.resolveThumb(vid, r.thumb_url)
+      : (r.thumb_url || '');
+    return {
+      id: r.id,
+      videoId: vid,
+      title: r.title,
+      url: r.external_url || youtubeWatchUrl(vid),
+      thumb: thumb,
+      duration: r.duration,
+      date: fmtDate(r.published_at || r.created_at),
+      isHomeMain: !!r.is_home_main,
+      isHomeFeatured: !!r.is_home_featured
+    };
+  }
+
   async function listYoutube() {
-    var res = await db().from('youtube_videos').select('*').order('sort_order', { ascending: true });
+    var res = await db().from('youtube_videos').select('*').order('sort_order', { ascending: false });
     if (res.error) throw res.error;
-    return (res.data || []).map(function (r) {
-      return {
-        id: r.id,
-        title: r.title,
-        url: r.external_url || youtubeWatchUrl(r.video_id),
-        thumb: r.thumb_url,
-        duration: r.duration,
-        date: fmtDate(r.published_at || r.created_at)
-      };
+    return (res.data || []).map(mapYoutubeAdminRow);
+  }
+
+  async function setYoutubeHomeMain(id) {
+    var clear = await db().from('youtube_videos').update({ is_home_main: false }).eq('is_home_main', true);
+    if (clear.error) throw clear.error;
+    var set = await db().from('youtube_videos').update({ is_home_main: true }).eq('id', id);
+    if (set.error) throw set.error;
+  }
+
+  async function setYoutubeHomeFeatured(id, featured) {
+    var res = await db().from('youtube_videos').update({ is_home_featured: !!featured }).eq('id', id);
+    if (res.error) throw res.error;
+  }
+
+  async function youtubeApiFetch(path, params) {
+    var cfg = window.SUPABASE_CONFIG || {};
+    var key = cfg.youtubeApiKey;
+    if (!key) throw new Error('NO_API_KEY');
+    var qs = new URLSearchParams();
+    Object.keys(params || {}).forEach(function (k) {
+      if (params[k] !== undefined && params[k] !== null && params[k] !== '') qs.set(k, params[k]);
     });
+    qs.set('key', key);
+    var res = await fetch('https://www.googleapis.com/youtube/v3/' + path + '?' + qs.toString());
+    var json = await res.json();
+    if (!res.ok) throw new Error((json.error && json.error.message) ? json.error.message : 'YouTube API 오류');
+    return json;
+  }
+
+  async function syncYoutubeChannel() {
+    var cfg = window.SUPABASE_CONFIG || {};
+    if (!cfg.youtubeApiKey) {
+      try {
+        var fn = await db().functions.invoke('youtube-sync', { body: { handle: CHANNEL_HANDLE } });
+        if (fn.error) throw fn.error;
+        return fn.data || { count: 0 };
+      } catch (e) {
+        throw new Error('채널 동기화를 위해 js/supabase-config.js 의 youtubeApiKey 에 YouTube Data API 키를 넣어 주세요.');
+      }
+    }
+
+    var ch = await youtubeApiFetch('channels', { part: 'contentDetails,snippet', forHandle: CHANNEL_HANDLE });
+    var channel = ch.items && ch.items[0];
+    if (!channel) throw new Error('채널을 찾을 수 없습니다: @' + CHANNEL_HANDLE);
+    var uploadsId = channel.contentDetails.relatedPlaylists.uploads;
+
+    var videoIds = [];
+    var pageToken = '';
+    do {
+      var plParams = { part: 'snippet,contentDetails', playlistId: uploadsId, maxResults: '50' };
+      if (pageToken) plParams.pageToken = pageToken;
+      var pl = await youtubeApiFetch('playlistItems', plParams);
+      (pl.items || []).forEach(function (item) {
+        if (item.contentDetails && item.contentDetails.videoId) {
+          videoIds.push(item.contentDetails.videoId);
+        }
+      });
+      pageToken = pl.nextPageToken || '';
+    } while (pageToken);
+
+    var details = {};
+    for (var i = 0; i < videoIds.length; i += 50) {
+      var batch = videoIds.slice(i, i + 50).join(',');
+      var v = await youtubeApiFetch('videos', { part: 'contentDetails,snippet', id: batch });
+      (v.items || []).forEach(function (item) {
+        details[item.id] = item;
+      });
+    }
+
+    var existingRes = await db().from('youtube_videos').select('video_id,is_home_main,is_home_featured');
+    if (existingRes.error) throw existingRes.error;
+    var flagMap = {};
+    (existingRes.data || []).forEach(function (r) {
+      flagMap[r.video_id] = { main: r.is_home_main, featured: r.is_home_featured };
+    });
+
+    var upserted = 0;
+    for (var idx = 0; idx < videoIds.length; idx++) {
+      var vid = videoIds[idx];
+      var item = details[vid];
+      if (!item) continue;
+      var sn = item.snippet || {};
+      var flags = flagMap[vid] || {};
+      var row = {
+        video_id: vid,
+        title: sn.title || '',
+        description: (sn.description || '').slice(0, 500),
+        external_url: youtubeWatchUrl(vid),
+        duration: (window.YoutubeUtils && window.YoutubeUtils.formatIsoDuration)
+          ? window.YoutubeUtils.formatIsoDuration(item.contentDetails.duration)
+          : '',
+        published_at: sn.publishedAt ? sn.publishedAt.split('T')[0] : null,
+        thumb_url: '',
+        is_active: true,
+        sort_order: videoIds.length - idx,
+        is_home_main: !!flags.main,
+        is_home_featured: !!flags.featured
+      };
+      var ups = await db().from('youtube_videos').upsert(row, { onConflict: 'video_id' });
+      if (ups.error) throw ups.error;
+      upserted++;
+    }
+    return { count: upserted };
   }
 
   async function saveYoutube(payload, editingId) {
@@ -386,6 +500,9 @@
     uploadImage: uploadImage,
     storagePublicUrl: storagePublicUrl,
     listYoutube: listYoutube,
+    setYoutubeHomeMain: setYoutubeHomeMain,
+    setYoutubeHomeFeatured: setYoutubeHomeFeatured,
+    syncYoutubeChannel: syncYoutubeChannel,
     saveYoutube: saveYoutube,
     deleteYoutube: deleteYoutube,
     listBlog: listBlog,

@@ -220,46 +220,36 @@ p { margin:0; }
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="/js/supabase-config.js"></script>
+<script src="/js/youtube-utils.js"></script>
 <script src="/js/supabase-data.js"></script>
 <script>
-/* ============================================================
-   데이터 정의부 — 운영자가 어드민페이지에서 등록하는 영역.
-   각 영상은 운영자가 유튜브 영상 URL과 썸네일을 직접 등록합니다.
-   (자동 연동 기능은 이번 프로토타입 범위에 포함되지 않으며, 추후 별도 백엔드 작업이 필요합니다.)
-   thumb 경로는 운영자가 업로드한 썸네일 이미지(자체 서버 경로) 또는 유튜브 썸네일 URL을 사용합니다.
-   ============================================================ */
-  let youtubeData = [
-    { id: 1, title: '장기렌트 vs 리스, 나에게 맞는 건 뭘까? 5분 정리', date: '2026.06.10', duration: '5:42', thumb: '/assets/youtube/yt-1.jpg', url: 'https://www.youtube.com/watch?v=example1' },
-    { id: 2, title: '제네시스 G80 장기렌트 실제 견적 비교 (2026년형)', date: '2026.06.03', duration: '8:15', thumb: '/assets/youtube/yt-2.jpg', url: 'https://www.youtube.com/watch?v=example2' },
-    { id: 3, title: '중고차 매입 전 꼭 확인해야 할 3가지', date: '2026.05.27', duration: '6:01', thumb: '/assets/youtube/yt-3.jpg', url: 'https://www.youtube.com/watch?v=example3' },
-    { id: 4, title: '전기차 장기렌트, 보조금 받을 수 있을까?', date: '2026.05.20', duration: '7:33', thumb: '/assets/youtube/yt-4.jpg', url: 'https://www.youtube.com/watch?v=example4' },
-    { id: 5, title: '퍼플리스 출고 후기 — 고객님과의 인터뷰', date: '2026.05.12', duration: '4:18', thumb: '/assets/youtube/yt-5.jpg', url: 'https://www.youtube.com/watch?v=example5' },
-    { id: 6, title: '리스 승계, 정말 저렴할까? 비용 전부 공개', date: '2026.05.05', duration: '9:02', thumb: '/assets/youtube/yt-6.jpg', url: 'https://www.youtube.com/watch?v=example6' },
-    { id: 7, title: '수입차 장기렌트 인기 모델 TOP 5 (2026 상반기)', date: '2026.04.28', duration: '6:47', thumb: '/assets/youtube/yt-7.jpg', url: 'https://www.youtube.com/watch?v=example7' },
-    { id: 8, title: '신차 출고 대기 줄이는 꿀팁 모음', date: '2026.04.21', duration: '5:09', thumb: '/assets/youtube/yt-8.jpg', url: 'https://www.youtube.com/watch?v=example8' },
-  ];
+  let youtubeData = [];
 
   const carIconSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="#9494A3" stroke-width="1.5" width="32" height="32"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>`;
+
+  function escapeHtml(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+  }
 
   function renderYoutube() {
     const grid = document.getElementById('ytGrid');
     if (youtubeData.length === 0) {
-      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">등록된 영상이 없습니다.</div>`;
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">등록된 영상이 없습니다. 어드민에서 채널 동기화 후 이곳에 전체 영상이 표시됩니다.</div>`;
       return;
     }
     grid.innerHTML = youtubeData.map(v => `
-      <a class="yt-card" href="${v.url}" target="_blank" rel="noopener noreferrer">
+      <a class="yt-card" href="${escapeHtml(v.url)}" target="_blank" rel="noopener noreferrer">
         <div class="yt-thumb">
-          <img src="${v.thumb}" alt="${v.title}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <img src="${escapeHtml(v.thumb)}" alt="${escapeHtml(v.title)}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
           <div class="ph-icon" style="display:none; position:absolute; inset:0; align-items:center; justify-content:center;">${carIconSvg}</div>
           <div class="play-badge"><span class="play-circle">
             <svg viewBox="0 0 24 24" fill="#fff"><polygon points="6 4 20 12 6 20 6 4"/></svg>
           </span></div>
-          <span class="duration-chip">${v.duration}</span>
+          <span class="duration-chip">${escapeHtml(v.duration || '')}</span>
         </div>
         <div class="yt-body">
-          <div class="yt-title">${v.title}</div>
-          <div class="yt-date">${v.date}</div>
+          <div class="yt-title">${escapeHtml(v.title)}</div>
+          <div class="yt-date">${escapeHtml(v.date || '')}</div>
         </div>
       </a>
     `).join('');
@@ -268,7 +258,7 @@ p { margin:0; }
   async function initPage() {
     if (window.PurpleLeaseData && window.PurpleLeaseData.isConfigured()) {
       try {
-        const rows = await window.PurpleLeaseData.fetchYoutubeGrid();
+        const rows = await window.PurpleLeaseData.fetchYoutubeAll();
         if (rows && rows.length) youtubeData = rows;
       } catch (err) {
         console.warn('[PurpleLease] youtube load failed:', err);

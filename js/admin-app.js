@@ -48,12 +48,15 @@
     var body = document.getElementById('ytTableBody');
     document.getElementById('ytCount').textContent = youtubeData.length;
     if (!youtubeData.length) {
-      body.innerHTML = '<tr><td colspan="6"><div class="empty-row">등록된 영상이 없습니다.</div></td></tr>';
+      body.innerHTML = '<tr><td colspan="8"><div class="empty-row">등록된 영상이 없습니다. 「채널 동기화」로 @purplelease 영상을 가져오세요.</div></td></tr>';
+      updateKpis();
       return;
     }
     body.innerHTML = youtubeData.map(function (v) {
       return '<tr>' +
-        '<td class="thumb-cell"><img src="' + v.thumb + '" onerror="this.style.opacity=0.15"></td>' +
+        '<td style="text-align:center;"><input type="radio" name="ytHomeMain" value="' + v.id + '"' + (v.isHomeMain ? ' checked' : '') + ' aria-label="메인영상"></td>' +
+        '<td style="text-align:center;"><input type="checkbox" data-feat-yt="' + v.id + '"' + (v.isHomeFeatured ? ' checked' : '') + ' aria-label="추천영상"></td>' +
+        '<td class="thumb-cell"><img src="' + v.thumb + '" alt=""></td>' +
         '<td class="title-cell">' + v.title + '</td>' +
         '<td><a href="' + v.url + '" target="_blank" rel="noopener" style="color:var(--purple-600);text-decoration:underline;">바로가기</a></td>' +
         '<td class="num-cell">' + v.duration + '</td>' +
@@ -61,6 +64,26 @@
         '<td class="row-actions"><button class="btn btn-outline btn-sm" data-edit-yt="' + v.id + '">수정</button>' +
         '<button class="btn-danger-text" data-del-yt="' + v.id + '">삭제</button></td></tr>';
     }).join('');
+
+    body.querySelectorAll('input[name="ytHomeMain"]').forEach(function (el) {
+      el.addEventListener('change', async function () {
+        if (!el.checked) return;
+        try {
+          await API.setYoutubeHomeMain(parseInt(el.value, 10));
+          youtubeData = await API.listYoutube();
+          renderYoutubeTable();
+        } catch (err) { showError(err); }
+      });
+    });
+    body.querySelectorAll('[data-feat-yt]').forEach(function (el) {
+      el.addEventListener('change', async function () {
+        try {
+          await API.setYoutubeHomeFeatured(parseInt(el.dataset.featYt, 10), el.checked);
+          var item = youtubeData.find(function (x) { return x.id === parseInt(el.dataset.featYt, 10); });
+          if (item) item.isHomeFeatured = el.checked;
+        } catch (err) { showError(err); el.checked = !el.checked; }
+      });
+    });
     body.querySelectorAll('[data-edit-yt]').forEach(function (b) {
       b.addEventListener('click', function () { editYoutube(parseInt(b.dataset.editYt, 10)); });
     });
@@ -373,6 +396,24 @@
 
     document.getElementById('btnLogout').addEventListener('click', function () {
       window.PurpleAdminAuth.signOut();
+    });
+
+    document.getElementById('btnSyncYoutube').addEventListener('click', async function () {
+      var btn = document.getElementById('btnSyncYoutube');
+      if (!confirm('@purplelease 채널의 영상을 동기화하시겠습니까?\n기존 메인/추천 설정은 유지됩니다.')) return;
+      btn.disabled = true;
+      btn.textContent = '동기화 중…';
+      try {
+        var result = await API.syncYoutubeChannel();
+        youtubeData = await API.listYoutube();
+        renderYoutubeTable();
+        alert('동기화 완료: ' + (result.count || 0) + '개 영상');
+      } catch (err) {
+        showError(err);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '채널 동기화 (@purplelease)';
+      }
     });
 
     document.getElementById('btnAddYoutube').addEventListener('click', function () {

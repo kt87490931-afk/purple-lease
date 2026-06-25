@@ -20,46 +20,71 @@
     return p[0] + '.' + p[1] + '.' + p[2];
   }
 
+  function mapYoutubeRow(r) {
+    var vid = r.video_id;
+    var thumb = (window.YoutubeUtils && window.YoutubeUtils.resolveThumb)
+      ? window.YoutubeUtils.resolveThumb(vid, r.thumb_url)
+      : (r.thumb_url || '');
+    return {
+      id: r.id,
+      videoId: vid,
+      title: r.title,
+      desc: r.description,
+      thumb: thumb,
+      duration: r.duration,
+      date: fmtDate(r.published_at || r.created_at),
+      url: 'https://www.youtube.com/watch?v=' + vid,
+      isHomeMain: !!r.is_home_main,
+      isHomeFeatured: !!r.is_home_featured
+    };
+  }
+
   async function fetchYoutubeVideos() {
     var client = getClient();
     if (!client) return null;
     var res = await client
       .from('youtube_videos')
-      .select('video_id,title,description,thumb_url,duration,sort_order,created_at')
+      .select('id,video_id,title,description,thumb_url,duration,sort_order,created_at,published_at,is_home_main,is_home_featured')
       .eq('is_active', true)
-      .order('sort_order', { ascending: true });
+      .order('sort_order', { ascending: false });
     if (res.error) throw res.error;
-    return (res.data || []).map(function (r) {
-      return {
-        videoId: r.video_id,
-        title: r.title,
-        desc: r.description,
-        thumb: r.thumb_url,
-        duration: r.duration,
-        date: fmtDate(r.created_at)
-      };
-    });
+    return (res.data || []).map(mapYoutubeRow);
   }
 
-  async function fetchYoutubeGrid() {
+  async function fetchYoutubeHomeMain() {
     var client = getClient();
     if (!client) return null;
     var res = await client
       .from('youtube_videos')
-      .select('video_id,title,thumb_url,duration,sort_order,created_at')
+      .select('id,video_id,title,description,thumb_url,duration,sort_order,created_at,published_at,is_home_main,is_home_featured')
       .eq('is_active', true)
-      .order('sort_order', { ascending: true });
+      .eq('is_home_main', true)
+      .order('sort_order', { ascending: false })
+      .limit(1);
     if (res.error) throw res.error;
-    return (res.data || []).map(function (r, i) {
-      return {
-        id: i + 1,
-        title: r.title,
-        date: fmtDate(r.created_at),
-        duration: r.duration,
-        thumb: r.thumb_url,
-        url: 'https://www.youtube.com/watch?v=' + r.video_id
-      };
-    });
+    return (res.data && res.data[0]) ? mapYoutubeRow(res.data[0]) : null;
+  }
+
+  async function fetchYoutubeHomeFeatured() {
+    var client = getClient();
+    if (!client) return null;
+    var res = await client
+      .from('youtube_videos')
+      .select('id,video_id,title,description,thumb_url,duration,sort_order,created_at,published_at,is_home_main,is_home_featured')
+      .eq('is_active', true)
+      .eq('is_home_featured', true)
+      .order('sort_order', { ascending: false });
+    if (res.error) throw res.error;
+    return (res.data || []).map(mapYoutubeRow);
+  }
+
+  async function fetchYoutubeAll() {
+    return fetchYoutubeVideos();
+  }
+
+  async function fetchYoutubeGrid() {
+    var rows = await fetchYoutubeAll();
+    return rows;
   }
 
   async function fetchTimeDeals() {
@@ -331,6 +356,9 @@
 
   window.PurpleLeaseData = {
     fetchYoutubeVideos: fetchYoutubeVideos,
+    fetchYoutubeHomeMain: fetchYoutubeHomeMain,
+    fetchYoutubeHomeFeatured: fetchYoutubeHomeFeatured,
+    fetchYoutubeAll: fetchYoutubeAll,
     fetchYoutubeGrid: fetchYoutubeGrid,
     fetchTimeDeals: fetchTimeDeals,
     fetchUsedCars: fetchUsedCars,
