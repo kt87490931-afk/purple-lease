@@ -240,7 +240,7 @@ input, select { font-family: inherit; }
       <div class="type-tab active" data-type="all">전체</div>
       <div class="type-tab" data-type="domestic"><span class="dot kr"></span>국산차</div>
       <div class="type-tab" data-type="import"><span class="dot im"></span>수입차</div>
-      <div class="type-tab" data-type="etc">기타</div>
+      <div class="type-tab" data-type="other">기타</div>
       <div class="type-tab" data-type="export">✈ 수출차량</div>
     </div>
 
@@ -329,22 +329,108 @@ input, select { font-family: inherit; }
   const carIconSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="#9494A3" stroke-width="1.5"><path d="M5 11l1.5-4h11L19 11M3 11h18v6H3z"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>`;
 
   let usedCarData = [
-    { id: 481, origin:'domestic', name:'기아 더 뉴 K3 1.6 가솔린 트렌디', year:2022, fuel:'가솔린', mileage:66926, price:1350, brand:'기아', segment:'세단', status:'판매중', photoCount:20, thumb:'/assets/usedcars/481-1.jpg', tags:['세이프6','무사고','짧은주행'] },
-    { id: 482, origin:'domestic', name:'현대 스타리아 2.2 디젤 라운지 9인승', year:2022, fuel:'디젤', mileage:131191, price:2650, brand:'현대', segment:'승합', status:'판매중', photoCount:20, thumb:'/assets/usedcars/482-1.jpg', tags:['세이프6','무사고','풀옵션'] },
-    { id: 483, origin:'domestic', name:'기아 더 뉴쏘렌토 하이브리드(MQ4) 1.6 HEV 2WD 프레스티지', year:2025, fuel:'하이브리드', mileage:18257, price:3550, brand:'기아', segment:'SUV', status:'판매중', photoCount:20, thumb:'/assets/usedcars/483-1.jpg', tags:['제작사A/S','세이프6','무사고','풀옵션'] },
-    { id: 484, origin:'domestic', name:'기아 디 올뉴니로EV 에어', year:2023, fuel:'전기', mileage:5214, price:2950, brand:'기아', segment:'SUV', status:'판매중', photoCount:20, thumb:'/assets/usedcars/484-1.jpg', tags:['제작사A/S','세이프6','무사고','풀옵션','짧은주행'] },
+    { id: 481, origin:'domestic', name:'기아 더 뉴 K3 1.6 가솔린 트렌디', year:2022, fuel:'가솔린', mileage:66926, price:1350, brand:'기아', segment:'세단', status:'판매중', photoCount:20, thumb:'/assets/usedcars/481-1.jpg', tags:['세이프6','무사고','짧은주행'], sortOrder:481 },
+    { id: 482, origin:'domestic', name:'현대 스타리아 2.2 디젤 라운지 9인승', year:2022, fuel:'디젤', mileage:131191, price:2650, brand:'현대', segment:'승합', status:'판매중', photoCount:20, thumb:'/assets/usedcars/482-1.jpg', tags:['세이프6','무사고','풀옵션'], sortOrder:482 },
+    { id: 483, origin:'domestic', name:'기아 더 뉴쏘렌토 하이브리드(MQ4) 1.6 HEV 2WD 프레스티지', year:2025, fuel:'하이브리드', mileage:18257, price:3550, brand:'기아', segment:'SUV', status:'판매중', photoCount:20, thumb:'/assets/usedcars/483-1.jpg', tags:['제작사A/S','세이프6','무사고','풀옵션'], sortOrder:483 },
+    { id: 484, origin:'domestic', name:'기아 디 올뉴니로EV 에어', year:2023, fuel:'전기', mileage:5214, price:2950, brand:'기아', segment:'SUV', status:'판매중', photoCount:20, thumb:'/assets/usedcars/484-1.jpg', tags:['제작사A/S','세이프6','무사고','풀옵션','짧은주행'], sortOrder:484 },
   ];
 
-  let state = { type:'all' };
+  let state = { type: 'all', sort: 'latest' };
 
-  function priceFmt(n) { return n.toLocaleString('ko-KR') + '만원'; }
-  function kmFmt(n) { return n.toLocaleString('ko-KR') + 'km'; }
+  function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function parseNum(v) {
+    if (v == null || v === '') return null;
+    var n = parseInt(String(v).replace(/[^\d]/g, ''), 10);
+    return isNaN(n) ? null : n;
+  }
+
+  function originLabel(origin) {
+    if (origin === 'domestic') return '국산차';
+    if (origin === 'import') return '수입차';
+    if (origin === 'export') return '수출';
+    return '기타';
+  }
+
+  function getFilterValues() {
+    return {
+      brand: document.getElementById('fBrand').value.trim(),
+      segment: document.getElementById('fSegment').value.trim(),
+      name: document.getElementById('fName').value.trim().toLowerCase(),
+      fuel: document.getElementById('fFuel').value.trim(),
+      priceMin: parseNum(document.getElementById('fPriceMin').value),
+      priceMax: parseNum(document.getElementById('fPriceMax').value),
+      yearMin: parseNum(document.getElementById('fYearMin').value),
+      yearMax: parseNum(document.getElementById('fYearMax').value)
+    };
+  }
+
+  function byType(list) {
+    if (state.type === 'all') return list;
+    return list.filter(function (c) { return c.origin === state.type; });
+  }
+
+  function uniqueSorted(arr) {
+    return arr.filter(Boolean).filter(function (v, i, a) { return a.indexOf(v) === i; }).sort(function (a, b) {
+      return String(a).localeCompare(String(b), 'ko');
+    });
+  }
+
+  function populateFilterOptions() {
+    var scoped = byType(usedCarData);
+    var brands = uniqueSorted(scoped.map(function (c) { return c.brand; }));
+    var segments = uniqueSorted(scoped.map(function (c) { return c.segment; }));
+    var fuels = uniqueSorted(scoped.map(function (c) { return c.fuel; }));
+
+    function fillSelect(id, placeholder, values) {
+      var el = document.getElementById(id);
+      var prev = el.value;
+      el.innerHTML = '<option value="">' + placeholder + '</option>' +
+        values.map(function (v) { return '<option value="' + escapeHtml(v) + '">' + escapeHtml(v) + '</option>'; }).join('');
+      if (prev && values.indexOf(prev) >= 0) el.value = prev;
+      else el.value = '';
+    }
+
+    fillSelect('fBrand', '브랜드 전체', brands);
+    fillSelect('fSegment', '차군 전체', segments);
+    fillSelect('fFuel', '연료 전체', fuels);
+  }
 
   function filteredData() {
-    let list = usedCarData.slice();
-    if (state.type !== 'all') list = list.filter(c => c.origin === state.type);
-    return list;
+    var f = getFilterValues();
+    var list = byType(usedCarData.slice());
+
+    if (f.brand) list = list.filter(function (c) { return c.brand === f.brand; });
+    if (f.segment) list = list.filter(function (c) { return c.segment === f.segment; });
+    if (f.fuel) list = list.filter(function (c) { return c.fuel === f.fuel; });
+    if (f.name) list = list.filter(function (c) { return String(c.name || '').toLowerCase().indexOf(f.name) >= 0; });
+    if (f.priceMin != null) list = list.filter(function (c) { return (c.price || 0) >= f.priceMin; });
+    if (f.priceMax != null) list = list.filter(function (c) { return (c.price || 0) <= f.priceMax; });
+    if (f.yearMin != null) list = list.filter(function (c) { return (c.year || 0) >= f.yearMin; });
+    if (f.yearMax != null) list = list.filter(function (c) { return (c.year || 0) <= f.yearMax; });
+
+    return sortData(list);
   }
+
+  function sortData(list) {
+    var out = list.slice();
+    if (state.sort === 'priceAsc') {
+      out.sort(function (a, b) { return (a.price || 0) - (b.price || 0); });
+    } else if (state.sort === 'priceDesc') {
+      out.sort(function (a, b) { return (b.price || 0) - (a.price || 0); });
+    } else if (state.sort === 'mileage') {
+      out.sort(function (a, b) { return (a.mileage || 0) - (b.mileage || 0); });
+    } else {
+      out.sort(function (a, b) { return (b.sortOrder || b.id || 0) - (a.sortOrder || a.id || 0); });
+    }
+    return out;
+  }
+
+  function priceFmt(n) { return (n || 0).toLocaleString('ko-KR') + '만원'; }
+  function kmFmt(n) { return (n || 0).toLocaleString('ko-KR') + 'km'; }
 
   function renderGrid() {
     const grid = document.getElementById('usedcarGrid');
@@ -352,27 +438,42 @@ input, select { font-family: inherit; }
     document.getElementById('resultCount').textContent = list.length;
 
     if (list.length === 0) {
-      grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:60px 0; color:var(--ink-400); font-size:13px;">등록된 매물이 없습니다.</div>`;
+      grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:60px 0; color:var(--ink-400); font-size:13px;">조건에 맞는 매물이 없습니다.</div>`;
       return;
     }
 
     grid.innerHTML = list.map(c => `
-      <a class="usedcar-card" href="used-car-detail.html?id=${c.id}">
+      <a class="usedcar-card" href="used-car-detail.html?id=${encodeURIComponent(c.id)}">
         <div class="usedcar-thumb">
-          <img src="${c.thumb}" alt="${c.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <img src="${escapeHtml(c.thumb)}" alt="${escapeHtml(c.name)}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
           <div class="ph-icon" style="display:none;">${carIconSvg}</div>
-          <span class="status-chip">${c.status}</span>
-          <span class="origin-chip">${c.origin==='domestic'?'국산차':(c.origin==='import'?'수입차':(c.origin==='export'?'수출':'기타'))}</span>
-          <span class="photo-count"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>${c.photoCount}</span>
+          <span class="status-chip">${escapeHtml(c.status)}</span>
+          <span class="origin-chip">${originLabel(c.origin)}</span>
+          <span class="photo-count"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>${c.photoCount || 0}</span>
         </div>
         <div class="usedcar-body">
-          <div class="uname">${c.name}</div>
-          <div class="umeta">${c.year}년식 · ${kmFmt(c.mileage)} · ${c.fuel}</div>
+          <div class="uname">${escapeHtml(c.name)}</div>
+          <div class="umeta">${c.year ? c.year + '년식' : '-'} · ${kmFmt(c.mileage)} · ${escapeHtml(c.fuel || '-')}</div>
           <div class="uprice">${priceFmt(c.price)}</div>
-          <div class="utags">${c.tags.slice(0,3).map(t=>`<span class="utag">${t}</span>`).join('')}</div>
+          <div class="utags">${(c.tags || []).slice(0,3).map(t=>`<span class="utag">${escapeHtml(t)}</span>`).join('')}</div>
         </div>
       </a>
     `).join('');
+  }
+
+  function resetFilters() {
+    state.type = 'all';
+    state.sort = 'latest';
+    document.querySelectorAll('.type-tab').forEach(function (t) {
+      t.classList.toggle('active', t.dataset.type === 'all');
+    });
+    ['fBrand','fSegment','fName','fFuel','fPriceMin','fPriceMax','fYearMin','fYearMax'].forEach(function (id) {
+      var el = document.getElementById(id);
+      el.value = '';
+    });
+    document.getElementById('sortSelect').value = 'latest';
+    populateFilterOptions();
+    renderGrid();
   }
 
   document.querySelectorAll('.type-tab').forEach(tab => {
@@ -380,17 +481,20 @@ input, select { font-family: inherit; }
       document.querySelectorAll('.type-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       state.type = tab.dataset.type;
+      populateFilterOptions();
       renderGrid();
     });
   });
 
-  document.getElementById('btnReset').addEventListener('click', () => {
-    ['fBrand','fSegment','fName','fFuel','fPriceMin','fPriceMax','fYearMin','fYearMax'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el.tagName === 'SELECT') el.value = '';
-      else el.value = '';
-    });
+  ['fBrand', 'fSegment', 'fFuel', 'fPriceMin', 'fPriceMax', 'fYearMin', 'fYearMax'].forEach(function (id) {
+    document.getElementById(id).addEventListener('change', renderGrid);
   });
+  document.getElementById('fName').addEventListener('input', renderGrid);
+  document.getElementById('sortSelect').addEventListener('change', function () {
+    state.sort = this.value;
+    renderGrid();
+  });
+  document.getElementById('btnReset').addEventListener('click', resetFilters);
 
   async function initPage() {
     if (window.PurpleLeaseData && window.PurpleLeaseData.isConfigured()) {
@@ -401,6 +505,7 @@ input, select { font-family: inherit; }
         console.warn('[PurpleLease] used cars load failed:', err);
       }
     }
+    populateFilterOptions();
     renderGrid();
   }
 

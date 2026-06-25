@@ -154,7 +154,8 @@
         status: r.status,
         photoCount: r.photo_count || 0,
         thumb: r.thumb_url,
-        tags: r.tags || []
+        tags: r.tags || [],
+        sortOrder: r.sort_order || r.listing_id || 0
       };
     });
   }
