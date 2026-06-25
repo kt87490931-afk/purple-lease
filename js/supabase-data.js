@@ -349,7 +349,17 @@
   async function submitInquiry(payload) {
     var client = getClient();
     if (!client) throw new Error('Supabase not configured');
-    var res = await client.from('inquiries').insert([payload]);
+    var row = {
+      name: payload.name,
+      phone: payload.phone,
+      brand: payload.brand || '',
+      usage_method: payload.usage_method || '',
+      car_type: payload.brand || payload.car_type || '',
+      message: payload.usage_method || payload.message || '',
+      source_page: payload.source_page || 'index',
+      is_read: false
+    };
+    var res = await client.from('inquiries').insert([row]);
     if (res.error) throw res.error;
     return res.data;
   }

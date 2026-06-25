@@ -60,14 +60,22 @@ CREATE TABLE IF NOT EXISTS used_cars (
 );
 
 CREATE TABLE IF NOT EXISTS inquiries (
-  id          BIGSERIAL PRIMARY KEY,
-  name        TEXT NOT NULL,
-  phone       TEXT NOT NULL,
-  car_type    TEXT,
-  message     TEXT,
-  source_page TEXT DEFAULT 'index',
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+  id            BIGSERIAL PRIMARY KEY,
+  name          TEXT NOT NULL,
+  phone         TEXT NOT NULL,
+  brand         TEXT NOT NULL DEFAULT '',
+  usage_method  TEXT NOT NULL DEFAULT '',
+  car_type      TEXT,
+  message       TEXT,
+  source_page   TEXT DEFAULT 'index',
+  is_read       BOOLEAN NOT NULL DEFAULT false,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE inquiries ADD COLUMN IF NOT EXISTS brand TEXT NOT NULL DEFAULT '';
+ALTER TABLE inquiries ADD COLUMN IF NOT EXISTS usage_method TEXT NOT NULL DEFAULT '';
+ALTER TABLE inquiries ADD COLUMN IF NOT EXISTS is_read BOOLEAN NOT NULL DEFAULT false;
+CREATE INDEX IF NOT EXISTS idx_inquiries_unread ON inquiries (is_read) WHERE is_read = false;
 
 -- ---------- 2) v2 테이블 + 중고차 확장 ----------
 ALTER TABLE used_cars ADD COLUMN IF NOT EXISTS listing_id INT UNIQUE;
@@ -243,6 +251,8 @@ END $$;
 
 DROP POLICY IF EXISTS "admin_read_inquiries" ON inquiries;
 CREATE POLICY "admin_read_inquiries" ON inquiries FOR SELECT USING (public.is_purple_admin());
+DROP POLICY IF EXISTS "admin_write_inquiries" ON inquiries;
+CREATE POLICY "admin_write_inquiries" ON inquiries FOR ALL USING (public.is_purple_admin()) WITH CHECK (public.is_purple_admin());
 
 -- ---------- 7) 트리거 ----------
 DROP TRIGGER IF EXISTS trg_youtube_updated ON youtube_videos;

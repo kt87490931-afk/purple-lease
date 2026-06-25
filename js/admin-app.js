@@ -11,6 +11,8 @@
   var reviewData = [];
   var partsData = [];
   var usedcarsData = [];
+  var inquiryData = [];
+  var inquiryUnread = 0;
   var leaseBrands = [];
   var selectedLeaseBrand = null;
 
@@ -42,6 +44,63 @@
     document.getElementById('kpiReview').textContent = reviewData.length;
     document.getElementById('kpiParts').textContent = partsData.length;
     document.getElementById('kpiUsedcars').textContent = usedcarsData.length;
+  }
+
+  function updateInquiryBadge(count) {
+    inquiryUnread = count || 0;
+    var badge = document.getElementById('inquiryNavBadge');
+    if (!badge) return;
+    if (inquiryUnread > 0) {
+      badge.textContent = inquiryUnread > 99 ? '99+' : String(inquiryUnread);
+      badge.hidden = false;
+    } else {
+      badge.hidden = true;
+    }
+  }
+
+  function renderInquiriesTable() {
+    var body = document.getElementById('inquiryTableBody');
+    var countEl = document.getElementById('inquiryCount');
+    if (countEl) countEl.textContent = inquiryData.length;
+    var checkAll = document.getElementById('inquiryCheckAll');
+    if (checkAll) checkAll.checked = false;
+
+    if (!inquiryData.length) {
+      body.innerHTML = '<tr><td colspan="7"><div class="empty-row">접수된 견적문의가 없습니다.</div></td></tr>';
+      return;
+    }
+
+    body.innerHTML = inquiryData.map(function (row) {
+      return '<tr>' +
+        '<td style="text-align:center;"><input type="checkbox" class="inquiry-check" value="' + row.id + '" aria-label="선택"></td>' +
+        '<td class="num-cell">' + row.date + '</td>' +
+        '<td class="num-cell">' + row.time + '</td>' +
+        '<td>' + row.brand + '</td>' +
+        '<td>' + row.usageMethod + '</td>' +
+        '<td class="title-cell">' + row.name + '</td>' +
+        '<td class="num-cell">' + row.phone + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  async function refreshInquiryBadge() {
+    try {
+      var n = await API.countUnreadInquiries();
+      updateInquiryBadge(n);
+    } catch (err) {
+      console.warn('[Admin] inquiry badge:', err);
+    }
+  }
+
+  async function openInquiriesPanel() {
+    try {
+      await API.markAllInquiriesRead();
+      updateInquiryBadge(0);
+      inquiryData = await API.listInquiries();
+      renderInquiriesTable();
+    } catch (err) {
+      showError(err);
+    }
   }
 
   function renderYoutubeTable() {
@@ -377,16 +436,21 @@
     renderPartsTable();
     renderUsedcarsTable();
     await renderLeaseBrandList();
+    await refreshInquiryBadge();
   }
 
   function bindEvents() {
     document.querySelectorAll('.admin-nav-item').forEach(function (item) {
-      item.addEventListener('click', function () {
+      item.addEventListener('click', async function () {
         document.querySelectorAll('.admin-nav-item').forEach(function (i) { i.classList.remove('active'); });
         item.classList.add('active');
         document.querySelectorAll('.panel').forEach(function (p) { p.classList.remove('active'); });
         document.getElementById('panel-' + item.dataset.panel).classList.add('active');
-        document.getElementById('topbarTitle').textContent = item.textContent.trim();
+        var labelEl = item.querySelector('.nav-label');
+        document.getElementById('topbarTitle').textContent = labelEl ? labelEl.textContent.trim() : item.textContent.trim();
+        if (item.dataset.panel === 'inquiries') {
+          await openInquiriesPanel();
+        }
       });
     });
 
@@ -396,6 +460,29 @@
 
     document.getElementById('btnLogout').addEventListener('click', function () {
       window.PurpleAdminAuth.signOut();
+    });
+
+    document.getElementById('btnDeleteInquiries').addEventListener('click', async function () {
+      var ids = [];
+      document.querySelectorAll('.inquiry-check:checked').forEach(function (el) {
+        ids.push(parseInt(el.value, 10));
+      });
+      if (!ids.length) {
+        alert('삭제할 항목을 선택해 주세요.');
+        return;
+      }
+      if (!confirm('선택한 ' + ids.length + '건을 삭제하시겠습니까?')) return;
+      try {
+        await API.deleteInquiries(ids);
+        inquiryData = await API.listInquiries();
+        renderInquiriesTable();
+        await refreshInquiryBadge();
+      } catch (err) { showError(err); }
+    });
+
+    document.getElementById('inquiryCheckAll').addEventListener('change', function () {
+      var checked = document.getElementById('inquiryCheckAll').checked;
+      document.querySelectorAll('.inquiry-check').forEach(function (el) { el.checked = checked; });
     });
 
     document.getElementById('btnSyncYoutube').addEventListener('click', async function () {

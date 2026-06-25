@@ -92,6 +92,15 @@ DROP POLICY IF EXISTS "admin_read_inquiries" ON inquiries;
 CREATE POLICY "admin_read_inquiries" ON inquiries
   FOR SELECT USING (public.is_purple_admin());
 
+DROP POLICY IF EXISTS "admin_write_inquiries" ON inquiries;
+CREATE POLICY "admin_write_inquiries" ON inquiries
+  FOR ALL USING (public.is_purple_admin()) WITH CHECK (public.is_purple_admin());
+
+ALTER TABLE inquiries ADD COLUMN IF NOT EXISTS brand TEXT NOT NULL DEFAULT '';
+ALTER TABLE inquiries ADD COLUMN IF NOT EXISTS usage_method TEXT NOT NULL DEFAULT '';
+ALTER TABLE inquiries ADD COLUMN IF NOT EXISTS is_read BOOLEAN NOT NULL DEFAULT false;
+CREATE INDEX IF NOT EXISTS idx_inquiries_unread ON inquiries (is_read) WHERE is_read = false;
+
 -- ========== updated_at 트리거 (lease) ==========
 DROP TRIGGER IF EXISTS trg_lease_brands_updated ON lease_brands;
 CREATE TRIGGER trg_lease_brands_updated BEFORE UPDATE ON lease_brands

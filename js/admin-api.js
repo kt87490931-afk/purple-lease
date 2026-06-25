@@ -494,6 +494,49 @@
     if (res.error) throw res.error;
   }
 
+  function fmtTime(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+
+  function mapInquiryRow(r) {
+    return {
+      id: r.id,
+      date: fmtDate(r.created_at),
+      time: fmtTime(r.created_at),
+      brand: r.brand || r.car_type || '',
+      usageMethod: r.usage_method || r.message || '',
+      name: r.name,
+      phone: r.phone,
+      isRead: !!r.is_read
+    };
+  }
+
+  async function listInquiries() {
+    var res = await db().from('inquiries').select('*').order('created_at', { ascending: false });
+    if (res.error) throw res.error;
+    return (res.data || []).map(mapInquiryRow);
+  }
+
+  async function countUnreadInquiries() {
+    var res = await db().from('inquiries').select('id', { count: 'exact', head: true }).eq('is_read', false);
+    if (res.error) throw res.error;
+    return res.count || 0;
+  }
+
+  async function markAllInquiriesRead() {
+    var res = await db().from('inquiries').update({ is_read: true }).eq('is_read', false);
+    if (res.error) throw res.error;
+  }
+
+  async function deleteInquiries(ids) {
+    if (!ids || !ids.length) return;
+    var res = await db().from('inquiries').delete().in('id', ids);
+    if (res.error) throw res.error;
+  }
+
   window.PurpleAdminAPI = {
     fmtDate: fmtDate,
     parseDotDate: parseDotDate,
@@ -521,6 +564,10 @@
     listLeaseModels: listLeaseModels,
     saveLeaseBrand: saveLeaseBrand,
     saveLeaseModel: saveLeaseModel,
-    deleteLeaseModel: deleteLeaseModel
+    deleteLeaseModel: deleteLeaseModel,
+    listInquiries: listInquiries,
+    countUnreadInquiries: countUnreadInquiries,
+    markAllInquiriesRead: markAllInquiriesRead,
+    deleteInquiries: deleteInquiries
   };
 })();

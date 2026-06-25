@@ -635,24 +635,24 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
         <h2>무료 견적 신청</h2>
         <p class="lead">간단한 정보만 입력하면 비교 견적을 보내드려요.</p>
         <div class="quick-form-row">
-          <select>
-            <option>브랜드 선택</option>
+          <select id="quickBrand">
+            <option value="">브랜드 선택</option>
             <option>현대</option><option>기아</option><option>제네시스</option>
             <option>BMW</option><option>벤츠</option><option>아우디</option>
           </select>
-          <select>
-            <option>이용방식</option>
+          <select id="quickUsage">
+            <option value="">이용방식</option>
             <option>장기렌트</option><option>리스</option><option>승계매입</option>
           </select>
         </div>
         <div class="quick-form-row">
-          <input type="text" placeholder="성함">
-          <input type="text" placeholder="연락처 (010-0000-0000)">
+          <input type="text" id="quickName" placeholder="성함">
+          <input type="text" id="quickPhone" placeholder="연락처 (010-0000-0000)">
         </div>
         <label class="quick-consent">
-          <input type="checkbox" style="accent-color:#6C3CE0;"> 개인정보 수집·이용에 동의합니다 <a href="#" style="color:var(--purple-600); text-decoration:underline; margin-left:2px;">[보기]</a>
+          <input type="checkbox" id="quickConsent" style="accent-color:#6C3CE0;"> 개인정보 수집·이용에 동의합니다 <a href="#" style="color:var(--purple-600); text-decoration:underline; margin-left:2px;">[보기]</a>
         </label>
-        <button class="btn btn-primary btn-block">무료 견적 받아보기</button>
+        <button type="button" class="btn btn-primary btn-block" id="btnQuickEstimate">무료 견적 받아보기</button>
       </div>
     </div>
   </section>
@@ -951,6 +951,69 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     renderVideo();
     renderDeals();
     renderUsedCars();
+    bindQuickEstimateForm();
+  }
+
+  function bindQuickEstimateForm() {
+    var btn = document.getElementById('btnQuickEstimate');
+    if (!btn) return;
+    btn.addEventListener('click', async function () {
+      var brand = document.getElementById('quickBrand').value.trim();
+      var usage = document.getElementById('quickUsage').value.trim();
+      var name = document.getElementById('quickName').value.trim();
+      var phone = document.getElementById('quickPhone').value.trim();
+      var consent = document.getElementById('quickConsent').checked;
+
+      if (!brand || brand === '브랜드 선택') {
+        alert('브랜드를 선택해 주세요.');
+        return;
+      }
+      if (!usage || usage === '이용방식') {
+        alert('이용방식을 선택해 주세요.');
+        return;
+      }
+      if (!name) {
+        alert('성함을 입력해 주세요.');
+        return;
+      }
+      if (!phone) {
+        alert('연락처를 입력해 주세요.');
+        return;
+      }
+      if (!consent) {
+        alert('개인정보 수집·이용에 동의해 주세요.');
+        return;
+      }
+      if (!window.PurpleLeaseData || !window.PurpleLeaseData.isConfigured()) {
+        alert('현재 견적 접수를 처리할 수 없습니다. 잠시 후 다시 시도해 주세요.');
+        return;
+      }
+
+      btn.disabled = true;
+      var prevText = btn.textContent;
+      btn.textContent = '접수 중…';
+      try {
+        await window.PurpleLeaseData.submitInquiry({
+          brand: brand,
+          usage_method: usage,
+          name: name,
+          phone: phone,
+          source_page: 'index'
+        });
+        alert('무료 견적 신청이 접수되었습니다.\n담당 플래너가 곧 연락드리겠습니다.');
+        document.getElementById('quickBrand').value = '';
+        document.getElementById('quickUsage').value = '';
+        document.getElementById('quickName').value = '';
+        document.getElementById('quickPhone').value = '';
+        document.getElementById('quickConsent').checked = false;
+      } catch (err) {
+        console.warn('[PurpleLease] inquiry submit failed:', err);
+        alert('접수 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = prevText;
+      }
+    });
   }
 
   initPage();
