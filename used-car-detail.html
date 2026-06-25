@@ -241,7 +241,7 @@ p { margin:0; }
       <a href="index.html">신차·리스·장기렌트카</a>
       <a href="used-cars.html" class="active">중고차</a>
       <a href="parts-register.html">수입차부품</a>
-      <a href="reviews.html">후기</a>
+      <a href="reviews-customer.html">후기</a>
     </div>
   </nav>
 </header>
@@ -367,7 +367,7 @@ p { margin:0; }
       <a href="index.html">신차·리스·렌트</a>
       <a href="used-cars.html">중고차 매물</a>
       <a href="parts-register.html">수입차부품</a>
-      <a href="reviews.html">후기관리</a>
+      <a href="reviews-customer.html">후기관리</a>
     </div>
     <div class="footer-meta">
       퍼플리스 | 오토리스&amp;장기렌트 승계매입전문업체<br>
@@ -417,6 +417,9 @@ p { margin:0; }
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/js/supabase-config.js"></script>
+<script src="/js/supabase-data.js"></script>
 <script>
 /* ============================================================
    데이터 정의부 — 운영자가 등록한 매물 상세 데이터.
@@ -641,7 +644,7 @@ p { margin:0; }
 
   const params = new URLSearchParams(window.location.search);
   const id = parseInt(params.get('id'), 10);
-  const v = vehicleDB[id];
+  let v = vehicleDB[id];
 
   let photoIdx = 0;
 
@@ -835,7 +838,19 @@ p { margin:0; }
     document.querySelectorAll('.gthumb').forEach((t,i) => t.classList.toggle('active', i===photoIdx));
   }
 
-  render();
+  async function bootstrap() {
+    if (window.PurpleLeaseData && window.PurpleLeaseData.isConfigured() && id) {
+      try {
+        const row = await window.PurpleLeaseData.fetchUsedCarDetail(id);
+        if (row) v = row;
+      } catch (err) {
+        console.warn('[PurpleLease] used car detail load failed:', err);
+      }
+    }
+    render();
+  }
+
+  bootstrap();
 
   // 액션 버튼 (데모: 알림으로 대체)
   ['btnChat','btnChatMobile'].forEach(id => {

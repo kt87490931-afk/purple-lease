@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>수입차부품 — PURPLE LEASE</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap');
+
+:root {
+  --grad-main: linear-gradient(135deg, #8B2FE0 0%, #5B2FD6 45%, #1A1E6E 100%);
+  --grad-text: linear-gradient(135deg, #8B2FE0 0%, #2030A0 100%);
+  --purple-600: #8B2FE0;
+  --purple-100: #F2E8FD;
+  --purple-50: #FAF6FE;
+  --navy-900: #11143A;
+  --white: #FFFFFF;
+  --surface: #FAFAFC;
+  --surface-alt: #F4F2FA;
+  --line: #E7E5F0;
+  --line-soft: #EFEDF6;
+  --ink-900: #15151D;
+  --ink-700: #383846;
+  --ink-500: #6B6B7B;
+  --ink-400: #9494A3;
+  --ok-600: #1AA15C;
+  --font-display: 'Sora', 'Noto Sans KR', sans-serif;
+  --font-body: 'Noto Sans KR', 'Pretendard', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --container: 1180px;
+  --shadow-sm: 0 1px 2px rgba(22,22,40,0.06);
+  --shadow-md: 0 8px 24px rgba(40,30,90,0.08);
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body { margin:0; background: var(--white); color: var(--ink-700); font-family: var(--font-body); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; padding-bottom: 90px; }
+img { max-width: 100%; display: block; }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; }
+h1,h2,h3,h4 { margin:0; font-family: var(--font-display); color: var(--ink-900); letter-spacing: -0.01em; }
+p { margin:0; }
+
+.wrap { max-width: var(--container); margin: 0 auto; padding: 0 18px; }
+.eyebrow { display:inline-flex; align-items:center; gap:6px; font-family: var(--font-mono); font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color: var(--purple-600); }
+.eyebrow::before { content:''; width:6px; height:6px; background: var(--grad-main); border-radius:50%; }
+
+/* --- Header (index.html과 동일) --- */
+.site-header { position: sticky; top:0; z-index:100; background: rgba(255,255,255,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line-soft); }
+.header-inner { display:flex; align-items:center; justify-content:space-between; height:64px; gap:16px; }
+.logo { display:flex; align-items:baseline; gap:1px; flex-shrink:0; font-family: var(--font-display); }
+.logo .logo-p { font-size:22px; font-weight:800; background: var(--grad-main); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.logo .logo-rest { font-size:18px; font-weight:700; color: var(--navy-900); letter-spacing:-0.01em; }
+.header-call { display:flex; align-items:center; gap:8px; font-family: var(--font-mono); font-size:13px; color: var(--ink-900); font-weight:700; }
+.icon-btn { width:38px; height:38px; display:flex; align-items:center; justify-content:center; border-radius: var(--radius-sm); background: var(--surface-alt); flex-shrink:0; }
+.category-nav { background: var(--white); border-bottom: 1px solid var(--line-soft); overflow-x:auto; scrollbar-width:none; }
+.category-nav::-webkit-scrollbar { display:none; }
+.category-nav-inner { display:flex; min-width:max-content; }
+.category-nav a { display:flex; align-items:center; padding:14px 18px; font-size:13px; font-weight:700; color: var(--ink-500); border-bottom:2px solid transparent; white-space:nowrap; }
+.category-nav a.active { color: var(--navy-900); border-bottom-color: var(--purple-600); }
+
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:10px 16px; border-radius: var(--radius-md); font-weight:700; font-size:13px; border:1px solid transparent; transition: all .15s ease; white-space:nowrap; }
+.btn-primary { background: var(--grad-main); color:#fff; box-shadow: var(--shadow-md); }
+.btn-outline { background: var(--white); border-color: var(--line); color: var(--ink-900); }
+.btn-outline:hover { border-color: var(--purple-600); color: var(--purple-600); }
+
+/* --- 페이지 헤드 --- */
+.page-head { padding: 22px 0 6px; }
+.page-head h1 { font-size: 20px; }
+.page-sub { font-size:12.5px; color: var(--ink-500); margin-top:6px; }
+
+/* --- 브랜드 탭 (현재는 테슬라 위주, 추후 어드민에서 카테고리 확장 예정) --- */
+.brand-tabs { display:flex; gap:8px; padding: 14px 0; overflow-x:auto; scrollbar-width:none; }
+.brand-tabs::-webkit-scrollbar { display:none; }
+.brand-tab { flex-shrink:0; padding: 9px 16px; border-radius:100px; font-size:13px; font-weight:700; color: var(--ink-500); background: var(--surface); border:1px solid var(--line); }
+.brand-tab.active { background: var(--navy-900); color:#fff; border-color: var(--navy-900); }
+
+/* --- 필터바 (단순) --- */
+.filter-bar { display:flex; flex-wrap:wrap; gap:8px; padding: 14px 0; border-top:1px solid var(--line-soft); border-bottom:1px solid var(--line-soft); margin-bottom:18px; }
+.filter-bar select, .filter-bar input { background: var(--white); border:1px solid var(--line); border-radius: var(--radius-sm); padding:9px 10px; font-size:12.5px; color: var(--ink-900); }
+.filter-reset { color: var(--ink-500); font-size:12.5px; font-weight:700; padding:9px 4px; }
+.filter-reset:hover { color: var(--purple-600); }
+
+.result-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.result-count { font-size:13px; color: var(--ink-500); }
+.result-count b { color: var(--ink-900); font-weight:800; }
+.view-controls select { border:1px solid var(--line); border-radius: var(--radius-sm); padding:7px 9px; font-size:12.5px; background:var(--white); color:var(--ink-700); }
+
+/* --- 부품 카드 그리드 --- */
+.parts-grid { display:grid; grid-template-columns: 1fr 1fr; gap:14px; padding-bottom:40px; }
+@media (min-width:640px){ .parts-grid{ grid-template-columns: repeat(3,1fr); } }
+@media (min-width:960px){ .parts-grid{ grid-template-columns: repeat(4,1fr); } }
+
+.part-card { background: var(--white); border:1px solid var(--line-soft); border-radius: var(--radius-md); overflow:hidden; transition: box-shadow .15s ease, transform .15s ease; cursor:pointer; }
+.part-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+
+.part-thumb { aspect-ratio:4/3; background: var(--surface-alt); position:relative; overflow:hidden; }
+.part-thumb img { width:100%; height:100%; object-fit:cover; }
+.part-thumb .ph-icon { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+.part-thumb .stock-chip { position:absolute; top:8px; left:8px; font-size:10.5px; font-weight:700; color:#fff; background: rgba(20,20,30,0.62); padding:3px 8px; border-radius:5px; }
+.part-thumb .stock-chip.out { background: rgba(160,40,50,0.75); }
+.part-thumb .brand-chip { position:absolute; top:8px; right:8px; font-size:10.5px; font-weight:700; background: rgba(255,255,255,0.92); color: var(--ink-700); padding:3px 8px; border-radius:5px; }
+
+.part-body { padding: 11px 12px 13px; }
+.part-body .pname { font-size:13.5px; font-weight:800; color: var(--ink-900); line-height:1.35; margin-bottom:3px;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:36px; }
+.part-body .pmeta { font-size:11.5px; color: var(--ink-500); line-height:1.4;
+  display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; }
+.part-body .pprice { font-family: var(--font-mono); font-size:16px; font-weight:800; margin-top:7px; color: var(--navy-900); }
+.part-body .pprice .unit { font-size:11.5px; font-weight:600; color: var(--ink-400); margin-left:2px; }
+.ptags { display:flex; gap:5px; flex-wrap:wrap; margin-top:8px; }
+.ptag { font-size:10.5px; font-weight:700; color: var(--ink-500); background: var(--surface); padding:3px 7px; border-radius:4px; }
+
+.empty-state { text-align:center; padding: 70px 0; color: var(--ink-400); font-size:13px; grid-column: 1/-1; }
+.load-more-wrap { display:flex; justify-content:center; padding: 8px 0 36px; }
+
+/* Footer */
+.site-footer { background: var(--surface-alt); border-top: 1px solid var(--line-soft); padding: 32px 0 40px; margin-top: 8px; }
+.footer-meta { font-size: 12.5px; color: var(--ink-500); line-height:1.8; }
+.footer-links { display:flex; gap:14px; margin:16px 0; flex-wrap:wrap; }
+.footer-links a { font-size:12.5px; color: var(--ink-700); font-weight:600; }
+
+.bottom-tabbar { position:fixed; left:0; right:0; bottom:0; z-index:90; display:flex; background: rgba(255,255,255,0.97); backdrop-filter: blur(10px); border-top:1px solid var(--line-soft); padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -4px 16px rgba(40,30,90,0.06); }
+.bottom-tabbar a { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:9px 4px 8px; font-size:10.5px; font-weight:600; color: var(--ink-400); }
+.bottom-tabbar a.active { color: var(--purple-600); }
+.bottom-tabbar svg { width:21px; height:21px; }
+
+@media (min-width: 860px) {
+  body { padding-bottom: 0; }
+  .bottom-tabbar { display:none; }
+  .site-footer { padding-bottom: 40px; }
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a href="index.html" class="logo"><span class="logo-p">P</span><span class="logo-rest">URPLE LEASE</span></a>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <a href="tel:1555-6362" class="header-call">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6C3CE0" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        <span class="label">1555-6362</span>
+      </a>
+    </div>
+  </div>
+  <nav class="category-nav">
+    <div class="wrap category-nav-inner">
+      <a href="index.html">신차·리스·장기렌트카</a>
+      <a href="used-cars.html">중고차</a>
+      <a href="parts-register.html" class="active">수입차부품</a>
+      <a href="reviews-customer.html">후기</a>
+    </div>
+  </nav>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <div class="page-head">
+      <span class="eyebrow">IMPORTED CAR PARTS</span>
+      <h1 style="margin-top:6px;">수입차부품</h1>
+      <p class="page-sub">테슬라 부품을 중심으로 운영자가 직접 검수하여 등록한 부품만 판매합니다.</p>
+    </div>
+
+    <div class="brand-tabs" id="brandTabs">
+      <div class="brand-tab active" data-brand="all">전체</div>
+      <div class="brand-tab" data-brand="tesla">테슬라</div>
+      <div class="brand-tab" data-brand="benz">벤츠</div>
+      <div class="brand-tab" data-brand="bmw">BMW</div>
+      <div class="brand-tab" data-brand="audi">아우디</div>
+    </div>
+
+    <div class="filter-bar">
+      <select id="fCategory"><option value="">분류 전체</option></select>
+      <input type="text" id="fName" placeholder="부품명 검색 (예: 와이퍼)">
+      <button type="button" class="filter-reset" id="btnReset">초기화</button>
+    </div>
+
+    <div class="result-head">
+      <div class="result-count">총 <b id="resultCount">0</b>개</div>
+      <div class="view-controls">
+        <select id="sortSelect">
+          <option value="latest">최신순</option>
+          <option value="priceAsc">가격 낮은순</option>
+          <option value="priceDesc">가격 높은순</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="parts-grid" id="partsGrid"><!-- JS 렌더 --></div>
+
+    <div class="load-more-wrap" id="loadMoreWrap">
+      <button type="button" class="btn btn-outline" id="btnLoadMore">부품 더 보기</button>
+    </div>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-logo"><span class="logo-p" style="font-size:20px;">P</span><span class="logo-rest" style="font-size:17px;">URPLE LEASE</span></div>
+    <div class="footer-links">
+      <a href="index.html">신차·리스·렌트</a>
+      <a href="used-cars.html">중고차 매물</a>
+      <a href="parts-register.html">수입차부품</a>
+      <a href="reviews-customer.html">후기관리</a>
+    </div>
+    <div class="footer-meta">
+      퍼플리스 | 오토리스&amp;장기렌트 승계매입전문업체<br>
+      대표 : 이호준 | 주소 : 경기도 용인시 기흥구 강남서로9, 7층 703호<br>
+      사업자등록번호 : 885-68-00449<br>
+      대표번호 : 1555-6362 | 평일 09:00~18:00<br>
+      © 2026 PURPLE LEASE. All rights reserved. (프로토타입 샘플 — 실제 서비스 아님)
+    </div>
+  </div>
+</footer>
+
+<nav class="bottom-tabbar">
+  <a href="index.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>홈
+  </a>
+  <a href="estimate.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="6" rx="1"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/><path d="M5 11l1.5-4h11L19 11"/></svg>견적
+  </a>
+  <a href="used-cars.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>중고차
+  </a>
+  <a href="parts-register.html" class="active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>부품
+  </a>
+  <a href="reviews-customer.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>후기
+  </a>
+</nav>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/js/supabase-config.js"></script>
+<script src="/js/supabase-data.js"></script>
+<script>
+/* ============================================================
+   데이터 정의부 — 운영자가 어드민페이지에서 등록하는 부품 데이터.
+   현재는 테슬라 부품 위주 샘플이며, 추후 어드민에서 분류(category)를
+   세분화할 예정입니다. thumb 경로는 운영자가 업로드한 자체 서버 경로입니다.
+   ============================================================ */
+  let partsData = [
+    { id: 1, brand:'tesla', category:'와이퍼', name:'모델3/Y 전용 무소음 와이퍼 (좌우 1세트)', price: 89000, stock:'재고있음', thumb:'/assets/parts/part-1.jpg', tags:['정품호환','당일발송'] },
+    { id: 2, brand:'tesla', category:'타이어', name:'모델Y 19인치 순정 휠 타이어 4본 세트', price: 1280000, stock:'재고있음', thumb:'/assets/parts/part-2.jpg', tags:['순정규격'] },
+    { id: 3, brand:'tesla', category:'브레이크', name:'모델3 퍼포먼스 브레이크 패드 (전륜)', price: 215000, stock:'재고있음', thumb:'/assets/parts/part-3.jpg', tags:['고성능'] },
+    { id: 4, brand:'tesla', category:'충전케이블', name:'테슬라 가정용 완속 충전케이블 (5M)', price: 165000, stock:'재고있음', thumb:'/assets/parts/part-4.jpg', tags:['정품호환'] },
+    { id: 5, brand:'tesla', category:'외장', name:'모델Y 도어 핸들 커버 4P (카본룩)', price: 42000, stock:'품절', thumb:'/assets/parts/part-5.jpg', tags:['외장튠업'] },
+    { id: 6, brand:'tesla', category:'내장', name:'모델3 트렁크 매트 (올웨더 방수)', price: 78000, stock:'재고있음', thumb:'/assets/parts/part-6.jpg', tags:['방수','맞춤제작'] },
+    { id: 7, brand:'tesla', category:'타이어', name:'모델3 18인치 순정 타이어 단품', price: 195000, stock:'재고있음', thumb:'/assets/parts/part-7.jpg', tags:['순정규격'] },
+    { id: 8, brand:'tesla', category:'외장', name:'모델Y 사이드미러 커버 (무광블랙)', price: 35000, stock:'재고있음', thumb:'/assets/parts/part-8.jpg', tags:['외장튠업'] },
+    { id: 9, brand:'benz', category:'와이퍼', name:'E클래스 전용 와이퍼 블레이드 세트', price: 65000, stock:'재고있음', thumb:'/assets/parts/part-9.jpg', tags:['정품호환'] },
+    { id: 10, brand:'bmw', category:'브레이크', name:'5시리즈 브레이크 패드 (전륜)', price: 198000, stock:'재고있음', thumb:'/assets/parts/part-10.jpg', tags:['정품호환'] },
+    { id: 11, brand:'audi', category:'외장', name:'A6 사이드미러 커버 (카본)', price: 58000, stock:'품절', thumb:'/assets/parts/part-11.jpg', tags:['외장튠업'] },
+    { id: 12, brand:'tesla', category:'충전케이블', name:'테슬라 완속충전 어댑터 (220V 가정용)', price: 49000, stock:'재고있음', thumb:'/assets/parts/part-12.jpg', tags:['정품호환','당일발송'] },
+  ];
+
+  let state = { brand:'all', visible: 8 };
+  const carIconSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="#9494A3" stroke-width="1.5" width="32" height="32"><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M3 17V9l3-5h9l4 5v8"/></svg>`;
+
+  function priceFmt(n) { return n.toLocaleString('ko-KR') + '원'; }
+  const brandLabel = { tesla:'테슬라', benz:'벤츠', bmw:'BMW', audi:'아우디' };
+
+  function filteredData() {
+    let list = partsData.slice();
+    if (state.brand !== 'all') list = list.filter(p => p.brand === state.brand);
+    return list;
+  }
+
+  function renderGrid() {
+    const grid = document.getElementById('partsGrid');
+    const list = filteredData();
+    document.getElementById('resultCount').textContent = list.length;
+
+    if (list.length === 0) {
+      grid.innerHTML = `<div class="empty-state">등록된 부품이 없습니다.</div>`;
+      document.getElementById('loadMoreWrap').style.display = 'none';
+      return;
+    }
+
+    const shown = list.slice(0, state.visible);
+    grid.innerHTML = shown.map(p => `
+      <a class="part-card" href="parts-detail.html?id=${p.id}">
+        <div class="part-thumb">
+          <img src="${p.thumb}" alt="${p.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <div class="ph-icon" style="display:none; position:absolute; inset:0; align-items:center; justify-content:center;">${carIconSvg}</div>
+          <span class="stock-chip${p.stock==='품절'?' out':''}">${p.stock}</span>
+          <span class="brand-chip">${brandLabel[p.brand] || p.brand}</span>
+        </div>
+        <div class="part-body">
+          <div class="pname">${p.name}</div>
+          <div class="pmeta">${p.category}</div>
+          <div class="pprice">${priceFmt(p.price)}</div>
+          <div class="ptags">${p.tags.slice(0,2).map(t=>`<span class="ptag">${t}</span>`).join('')}</div>
+        </div>
+      </a>
+    `).join('');
+
+    document.getElementById('loadMoreWrap').style.display = list.length > state.visible ? 'flex' : 'none';
+  }
+
+  document.querySelectorAll('.brand-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.brand-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      state.brand = tab.dataset.brand;
+      state.visible = 8;
+      renderGrid();
+    });
+  });
+
+  document.getElementById('btnLoadMore').addEventListener('click', () => {
+    state.visible += 8;
+    renderGrid();
+  });
+
+  document.getElementById('btnReset').addEventListener('click', () => {
+    document.getElementById('fCategory').value = '';
+    document.getElementById('fName').value = '';
+  });
+
+  async function initPage() {
+    if (window.PurpleLeaseData && window.PurpleLeaseData.isConfigured()) {
+      try {
+        const rows = await window.PurpleLeaseData.fetchParts();
+        if (rows && rows.length) partsData = rows;
+      } catch (err) {
+        console.warn('[PurpleLease] parts load failed:', err);
+      }
+    }
+    renderGrid();
+  }
+
+  initPage();
+</script>
+
+</body>
+</html>
