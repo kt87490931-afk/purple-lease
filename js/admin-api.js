@@ -453,6 +453,16 @@
     });
   }
 
+  async function findUsedCarRow(carId) {
+    if (carId == null || carId === '') return null;
+    var res = await db().from('used_cars')
+      .select('id,listing_id,sync_source,detail_json,detail_slug')
+      .or('listing_id.eq.' + carId + ',id.eq.' + carId)
+      .maybeSingle();
+    if (res.error) throw res.error;
+    return res.data || null;
+  }
+
   async function saveUsedcar(payload, editingId) {
     if (!payload.name || isNaN(payload.year) || isNaN(payload.price)) {
       throw new Error('차량명, 연식, 가격은 필수입니다.');
@@ -467,15 +477,20 @@
       origin: 'domestic',
       meta: payload.year + '년 · ' + Math.round((payload.mileage || 0) / 10000 * 10) / 10 + '만km',
       price: payload.price.toLocaleString('ko-KR') + '만원',
-      detail_slug: editingId ? String(editingId) : undefined,
       is_active: true
     };
     if (editingId) {
-      row.detail_slug = String(editingId);
-      var up = await db().from('used_cars').update(row).eq('listing_id', editingId).select().single();
+      var existing = await findUsedCarRow(editingId);
+      if (!existing) throw new Error('매물을 찾을 수 없습니다.');
+      row.detail_slug = existing.detail_slug || String(existing.listing_id || existing.id);
+      var upQuery = existing.listing_id != null
+        ? db().from('used_cars').update(row).eq('listing_id', existing.listing_id)
+        : db().from('used_cars').update(row).eq('id', existing.id);
+      var up = await upQuery.select().single();
       if (up.error) throw up.error;
       return up.data;
     }
+    row.detail_slug = undefined;
     var maxRes = await db().from('used_cars').select('listing_id').order('listing_id', { ascending: false }).limit(1);
     var nextId = (maxRes.data && maxRes.data[0]) ? maxRes.data[0].listing_id + 1 : 481;
     row.listing_id = nextId;
@@ -488,22 +503,22 @@
     return ins.data;
   }
 
-  async function deleteUsedcar(listingId) {
-    var rowRes = await db().from('used_cars').select('sync_source,detail_json').eq('listing_id', listingId).maybeSingle();
-    if (rowRes.error) throw rowRes.error;
+  async function deleteUsedcar(carId) {
+    var row = await findUsedCarRow(carId);
+    if (!row) throw new Error('매물을 찾을 수 없습니다.');
 
-    if (rowRes.data && rowRes.data.sync_source === 'swautopia') {
-      var dj = Object.assign({}, rowRes.data.detail_json || {}, { admin_hidden: true });
+    if (row.sync_source === 'swautopia' && row.listing_id != null) {
+      var dj = Object.assign({}, row.detail_json || {}, { admin_hidden: true });
       var up = await db().from('used_cars').update({
         is_active: false,
         status: '숨김',
         detail_json: dj
-      }).eq('listing_id', listingId);
+      }).eq('listing_id', row.listing_id);
       if (up.error) throw up.error;
       return { soft: true };
     }
 
-    var res = await db().from('used_cars').delete().eq('listing_id', listingId);
+    var res = await db().from('used_cars').delete().eq('id', row.id);
     if (res.error) throw res.error;
     return { soft: false };
   }
