@@ -1,0 +1,20 @@
+[
+  {
+    "badge": "수입차",
+    "badge_class": "badge-purple",
+    "name": "BMW 5시리즈 520i",
+    "meta": "2022년 · 4.2만km · 무사고",
+    "price": "4,280만원",
+    "detail_slug": "bmw-520i-2022",
+    "sort_order": 1
+  },
+  {
+    "badge": "국산차",
+    "badge_class": "badge-grad",
+    "name": "현대 아반떼 CN7",
+    "meta": "2023년 · 2.1만km · 무사고",
+    "price": "1,850만원",
+    "detail_slug": "avante-cn7-2023",
+    "sort_order": 2
+  }
+]

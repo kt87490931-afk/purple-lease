@@ -1,0 +1,22 @@
+[
+  {
+    "badge": "무보증특가",
+    "badge_class": "badge-grad",
+    "name": "Model Y",
+    "trim": "2026년형 전기 Premium RWD (A/T)",
+    "was_price": "472,516원",
+    "now_price": "429,560원",
+    "lease_info": "월 리스료 322,875원 · 48개월 선납30%",
+    "sort_order": 1
+  },
+  {
+    "badge": "즉시출고",
+    "badge_class": "badge-purple",
+    "name": "제네시스 G80",
+    "trim": "2026년형 가솔린 2.5T AWD",
+    "was_price": "89,900원",
+    "now_price": "79,900원",
+    "lease_info": "월 렌트료 589,000원 · 48개월",
+    "sort_order": 2
+  }
+]
