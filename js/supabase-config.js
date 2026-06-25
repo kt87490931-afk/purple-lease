@@ -4,5 +4,5 @@
  */
 window.SUPABASE_CONFIG = {
   url: 'https://zliclwgiaqvilnnookyi.supabase.co',
-  anonKey: 'YOUR_SUPABASE_ANON_KEY'   // Dashboard > Settings > API > anon public key
+  anonKey: 'sb_publishable_2Llb_MkOeAPqGN8BFaALfw_umUNEzP7'
 };

@@ -8,6 +8,7 @@
     var cfg = window.SUPABASE_CONFIG;
     if (!cfg || !cfg.url || !cfg.anonKey) return null;
     if (cfg.url.indexOf('YOUR_') === 0 || cfg.anonKey.indexOf('YOUR_') === 0) return null;
+    if (!cfg.anonKey || cfg.anonKey.length < 10) return null;
     if (!window.supabase || !window.supabase.createClient) return null;
     return window.supabase.createClient(cfg.url, cfg.anonKey);
   }
