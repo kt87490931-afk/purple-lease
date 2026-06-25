@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>퍼플리스 블로그 — PURPLE LEASE</title>
+<title>고객후기 — PURPLE LEASE</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap');
@@ -81,39 +81,50 @@ p { margin:0; }
 .page-head h1 { font-size: 20px; margin-top:6px; }
 .page-sub { font-size:12.5px; color: var(--ink-500); margin-top:4px; }
 
-/* --- 블로그 카드 그리드 --- */
-.blog-grid { display:grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 18px 0 40px; }
-@media (min-width:640px){ .blog-grid{ grid-template-columns: repeat(3,1fr); } }
-@media (min-width:960px){ .blog-grid{ grid-template-columns: repeat(4,1fr); } }
-
-.blog-card {
-  border: 1px solid var(--line-soft);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  background: var(--white);
-  transition: box-shadow .15s ease, transform .15s ease;
+/* --- 게시판 리스트 --- */
+.board { margin-top: 18px; border-top: 1px solid var(--line); }
+.board-head-row {
+  display:grid; grid-template-columns: 90px 1fr 70px;
+  padding: 12px 4px;
+  font-size: 12px; font-weight:700; color: var(--ink-500);
+  border-bottom: 1px solid var(--line);
 }
-.blog-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+@media (min-width:640px) { .board-head-row { grid-template-columns: 120px 1fr 90px; } }
+.board-head-row .col-date, .board-head-row .col-views { text-align:center; }
 
-.blog-thumb { position: relative; aspect-ratio: 4/3; background: var(--surface-alt); overflow:hidden; }
-.blog-thumb img { width:100%; height:100%; object-fit:cover; }
-.blog-thumb .ph-icon { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
-.blog-thumb .ext-badge {
-  position:absolute; top:8px; right:8px;
-  width:24px; height:24px; border-radius:6px;
-  background: rgba(255,255,255,0.92);
-  display:flex; align-items:center; justify-content:center;
-  box-shadow: var(--shadow-sm);
+.board-row {
+  display:grid; grid-template-columns: 90px 1fr 70px;
+  align-items:center;
+  padding: 14px 4px;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 13.5px;
 }
-.blog-thumb .ext-badge svg { width:12px; height:12px; }
-
-.blog-body { padding: 11px 12px 13px; }
-.blog-body .blog-source { font-size:10.5px; font-weight:700; color: var(--purple-600); margin-bottom:5px; }
-.blog-body .blog-title { font-size: 13.5px; font-weight: 800; color: var(--ink-900); line-height:1.4;
-  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height: 38px; }
-.blog-body .blog-date { font-size: 11.5px; color: var(--ink-400); margin-top: 6px; font-family: var(--font-mono); }
+@media (min-width:640px) { .board-row { grid-template-columns: 120px 1fr 90px; } }
+.board-row:hover { background: var(--surface); }
+.board-row .col-date { font-family: var(--font-mono); font-size:12px; color: var(--ink-400); text-align:center; }
+.board-row .col-title {
+  color: var(--ink-900); font-weight:600;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  padding: 0 10px;
+}
+.board-row .col-views { font-family: var(--font-mono); font-size:12px; color: var(--ink-400); text-align:center; }
 
 .empty-state { text-align:center; padding: 70px 0; color: var(--ink-400); font-size:13px; }
+
+/* --- 페이지네이션 --- */
+.pagination { display:flex; align-items:center; justify-content:center; gap:4px; padding: 28px 0 40px; }
+.page-btn {
+  min-width: 32px; height: 32px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius: var(--radius-sm);
+  font-size: 13px; font-weight:600; color: var(--ink-500);
+  border: 1px solid transparent;
+}
+.page-btn:hover { background: var(--surface); }
+.page-btn.active { background: var(--navy-900); color:#fff; font-weight:700; }
+.page-btn.nav-arrow { color: var(--ink-400); }
+.page-btn.nav-arrow:hover { color: var(--ink-900); }
+.page-btn[disabled] { opacity:.35; pointer-events:none; }
 
 /* Footer */
 .site-footer { background: var(--surface-alt); border-top: 1px solid var(--line-soft); padding: 32px 0 40px; margin-top: 8px; }
@@ -164,11 +175,20 @@ p { margin:0; }
 
     <div class="sub-tabs">
       <a href="reviews-youtube.html" class="sub-tab">퍼플리스 유튜브</a>
-      <a href="reviews-blog.html" class="sub-tab active">퍼플리스 블로그</a>
-      <a href="reviews-customer.html" class="sub-tab">고객후기</a>
+      <a href="reviews-blog.html" class="sub-tab">퍼플리스 블로그</a>
+      <a href="reviews-customer.html" class="sub-tab active">고객후기</a>
     </div>
 
-    <div class="blog-grid" id="blogGrid"><!-- JS 렌더 --></div>
+    <div class="board">
+      <div class="board-head-row">
+        <span class="col-date">날짜</span>
+        <span class="col-title">제목</span>
+        <span class="col-views">조회수</span>
+      </div>
+      <div id="boardBody"><!-- JS 렌더 --></div>
+    </div>
+
+    <div class="pagination" id="pagination"><!-- JS 렌더 --></div>
 
   </div>
 </main>
@@ -210,62 +230,90 @@ p { margin:0; }
   </a>
 </nav>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/js/supabase-config.js"></script>
-<script src="/js/supabase-data.js"></script>
 <script>
 /* ============================================================
-   데이터 정의부 — 운영자가 어드민페이지에서 직접 등록하는 영역.
-   네이버 블로그 포스트의 제목/썸네일/링크를 운영자가 직접 입력합니다.
-   (자동 연동은 이번 프로토타입 범위에 포함되지 않습니다.)
+   데이터 정의부 — 운영자가 어드민페이지에서 직접 작성/등록하는 영역.
+   고객이 직접 작성하는 기능은 없으며, 운영자만 작성할 수 있습니다.
+   실제 운영 시 이 배열을 서버 API(/api/reviews) 응답으로 교체하고,
+   페이지네이션도 서버 측 페이징으로 전환하면 됩니다.
    ============================================================ */
-  let blogData = [
-    { id: 1, title: '장기렌트 계약 전 꼭 확인해야 할 약관 5가지', date: '2026.06.12', thumb: '/assets/blog/blog-1.jpg', url: 'https://blog.naver.com/purplelease/000000001' },
-    { id: 2, title: '제네시스 GV70 vs GV80, 장기렌트 비용 비교', date: '2026.06.05', thumb: '/assets/blog/blog-2.jpg', url: 'https://blog.naver.com/purplelease/000000002' },
-    { id: 3, title: '중고차 매입 시 성능점검기록부 보는 법', date: '2026.05.29', thumb: '/assets/blog/blog-3.jpg', url: 'https://blog.naver.com/purplelease/000000003' },
-    { id: 4, title: '리스 승계받을 때 주의할 점 총정리', date: '2026.05.22', thumb: '/assets/blog/blog-4.jpg', url: 'https://blog.naver.com/purplelease/000000004' },
-    { id: 5, title: '전기차 장기렌트 보조금, 이렇게 받으세요', date: '2026.05.15', thumb: '/assets/blog/blog-5.jpg', url: 'https://blog.naver.com/purplelease/000000005' },
-    { id: 6, title: '법인 장기렌트, 세금 혜택 받는 방법', date: '2026.05.08', thumb: '/assets/blog/blog-6.jpg', url: 'https://blog.naver.com/purplelease/000000006' },
+  const PAGE_SIZE = 15;
+
+  // 데모를 위해 32건의 후기 데이터를 생성합니다 (실제로는 운영자가 한 건씩 작성).
+  const reviewData = [];
+  const sampleTitles = [
+    '장기렌트 처음인데 친절하게 안내해주셔서 좋았어요',
+    'G80 출고 후기 — 생각보다 빠르게 받았습니다',
+    '중고차 매입 깔끔하게 잘 처리해주셨어요',
+    '리스 승계 진행하면서 궁금한 점 다 해결됐어요',
+    '전기차 보조금 안내 꼼꼼하게 해주셔서 감사합니다',
+    '법인차량 장기렌트 상담 만족스러웠습니다',
+    '견적 비교해보고 결정했는데 가장 합리적이었어요',
+    '출고까지 빠르고 정확하게 안내해주셨어요',
+    '수입차 장기렌트 옵션 설명 자세히 들었습니다',
+    '재계약 시에도 신경써서 챙겨주셔서 좋았어요',
   ];
+  for (let i = 32; i >= 1; i--) {
+    const d = new Date(2026, 5, 25);
+    d.setDate(d.getDate() - (32 - i) * 2);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    reviewData.push({
+      id: i,
+      title: sampleTitles[(i - 1) % sampleTitles.length] + (i > 10 ? ` (${i})` : ''),
+      date: `${yyyy}.${mm}.${dd}`,
+      views: Math.floor(Math.random() * 800) + 20,
+    });
+  }
 
-  const carIconSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="#9494A3" stroke-width="1.5" width="32" height="32"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>`;
-  const extIconSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="#383846" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
+  let currentPage = 1;
+  const totalPages = Math.ceil(reviewData.length / PAGE_SIZE);
 
-  function renderBlog() {
-    const grid = document.getElementById('blogGrid');
-    if (blogData.length === 0) {
-      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">등록된 블로그 글이 없습니다.</div>`;
+  function renderBoard() {
+    const body = document.getElementById('boardBody');
+    if (reviewData.length === 0) {
+      body.innerHTML = `<div class="empty-state">등록된 후기가 없습니다.</div>`;
+      document.getElementById('pagination').innerHTML = '';
       return;
     }
-    grid.innerHTML = blogData.map(b => `
-      <a class="blog-card" href="${b.url}" target="_blank" rel="noopener noreferrer">
-        <div class="blog-thumb">
-          <img src="${b.thumb}" alt="${b.title}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-          <div class="ph-icon" style="display:none; position:absolute; inset:0; align-items:center; justify-content:center;">${carIconSvg}</div>
-          <span class="ext-badge">${extIconSvg}</span>
-        </div>
-        <div class="blog-body">
-          <div class="blog-source">퍼플리스 블로그</div>
-          <div class="blog-title">${b.title}</div>
-          <div class="blog-date">${b.date}</div>
-        </div>
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageItems = reviewData.slice(start, start + PAGE_SIZE);
+
+    body.innerHTML = pageItems.map(r => `
+      <a class="board-row" href="review-detail.html?id=${r.id}">
+        <span class="col-date">${r.date}</span>
+        <span class="col-title">${r.title}</span>
+        <span class="col-views">${r.views.toLocaleString('ko-KR')}</span>
       </a>
     `).join('');
+
+    renderPagination();
   }
 
-  async function initPage() {
-    if (window.PurpleLeaseData && window.PurpleLeaseData.isConfigured()) {
-      try {
-        const rows = await window.PurpleLeaseData.fetchBlogPosts();
-        if (rows && rows.length) blogData = rows;
-      } catch (err) {
-        console.warn('[PurpleLease] blog load failed:', err);
-      }
+  function renderPagination() {
+    const wrap = document.getElementById('pagination');
+    let html = `<button class="page-btn nav-arrow" id="pgPrev" ${currentPage===1?'disabled':''} aria-label="이전 페이지">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>`;
+    for (let p = 1; p <= totalPages; p++) {
+      html += `<button class="page-btn${p===currentPage?' active':''}" data-page="${p}">${p}</button>`;
     }
-    renderBlog();
+    html += `<button class="page-btn nav-arrow" id="pgNext" ${currentPage===totalPages?'disabled':''} aria-label="다음 페이지">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>`;
+    wrap.innerHTML = html;
+
+    wrap.querySelectorAll('.page-btn[data-page]').forEach(btn => {
+      btn.addEventListener('click', () => { currentPage = parseInt(btn.dataset.page, 10); renderBoard(); window.scrollTo({top:0, behavior:'smooth'}); });
+    });
+    const prevBtn = document.getElementById('pgPrev');
+    const nextBtn = document.getElementById('pgNext');
+    if (prevBtn) prevBtn.addEventListener('click', () => { if (currentPage>1) { currentPage--; renderBoard(); window.scrollTo({top:0, behavior:'smooth'}); } });
+    if (nextBtn) nextBtn.addEventListener('click', () => { if (currentPage<totalPages) { currentPage++; renderBoard(); window.scrollTo({top:0, behavior:'smooth'}); } });
   }
 
-  initPage();
+  renderBoard();
 </script>
 
 </body>

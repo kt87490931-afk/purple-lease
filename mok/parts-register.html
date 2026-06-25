@@ -240,16 +240,13 @@ p { margin:0; }
   </a>
 </nav>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/js/supabase-config.js"></script>
-<script src="/js/supabase-data.js"></script>
 <script>
 /* ============================================================
    데이터 정의부 — 운영자가 어드민페이지에서 등록하는 부품 데이터.
    현재는 테슬라 부품 위주 샘플이며, 추후 어드민에서 분류(category)를
    세분화할 예정입니다. thumb 경로는 운영자가 업로드한 자체 서버 경로입니다.
    ============================================================ */
-  let partsData = [
+  const partsData = [
     { id: 1, brand:'tesla', category:'와이퍼', name:'모델3/Y 전용 무소음 와이퍼 (좌우 1세트)', price: 89000, stock:'재고있음', thumb:'/assets/parts/part-1.jpg', tags:['정품호환','당일발송'] },
     { id: 2, brand:'tesla', category:'타이어', name:'모델Y 19인치 순정 휠 타이어 4본 세트', price: 1280000, stock:'재고있음', thumb:'/assets/parts/part-2.jpg', tags:['순정규격'] },
     { id: 3, brand:'tesla', category:'브레이크', name:'모델3 퍼포먼스 브레이크 패드 (전륜)', price: 215000, stock:'재고있음', thumb:'/assets/parts/part-3.jpg', tags:['고성능'] },
@@ -328,19 +325,7 @@ p { margin:0; }
     document.getElementById('fName').value = '';
   });
 
-  async function initPage() {
-    if (window.PurpleLeaseData && window.PurpleLeaseData.isConfigured()) {
-      try {
-        const rows = await window.PurpleLeaseData.fetchParts();
-        if (rows && rows.length) partsData = rows;
-      } catch (err) {
-        console.warn('[PurpleLease] parts load failed:', err);
-      }
-    }
-    renderGrid();
-  }
-
-  initPage();
+  renderGrid();
 </script>
 
 </body>

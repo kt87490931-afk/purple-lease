@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>퍼플리스 블로그 — PURPLE LEASE</title>
+<title>퍼플리스 유튜브 — PURPLE LEASE</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap');
@@ -63,7 +63,7 @@ p { margin:0; }
 .category-nav a { display:flex; align-items:center; padding:14px 18px; font-size:13px; font-weight:700; color: var(--ink-500); border-bottom:2px solid transparent; white-space:nowrap; }
 .category-nav a.active { color: var(--navy-900); border-bottom-color: var(--purple-600); }
 
-/* --- 후기 서브탭 --- */
+/* --- 후기 서브탭 (유튜브/블로그/고객후기 — 각각 별도 URL) --- */
 .sub-tabs { display:flex; gap:6px; padding: 14px 0; overflow-x:auto; scrollbar-width:none; }
 .sub-tabs::-webkit-scrollbar { display:none; }
 .sub-tab {
@@ -81,37 +81,45 @@ p { margin:0; }
 .page-head h1 { font-size: 20px; margin-top:6px; }
 .page-sub { font-size:12.5px; color: var(--ink-500); margin-top:4px; }
 
-/* --- 블로그 카드 그리드 --- */
-.blog-grid { display:grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 18px 0 40px; }
-@media (min-width:640px){ .blog-grid{ grid-template-columns: repeat(3,1fr); } }
-@media (min-width:960px){ .blog-grid{ grid-template-columns: repeat(4,1fr); } }
+/* --- 유튜브 카드 그리드 --- */
+.yt-grid { display:grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 18px 0 40px; }
+@media (min-width:640px){ .yt-grid{ grid-template-columns: repeat(3,1fr); } }
+@media (min-width:960px){ .yt-grid{ grid-template-columns: repeat(4,1fr); } }
 
-.blog-card {
+.yt-card {
   border: 1px solid var(--line-soft);
   border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--white);
   transition: box-shadow .15s ease, transform .15s ease;
 }
-.blog-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.yt-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
 
-.blog-thumb { position: relative; aspect-ratio: 4/3; background: var(--surface-alt); overflow:hidden; }
-.blog-thumb img { width:100%; height:100%; object-fit:cover; }
-.blog-thumb .ph-icon { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
-.blog-thumb .ext-badge {
-  position:absolute; top:8px; right:8px;
-  width:24px; height:24px; border-radius:6px;
-  background: rgba(255,255,255,0.92);
-  display:flex; align-items:center; justify-content:center;
-  box-shadow: var(--shadow-sm);
+.yt-thumb { position: relative; aspect-ratio: 16/9; background: var(--surface-alt); overflow:hidden; }
+.yt-thumb img { width:100%; height:100%; object-fit:cover; }
+.yt-thumb .ph-icon { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+.yt-thumb .play-badge {
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  background: rgba(15,15,25,0); transition: background .15s ease;
 }
-.blog-thumb .ext-badge svg { width:12px; height:12px; }
-
-.blog-body { padding: 11px 12px 13px; }
-.blog-body .blog-source { font-size:10.5px; font-weight:700; color: var(--purple-600); margin-bottom:5px; }
-.blog-body .blog-title { font-size: 13.5px; font-weight: 800; color: var(--ink-900); line-height:1.4;
+.yt-card:hover .play-badge { background: rgba(15,15,25,0.15); }
+.yt-thumb .play-circle {
+  width:48px; height:48px; border-radius:50%;
+  background: rgba(20,20,30,0.62);
+  display:flex; align-items:center; justify-content:center;
+}
+.yt-thumb .play-circle svg { width:18px; height:18px; }
+.yt-thumb .duration-chip {
+  position:absolute; bottom:8px; right:8px;
+  font-size:10.5px; font-weight:700; color:#fff;
+  background: rgba(15,15,25,0.7);
+  padding:2px 7px; border-radius:4px;
+  font-family: var(--font-mono);
+}
+.yt-body { padding: 11px 12px 13px; }
+.yt-body .yt-title { font-size: 13.5px; font-weight: 800; color: var(--ink-900); line-height:1.4;
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height: 38px; }
-.blog-body .blog-date { font-size: 11.5px; color: var(--ink-400); margin-top: 6px; font-family: var(--font-mono); }
+.yt-body .yt-date { font-size: 11.5px; color: var(--ink-400); margin-top: 6px; font-family: var(--font-mono); }
 
 .empty-state { text-align:center; padding: 70px 0; color: var(--ink-400); font-size:13px; }
 
@@ -163,12 +171,12 @@ p { margin:0; }
     </div>
 
     <div class="sub-tabs">
-      <a href="reviews-youtube.html" class="sub-tab">퍼플리스 유튜브</a>
-      <a href="reviews-blog.html" class="sub-tab active">퍼플리스 블로그</a>
+      <a href="reviews-youtube.html" class="sub-tab active">퍼플리스 유튜브</a>
+      <a href="reviews-blog.html" class="sub-tab">퍼플리스 블로그</a>
       <a href="reviews-customer.html" class="sub-tab">고객후기</a>
     </div>
 
-    <div class="blog-grid" id="blogGrid"><!-- JS 렌더 --></div>
+    <div class="yt-grid" id="ytGrid"><!-- JS 렌더 --></div>
 
   </div>
 </main>
@@ -210,62 +218,51 @@ p { margin:0; }
   </a>
 </nav>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/js/supabase-config.js"></script>
-<script src="/js/supabase-data.js"></script>
 <script>
 /* ============================================================
-   데이터 정의부 — 운영자가 어드민페이지에서 직접 등록하는 영역.
-   네이버 블로그 포스트의 제목/썸네일/링크를 운영자가 직접 입력합니다.
-   (자동 연동은 이번 프로토타입 범위에 포함되지 않습니다.)
+   데이터 정의부 — 운영자가 어드민페이지에서 등록하는 영역.
+   각 영상은 운영자가 유튜브 영상 URL과 썸네일을 직접 등록합니다.
+   (자동 연동 기능은 이번 프로토타입 범위에 포함되지 않으며, 추후 별도 백엔드 작업이 필요합니다.)
+   thumb 경로는 운영자가 업로드한 썸네일 이미지(자체 서버 경로) 또는 유튜브 썸네일 URL을 사용합니다.
    ============================================================ */
-  let blogData = [
-    { id: 1, title: '장기렌트 계약 전 꼭 확인해야 할 약관 5가지', date: '2026.06.12', thumb: '/assets/blog/blog-1.jpg', url: 'https://blog.naver.com/purplelease/000000001' },
-    { id: 2, title: '제네시스 GV70 vs GV80, 장기렌트 비용 비교', date: '2026.06.05', thumb: '/assets/blog/blog-2.jpg', url: 'https://blog.naver.com/purplelease/000000002' },
-    { id: 3, title: '중고차 매입 시 성능점검기록부 보는 법', date: '2026.05.29', thumb: '/assets/blog/blog-3.jpg', url: 'https://blog.naver.com/purplelease/000000003' },
-    { id: 4, title: '리스 승계받을 때 주의할 점 총정리', date: '2026.05.22', thumb: '/assets/blog/blog-4.jpg', url: 'https://blog.naver.com/purplelease/000000004' },
-    { id: 5, title: '전기차 장기렌트 보조금, 이렇게 받으세요', date: '2026.05.15', thumb: '/assets/blog/blog-5.jpg', url: 'https://blog.naver.com/purplelease/000000005' },
-    { id: 6, title: '법인 장기렌트, 세금 혜택 받는 방법', date: '2026.05.08', thumb: '/assets/blog/blog-6.jpg', url: 'https://blog.naver.com/purplelease/000000006' },
+  const youtubeData = [
+    { id: 1, title: '장기렌트 vs 리스, 나에게 맞는 건 뭘까? 5분 정리', date: '2026.06.10', duration: '5:42', thumb: '/assets/youtube/yt-1.jpg', url: 'https://www.youtube.com/watch?v=example1' },
+    { id: 2, title: '제네시스 G80 장기렌트 실제 견적 비교 (2026년형)', date: '2026.06.03', duration: '8:15', thumb: '/assets/youtube/yt-2.jpg', url: 'https://www.youtube.com/watch?v=example2' },
+    { id: 3, title: '중고차 매입 전 꼭 확인해야 할 3가지', date: '2026.05.27', duration: '6:01', thumb: '/assets/youtube/yt-3.jpg', url: 'https://www.youtube.com/watch?v=example3' },
+    { id: 4, title: '전기차 장기렌트, 보조금 받을 수 있을까?', date: '2026.05.20', duration: '7:33', thumb: '/assets/youtube/yt-4.jpg', url: 'https://www.youtube.com/watch?v=example4' },
+    { id: 5, title: '퍼플리스 출고 후기 — 고객님과의 인터뷰', date: '2026.05.12', duration: '4:18', thumb: '/assets/youtube/yt-5.jpg', url: 'https://www.youtube.com/watch?v=example5' },
+    { id: 6, title: '리스 승계, 정말 저렴할까? 비용 전부 공개', date: '2026.05.05', duration: '9:02', thumb: '/assets/youtube/yt-6.jpg', url: 'https://www.youtube.com/watch?v=example6' },
+    { id: 7, title: '수입차 장기렌트 인기 모델 TOP 5 (2026 상반기)', date: '2026.04.28', duration: '6:47', thumb: '/assets/youtube/yt-7.jpg', url: 'https://www.youtube.com/watch?v=example7' },
+    { id: 8, title: '신차 출고 대기 줄이는 꿀팁 모음', date: '2026.04.21', duration: '5:09', thumb: '/assets/youtube/yt-8.jpg', url: 'https://www.youtube.com/watch?v=example8' },
   ];
 
-  const carIconSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="#9494A3" stroke-width="1.5" width="32" height="32"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>`;
-  const extIconSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="#383846" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
+  const carIconSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="#9494A3" stroke-width="1.5" width="32" height="32"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>`;
 
-  function renderBlog() {
-    const grid = document.getElementById('blogGrid');
-    if (blogData.length === 0) {
-      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">등록된 블로그 글이 없습니다.</div>`;
+  function renderYoutube() {
+    const grid = document.getElementById('ytGrid');
+    if (youtubeData.length === 0) {
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">등록된 영상이 없습니다.</div>`;
       return;
     }
-    grid.innerHTML = blogData.map(b => `
-      <a class="blog-card" href="${b.url}" target="_blank" rel="noopener noreferrer">
-        <div class="blog-thumb">
-          <img src="${b.thumb}" alt="${b.title}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+    grid.innerHTML = youtubeData.map(v => `
+      <a class="yt-card" href="${v.url}" target="_blank" rel="noopener noreferrer">
+        <div class="yt-thumb">
+          <img src="${v.thumb}" alt="${v.title}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
           <div class="ph-icon" style="display:none; position:absolute; inset:0; align-items:center; justify-content:center;">${carIconSvg}</div>
-          <span class="ext-badge">${extIconSvg}</span>
+          <div class="play-badge"><span class="play-circle">
+            <svg viewBox="0 0 24 24" fill="#fff"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+          </span></div>
+          <span class="duration-chip">${v.duration}</span>
         </div>
-        <div class="blog-body">
-          <div class="blog-source">퍼플리스 블로그</div>
-          <div class="blog-title">${b.title}</div>
-          <div class="blog-date">${b.date}</div>
+        <div class="yt-body">
+          <div class="yt-title">${v.title}</div>
+          <div class="yt-date">${v.date}</div>
         </div>
       </a>
     `).join('');
   }
 
-  async function initPage() {
-    if (window.PurpleLeaseData && window.PurpleLeaseData.isConfigured()) {
-      try {
-        const rows = await window.PurpleLeaseData.fetchBlogPosts();
-        if (rows && rows.length) blogData = rows;
-      } catch (err) {
-        console.warn('[PurpleLease] blog load failed:', err);
-      }
-    }
-    renderBlog();
-  }
-
-  initPage();
+  renderYoutube();
 </script>
 
 </body>

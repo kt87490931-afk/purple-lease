@@ -282,9 +282,6 @@ p { margin:0; }
   <a href="estimate.html" class="btn btn-primary" id="btnConsultMobile">상담하기</a>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/js/supabase-config.js"></script>
-<script src="/js/supabase-data.js"></script>
 <script>
 /* ============================================================
    데이터 정의부 — 운영자가 어드민페이지에서 등록하는 부품 상세 데이터.
@@ -472,7 +469,7 @@ p { margin:0; }
 
   const params = new URLSearchParams(window.location.search);
   const id = parseInt(params.get('id'), 10);
-  let p = partsDB[id] || (id ? partialDefault(id) : null);
+  const p = partsDB[id] || (id ? partialDefault(id) : null);
 
   let photoIdx = 0;
 
@@ -542,19 +539,7 @@ p { margin:0; }
     document.querySelectorAll('.gthumb').forEach((t,i) => t.classList.toggle('active', i===photoIdx));
   }
 
-  async function bootstrap() {
-    if (window.PurpleLeaseData && window.PurpleLeaseData.isConfigured() && id) {
-      try {
-        const row = await window.PurpleLeaseData.fetchPartDetail(id);
-        if (row) p = row;
-      } catch (err) {
-        console.warn('[PurpleLease] part detail load failed:', err);
-      }
-    }
-    render();
-  }
-
-  bootstrap();
+  render();
 </script>
 
 </body>

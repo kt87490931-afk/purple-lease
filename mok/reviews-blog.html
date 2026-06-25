@@ -210,16 +210,13 @@ p { margin:0; }
   </a>
 </nav>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="/js/supabase-config.js"></script>
-<script src="/js/supabase-data.js"></script>
 <script>
 /* ============================================================
    데이터 정의부 — 운영자가 어드민페이지에서 직접 등록하는 영역.
    네이버 블로그 포스트의 제목/썸네일/링크를 운영자가 직접 입력합니다.
    (자동 연동은 이번 프로토타입 범위에 포함되지 않습니다.)
    ============================================================ */
-  let blogData = [
+  const blogData = [
     { id: 1, title: '장기렌트 계약 전 꼭 확인해야 할 약관 5가지', date: '2026.06.12', thumb: '/assets/blog/blog-1.jpg', url: 'https://blog.naver.com/purplelease/000000001' },
     { id: 2, title: '제네시스 GV70 vs GV80, 장기렌트 비용 비교', date: '2026.06.05', thumb: '/assets/blog/blog-2.jpg', url: 'https://blog.naver.com/purplelease/000000002' },
     { id: 3, title: '중고차 매입 시 성능점검기록부 보는 법', date: '2026.05.29', thumb: '/assets/blog/blog-3.jpg', url: 'https://blog.naver.com/purplelease/000000003' },
@@ -253,19 +250,7 @@ p { margin:0; }
     `).join('');
   }
 
-  async function initPage() {
-    if (window.PurpleLeaseData && window.PurpleLeaseData.isConfigured()) {
-      try {
-        const rows = await window.PurpleLeaseData.fetchBlogPosts();
-        if (rows && rows.length) blogData = rows;
-      } catch (err) {
-        console.warn('[PurpleLease] blog load failed:', err);
-      }
-    }
-    renderBlog();
-  }
-
-  initPage();
+  renderBlog();
 </script>
 
 </body>
