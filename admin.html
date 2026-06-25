@@ -382,14 +382,24 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
         </div>
         <div class="form-row"><label>분류</label><input type="text" id="partCategory" placeholder="예: 와이퍼, 타이어, 브레이크"><span class="hint">현재는 자유 입력, 추후 카테고리 목록으로 분리 예정</span></div>
       </div>
-      <div class="form-row"><label>적용 차종</label><input type="text" id="partCompatible" placeholder="예: 모델3, 모델Y (2021년식 이후)"></div>
+      <div class="form-row"><label>적용 차종</label><input type="text" id="partCompatible" placeholder="예: 모델Y (전 연식)"></div>
+      <div class="form-row"><label>제조/호환</label><input type="text" id="partMaker" placeholder="예: 순정 규격 호환"></div>
       <div class="form-grid-2">
         <div class="form-row"><label>가격(원)</label><input type="number" id="partPrice" placeholder="89000"></div>
         <div class="form-row"><label>재고 상태</label>
           <select id="partStock"><option value="재고있음">재고있음</option><option value="품절">품절</option></select>
         </div>
       </div>
-      <div class="form-row"><label>대표 이미지</label><input type="text" id="partThumb" placeholder="/assets/parts/part-1.jpg"><div style="display:flex;gap:8px;align-items:center;margin-top:6px;"><input type="file" id="partThumbFile" accept="image/jpeg,image/png,image/webp,image/gif"><button type="button" class="btn btn-outline btn-sm" id="btnUploadPartThumb">업로드</button></div></div>
+      <div class="form-row"><label>태그</label><input type="text" id="partTags" placeholder="쉼표 구분 (예: 정품호환, 당일발송)"></div>
+      <div class="form-row">
+        <label>부품 사진 (4:3 — 목록 800×600 / 상세 1280×960)</label>
+        <textarea id="partPhotos" rows="3" placeholder="업로드된 이미지 URL (한 줄에 하나)"></textarea>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;">
+          <input type="file" id="partPhotosFiles" accept="image/jpeg,image/png,image/webp,image/gif" multiple>
+          <button type="button" class="btn btn-outline btn-sm" id="btnUploadPartPhotos">선택 사진 업로드</button>
+        </div>
+        <span class="hint">첫 번째 사진이 목록 썸네일·상세 대표 사진으로 사용됩니다.</span>
+      </div>
       <div class="form-row"><label>상품 설명</label><textarea id="partDesc" placeholder="부품 상세 설명을 입력합니다."></textarea></div>
     </div>
     <div class="modal-foot"><button class="btn btn-outline" data-close="modalPart">취소</button><button class="btn btn-primary" id="btnSavePart">저장</button></div>
@@ -437,6 +447,7 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
 <script src="/js/youtube-utils.js"></script>
 <script src="/js/swautopia-sync.js"></script>
 <script src="/js/purple-image.js"></script>
+<script src="/js/part-utils.js"></script>
 <script src="/js/used-car-filters.js"></script>
 <script src="/js/admin-auth.js"></script>
 <script src="/js/admin-api.js"></script>

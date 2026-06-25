@@ -81,20 +81,38 @@ p { margin:0; }
   .detail-layout { display:grid; grid-template-columns: 1.6fr 1fr; gap: 32px; align-items: start; }
   .detail-side { position: sticky; top: 84px; }
 }
+.detail-main { min-width:0; width:100%; max-width:100%; }
+.detail-side { min-width:0; width:100%; }
 
 /* --- 이미지 갤러리 --- */
-.gallery { position: relative; border-radius: var(--radius-lg); overflow:hidden; background: var(--surface-alt); }
-.gallery-main { aspect-ratio: 4/3; display:flex; align-items:center; justify-content:center; position:relative; }
-.gallery-main img { width:100%; height:100%; object-fit:cover; }
-.gallery-nav { position:absolute; top:50%; transform:translateY(-50%); width:34px; height:34px; border-radius:50%; background: rgba(255,255,255,0.85); display:flex; align-items:center; justify-content:center; box-shadow: var(--shadow-sm); }
+.gallery-wrap { width:100%; max-width:100%; min-width:0; }
+.gallery { position: relative; border-radius: var(--radius-lg); overflow:hidden; background: var(--surface-alt); width:100%; }
+.gallery-main {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  background: var(--surface-alt);
+}
+.gallery-main #mainPhoto {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  display: block;
+}
+.gallery-nav { position:absolute; top:50%; transform:translateY(-50%); z-index:3; width:34px; height:34px; border-radius:50%; background: rgba(255,255,255,0.85); display:flex; align-items:center; justify-content:center; box-shadow: var(--shadow-sm); border:none; cursor:pointer; }
 .gallery-nav.prev { left:10px; } .gallery-nav.next { right:10px; }
 .gallery-nav svg { width:16px; height:16px; }
-.gallery-counter { position:absolute; bottom:10px; right:10px; background: rgba(20,20,30,0.6); color:#fff; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:100px; }
+.gallery-counter { position:absolute; bottom:10px; right:10px; z-index:3; background: rgba(20,20,30,0.6); color:#fff; font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:100px; }
 .gallery-thumbs { display:flex; gap:7px; overflow-x:auto; padding-top:8px; scrollbar-width:none; }
 .gallery-thumbs::-webkit-scrollbar { display:none; }
-.gallery-thumbs .gthumb { flex-shrink:0; width:64px; height:48px; border-radius: var(--radius-sm); overflow:hidden; border:2px solid transparent; cursor:pointer; background: var(--surface-alt); }
+.gallery-thumbs .gthumb { flex-shrink:0; width:64px; aspect-ratio:4/3; border-radius: var(--radius-sm); overflow:hidden; border:2px solid transparent; cursor:pointer; background: var(--surface-alt); position:relative; }
 .gallery-thumbs .gthumb.active { border-color: var(--purple-600); }
-.gallery-thumbs .gthumb img { width:100%; height:100%; object-fit:cover; }
+.gallery-thumbs .gthumb img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; display:block; }
 
 /* --- 섹션 공통 --- */
 .info-section { padding: 30px 0; border-bottom: 1px solid var(--line-soft); }
@@ -183,6 +201,7 @@ p { margin:0; }
       <!-- ============ 메인 컬럼 ============ -->
       <div class="detail-main">
 
+        <div class="gallery-wrap">
         <div class="gallery">
           <div class="gallery-main">
             <img id="mainPhoto" src="" alt="" onerror="this.style.display='none'; document.getElementById('mainPhPlaceholder').style.display='flex';">
@@ -199,6 +218,7 @@ p { margin:0; }
           </div>
         </div>
         <div class="gallery-thumbs" id="galleryThumbs"></div>
+        </div>
 
         <!-- 부품 정보 -->
         <section class="info-section">
@@ -284,6 +304,7 @@ p { margin:0; }
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="/js/supabase-config.js"></script>
+<script src="/js/part-utils.js"></script>
 <script src="/js/supabase-data.js"></script>
 <script>
 /* ============================================================
@@ -533,6 +554,12 @@ p { margin:0; }
   }
 
   function renderPhoto() {
+    if (!p.photos || !p.photos.length) {
+      document.getElementById('mainPhoto').style.display = 'none';
+      document.getElementById('mainPhPlaceholder').style.display = 'flex';
+      document.getElementById('photoCounter').textContent = '0 / 0';
+      return;
+    }
     const photo = p.photos[photoIdx];
     const img = document.getElementById('mainPhoto');
     const ph = document.getElementById('mainPhPlaceholder');
@@ -542,15 +569,31 @@ p { margin:0; }
     document.querySelectorAll('.gthumb').forEach((t,i) => t.classList.toggle('active', i===photoIdx));
   }
 
+  function ensurePartFields(part) {
+    if (!part) return part;
+    if (window.PurplePartUtils) {
+      if (!part.brandLabel) part.brandLabel = window.PurplePartUtils.brandLabel(part.brand);
+    }
+    if (!part.photos || !part.photos.length) {
+      part.photos = part.thumb ? [part.thumb] : ['/assets/parts/placeholder.jpg'];
+    }
+    if (!part.compatible) part.compatible = '문의 시 안내';
+    if (!part.maker) part.maker = '-';
+    if (!part.description) part.description = '상품 설명이 준비 중입니다.';
+    if (!part.tags) part.tags = [];
+    return part;
+  }
+
   async function bootstrap() {
     if (window.PurpleLeaseData && window.PurpleLeaseData.isConfigured() && id) {
       try {
         const row = await window.PurpleLeaseData.fetchPartDetail(id);
-        if (row) p = row;
+        if (row) p = ensurePartFields(row);
       } catch (err) {
         console.warn('[PurpleLease] part detail load failed:', err);
       }
     }
+    if (p) p = ensurePartFields(p);
     render();
   }
 

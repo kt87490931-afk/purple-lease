@@ -209,11 +209,26 @@
     if (!client) return null;
     var res = await client
       .from('parts')
-      .select('listing_id,brand,category,name,price,stock,thumb_url,tags,sort_order')
+      .select('listing_id,brand,category,name,price,stock,thumb_url,tags,sort_order,detail_json')
       .eq('is_active', true)
       .order('sort_order', { ascending: true });
     if (res.error) throw res.error;
+    var norm = window.PurplePartUtils && window.PurplePartUtils.normalizePartRow;
     return (res.data || []).map(function (r) {
+      var p = norm ? norm(r) : null;
+      if (p) {
+        return {
+          id: p.id,
+          brand: p.brand,
+          category: p.category,
+          name: p.name,
+          price: p.price,
+          stock: p.stock,
+          thumb: p.thumb,
+          tags: p.tags,
+          sortOrder: p.sortOrder
+        };
+      }
       return {
         id: r.listing_id,
         brand: r.brand,
@@ -222,7 +237,8 @@
         price: r.price,
         stock: r.stock,
         thumb: r.thumb_url,
-        tags: r.tags || []
+        tags: r.tags || [],
+        sortOrder: r.sort_order || r.listing_id || 0
       };
     });
   }
@@ -238,17 +254,25 @@
       .maybeSingle();
     if (res.error) throw res.error;
     if (!res.data) return null;
-    var base = {
+    if (window.PurplePartUtils && window.PurplePartUtils.normalizePartRow) {
+      return window.PurplePartUtils.normalizePartRow(res.data);
+    }
+    var dj = res.data.detail_json || {};
+    return {
       id: res.data.listing_id,
       brand: res.data.brand,
+      brandLabel: res.data.brand,
       category: res.data.category,
       name: res.data.name,
       price: res.data.price,
       stock: res.data.stock,
       thumb: res.data.thumb_url,
-      tags: res.data.tags || []
+      tags: res.data.tags || [],
+      compatible: dj.compatible || '',
+      maker: dj.maker || '',
+      description: dj.description || '',
+      photos: dj.photos && dj.photos.length ? dj.photos : (res.data.thumb_url ? [res.data.thumb_url] : [])
     };
-    return Object.assign(base, res.data.detail_json || {});
   }
 
   async function fetchCustomerReviews() {

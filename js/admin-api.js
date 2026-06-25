@@ -378,49 +378,92 @@
   }
 
   /* ---------- Parts ---------- */
+  async function getNextPartListingId() {
+    var maxRes = await db().from('parts').select('listing_id').order('listing_id', { ascending: false }).limit(1);
+    return (maxRes.data && maxRes.data[0]) ? maxRes.data[0].listing_id + 1 : 1;
+  }
+
+  async function uploadPartPhotoFiles(listingId, files, startIndex) {
+    if (!files || !files.length) return [];
+    var PI = window.PurpleImage;
+    if (!PI) throw new Error('PurpleImage 모듈이 로드되지 않았습니다.');
+    var out = [];
+    var start = startIndex || 0;
+    for (var i = 0; i < files.length; i++) {
+      var idx = start + i;
+      var img = await PI.loadFileAsImage(files[i]);
+      var galleryBlob = await PI.resizeImageToBlob(img, PI.SIZES.GALLERY.w, PI.SIZES.GALLERY.h);
+      var url = await uploadBlob(galleryBlob, 'parts/' + listingId + '/' + idx + '.jpg');
+      if (idx === 0) {
+        var thumbBlob = await PI.resizeImageToBlob(img, PI.SIZES.THUMB.w, PI.SIZES.THUMB.h);
+        await uploadBlob(thumbBlob, 'parts/' + listingId + '/thumb.jpg');
+      }
+      out.push(url);
+    }
+    return out;
+  }
+
   async function listParts() {
-    var res = await db().from('parts').select('*').order('sort_order', { ascending: true });
+    var res = await db().from('parts').select('*').eq('is_active', true).order('sort_order', { ascending: true });
     if (res.error) throw res.error;
+    var norm = window.PurplePartUtils && window.PurplePartUtils.normalizePartRow;
     return (res.data || []).map(function (r) {
-      var dj = r.detail_json || {};
+      var p = norm ? norm(r) : r;
       return {
-        id: r.listing_id,
-        brand: r.brand,
-        category: r.category,
-        name: r.name,
-        price: r.price,
-        stock: r.stock,
-        thumb: r.thumb_url,
-        compatible: dj.compatible || '',
-        description: dj.description || ''
+        id: p.id || r.listing_id,
+        brand: p.brand || r.brand,
+        category: p.category || r.category,
+        name: p.name || r.name,
+        price: p.price != null ? p.price : r.price,
+        stock: p.stock || r.stock,
+        thumb: p.thumb || r.thumb_url,
+        compatible: p.compatible || '',
+        maker: p.maker || '',
+        description: p.description || '',
+        photos: p.photos || [],
+        tags: p.tags || []
       };
     });
   }
 
   async function savePart(payload, editingId) {
     if (!payload.name || isNaN(payload.price)) throw new Error('부품명과 가격은 필수입니다.');
+
+    var Tags = window.PurplePartUtils;
+    var listingId = editingId || payload.listingId || await getNextPartListingId();
+    var photos = (payload.photos || []).filter(Boolean);
+
+    if (payload.photoFiles && payload.photoFiles.length) {
+      var uploaded = await uploadPartPhotoFiles(listingId, payload.photoFiles, photos.length);
+      photos = photos.concat(uploaded);
+    }
+
     var row = {
+      listing_id: listingId,
       brand: payload.brand,
       category: payload.category || '',
       name: payload.name,
       price: payload.price,
       stock: payload.stock || '재고있음',
-      thumb_url: payload.thumb || '',
+      thumb_url: photos[0] || payload.thumb || '',
+      tags: Tags ? Tags.parseTagsInput(payload.tags) : (payload.tags || []),
       detail_json: {
         compatible: payload.compatible || '',
-        description: payload.description || ''
+        maker: payload.maker || '',
+        description: payload.description || '',
+        photos: photos
       },
       is_active: true
     };
+
     if (editingId) {
+      delete row.listing_id;
       var up = await db().from('parts').update(row).eq('listing_id', editingId).select().single();
       if (up.error) throw up.error;
       return up.data;
     }
-    var maxRes = await db().from('parts').select('listing_id').order('listing_id', { ascending: false }).limit(1);
-    var nextId = (maxRes.data && maxRes.data[0]) ? maxRes.data[0].listing_id + 1 : 1;
-    row.listing_id = nextId;
-    row.sort_order = nextId;
+
+    row.sort_order = listingId;
     var ins = await db().from('parts').insert([row]).select().single();
     if (ins.error) throw ins.error;
     return ins.data;
@@ -774,6 +817,8 @@
     listParts: listParts,
     savePart: savePart,
     deletePart: deletePart,
+    getNextPartListingId: getNextPartListingId,
+    uploadPartPhotoFiles: uploadPartPhotoFiles,
     listUsedcars: listUsedcars,
     saveUsedcar: saveUsedcar,
     deleteUsedcar: deleteUsedcar,

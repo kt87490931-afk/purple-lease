@@ -118,7 +118,6 @@ p { margin:0; }
 .ptag { font-size:10.5px; font-weight:700; color: var(--ink-500); background: var(--surface); padding:3px 7px; border-radius:4px; }
 
 .empty-state { text-align:center; padding: 70px 0; color: var(--ink-400); font-size:13px; grid-column: 1/-1; }
-.load-more-wrap { display:flex; justify-content:center; padding: 8px 0 36px; }
 
 /* Footer */
 .site-footer { background: var(--surface-alt); border-top: 1px solid var(--line-soft); padding: 32px 0 40px; margin-top: 8px; }
@@ -196,10 +195,6 @@ p { margin:0; }
 
     <div class="parts-grid" id="partsGrid"><!-- JS 렌더 --></div>
 
-    <div class="load-more-wrap" id="loadMoreWrap">
-      <button type="button" class="btn btn-outline" id="btnLoadMore">부품 더 보기</button>
-    </div>
-
   </div>
 </main>
 
@@ -242,38 +237,83 @@ p { margin:0; }
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="/js/supabase-config.js"></script>
+<script src="/js/part-utils.js"></script>
 <script src="/js/supabase-data.js"></script>
 <script>
-/* ============================================================
-   데이터 정의부 — 운영자가 어드민페이지에서 등록하는 부품 데이터.
-   현재는 테슬라 부품 위주 샘플이며, 추후 어드민에서 분류(category)를
-   세분화할 예정입니다. thumb 경로는 운영자가 업로드한 자체 서버 경로입니다.
-   ============================================================ */
   let partsData = [
-    { id: 1, brand:'tesla', category:'와이퍼', name:'모델3/Y 전용 무소음 와이퍼 (좌우 1세트)', price: 89000, stock:'재고있음', thumb:'/assets/parts/part-1.jpg', tags:['정품호환','당일발송'] },
-    { id: 2, brand:'tesla', category:'타이어', name:'모델Y 19인치 순정 휠 타이어 4본 세트', price: 1280000, stock:'재고있음', thumb:'/assets/parts/part-2.jpg', tags:['순정규격'] },
-    { id: 3, brand:'tesla', category:'브레이크', name:'모델3 퍼포먼스 브레이크 패드 (전륜)', price: 215000, stock:'재고있음', thumb:'/assets/parts/part-3.jpg', tags:['고성능'] },
-    { id: 4, brand:'tesla', category:'충전케이블', name:'테슬라 가정용 완속 충전케이블 (5M)', price: 165000, stock:'재고있음', thumb:'/assets/parts/part-4.jpg', tags:['정품호환'] },
-    { id: 5, brand:'tesla', category:'외장', name:'모델Y 도어 핸들 커버 4P (카본룩)', price: 42000, stock:'품절', thumb:'/assets/parts/part-5.jpg', tags:['외장튠업'] },
-    { id: 6, brand:'tesla', category:'내장', name:'모델3 트렁크 매트 (올웨더 방수)', price: 78000, stock:'재고있음', thumb:'/assets/parts/part-6.jpg', tags:['방수','맞춤제작'] },
-    { id: 7, brand:'tesla', category:'타이어', name:'모델3 18인치 순정 타이어 단품', price: 195000, stock:'재고있음', thumb:'/assets/parts/part-7.jpg', tags:['순정규격'] },
-    { id: 8, brand:'tesla', category:'외장', name:'모델Y 사이드미러 커버 (무광블랙)', price: 35000, stock:'재고있음', thumb:'/assets/parts/part-8.jpg', tags:['외장튠업'] },
-    { id: 9, brand:'benz', category:'와이퍼', name:'E클래스 전용 와이퍼 블레이드 세트', price: 65000, stock:'재고있음', thumb:'/assets/parts/part-9.jpg', tags:['정품호환'] },
-    { id: 10, brand:'bmw', category:'브레이크', name:'5시리즈 브레이크 패드 (전륜)', price: 198000, stock:'재고있음', thumb:'/assets/parts/part-10.jpg', tags:['정품호환'] },
-    { id: 11, brand:'audi', category:'외장', name:'A6 사이드미러 커버 (카본)', price: 58000, stock:'품절', thumb:'/assets/parts/part-11.jpg', tags:['외장튠업'] },
-    { id: 12, brand:'tesla', category:'충전케이블', name:'테슬라 완속충전 어댑터 (220V 가정용)', price: 49000, stock:'재고있음', thumb:'/assets/parts/part-12.jpg', tags:['정품호환','당일발송'] },
+    { id: 1, brand:'tesla', category:'와이퍼', name:'모델3/Y 전용 무소음 와이퍼 (좌우 1세트)', price: 89000, stock:'재고있음', thumb:'/assets/parts/part-1.jpg', tags:['정품호환','당일발송'], sortOrder: 1 },
+    { id: 2, brand:'tesla', category:'타이어', name:'모델Y 19인치 순정 휠 타이어 4본 세트', price: 1280000, stock:'재고있음', thumb:'/assets/parts/part-2.jpg', tags:['순정규격'], sortOrder: 2 },
+    { id: 3, brand:'tesla', category:'브레이크', name:'모델3 퍼포먼스 브레이크 패드 (전륜)', price: 215000, stock:'재고있음', thumb:'/assets/parts/part-3.jpg', tags:['고성능'], sortOrder: 3 },
+    { id: 4, brand:'tesla', category:'충전케이블', name:'테슬라 가정용 완속 충전케이블 (5M)', price: 165000, stock:'재고있음', thumb:'/assets/parts/part-4.jpg', tags:['정품호환'], sortOrder: 4 },
+    { id: 5, brand:'tesla', category:'외장', name:'모델Y 도어 핸들 커버 4P (카본룩)', price: 42000, stock:'품절', thumb:'/assets/parts/part-5.jpg', tags:['외장튠업'], sortOrder: 5 },
+    { id: 6, brand:'tesla', category:'내장', name:'모델3 트렁크 매트 (올웨더 방수)', price: 78000, stock:'재고있음', thumb:'/assets/parts/part-6.jpg', tags:['방수','맞춤제작'], sortOrder: 6 },
+    { id: 7, brand:'tesla', category:'타이어', name:'모델3 18인치 순정 타이어 단품', price: 195000, stock:'재고있음', thumb:'/assets/parts/part-7.jpg', tags:['순정규격'], sortOrder: 7 },
+    { id: 8, brand:'tesla', category:'외장', name:'모델Y 사이드미러 커버 (무광블랙)', price: 35000, stock:'재고있음', thumb:'/assets/parts/part-8.jpg', tags:['외장튠업'], sortOrder: 8 },
+    { id: 9, brand:'benz', category:'와이퍼', name:'E클래스 전용 와이퍼 블레이드 세트', price: 65000, stock:'재고있음', thumb:'/assets/parts/part-9.jpg', tags:['정품호환'], sortOrder: 9 },
+    { id: 10, brand:'bmw', category:'브레이크', name:'5시리즈 브레이크 패드 (전륜)', price: 198000, stock:'재고있음', thumb:'/assets/parts/part-10.jpg', tags:['정품호환'], sortOrder: 10 },
+    { id: 11, brand:'audi', category:'외장', name:'A6 사이드미러 커버 (카본)', price: 58000, stock:'품절', thumb:'/assets/parts/part-11.jpg', tags:['외장튠업'], sortOrder: 11 },
+    { id: 12, brand:'tesla', category:'충전케이블', name:'테슬라 완속충전 어댑터 (220V 가정용)', price: 49000, stock:'재고있음', thumb:'/assets/parts/part-12.jpg', tags:['정품호환','당일발송'], sortOrder: 12 },
   ];
 
-  let state = { brand:'all', visible: 8 };
+  let state = { brand: 'all', sort: 'latest' };
   const carIconSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="#9494A3" stroke-width="1.5" width="32" height="32"><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M3 17V9l3-5h9l4 5v8"/></svg>`;
 
-  function priceFmt(n) { return n.toLocaleString('ko-KR') + '원'; }
-  const brandLabel = { tesla:'테슬라', benz:'벤츠', bmw:'BMW', audi:'아우디' };
+  function escapeHtml(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function priceFmt(n) { return (n || 0).toLocaleString('ko-KR') + '원'; }
+
+  function brandLabel(slug) {
+    if (window.PurplePartUtils) return window.PurplePartUtils.brandLabel(slug);
+    var map = { tesla:'테슬라', benz:'벤츠', bmw:'BMW', audi:'아우디' };
+    return map[slug] || slug || '';
+  }
+
+  function uniqueSorted(arr) {
+    return arr.filter(Boolean).filter(function (v, i, a) { return a.indexOf(v) === i; }).sort(function (a, b) {
+      return String(a).localeCompare(String(b), 'ko');
+    });
+  }
+
+  function getFilterValues() {
+    return {
+      category: document.getElementById('fCategory').value,
+      name: document.getElementById('fName').value.trim().toLowerCase()
+    };
+  }
+
+  function populateFilterOptions() {
+    var scoped = partsData.slice();
+    if (state.brand !== 'all') scoped = scoped.filter(function (p) { return p.brand === state.brand; });
+    var categories = uniqueSorted(scoped.map(function (p) { return p.category; }));
+    var el = document.getElementById('fCategory');
+    var prev = el.value;
+    el.innerHTML = '<option value="">분류 전체</option>' +
+      categories.map(function (v) { return '<option value="' + escapeHtml(v) + '">' + escapeHtml(v) + '</option>'; }).join('');
+    if (prev && categories.indexOf(prev) >= 0) el.value = prev;
+    else el.value = '';
+  }
+
+  function sortData(list) {
+    var out = list.slice();
+    if (state.sort === 'priceAsc') {
+      out.sort(function (a, b) { return (a.price || 0) - (b.price || 0); });
+    } else if (state.sort === 'priceDesc') {
+      out.sort(function (a, b) { return (b.price || 0) - (a.price || 0); });
+    } else {
+      out.sort(function (a, b) { return (b.sortOrder || b.id || 0) - (a.sortOrder || a.id || 0); });
+    }
+    return out;
+  }
 
   function filteredData() {
-    let list = partsData.slice();
-    if (state.brand !== 'all') list = list.filter(p => p.brand === state.brand);
-    return list;
+    var f = getFilterValues();
+    var list = partsData.slice();
+    if (state.brand !== 'all') list = list.filter(function (p) { return p.brand === state.brand; });
+    if (f.category) list = list.filter(function (p) { return p.category === f.category; });
+    if (f.name) list = list.filter(function (p) { return String(p.name || '').toLowerCase().indexOf(f.name) >= 0; });
+    return sortData(list);
   }
 
   function renderGrid() {
@@ -282,53 +322,60 @@ p { margin:0; }
     document.getElementById('resultCount').textContent = list.length;
 
     if (list.length === 0) {
-      grid.innerHTML = `<div class="empty-state">등록된 부품이 없습니다.</div>`;
-      document.getElementById('loadMoreWrap').style.display = 'none';
+      grid.innerHTML = `<div class="empty-state">조건에 맞는 부품이 없습니다.</div>`;
       return;
     }
 
-    const shown = list.slice(0, state.visible);
-    grid.innerHTML = shown.map(p => `
-      <a class="part-card" href="parts-detail.html?id=${p.id}">
+    grid.innerHTML = list.map(function (p) {
+      return `
+      <a class="part-card" href="parts-detail.html?id=${encodeURIComponent(p.id)}">
         <div class="part-thumb">
-          <img src="${p.thumb}" alt="${p.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <img src="${escapeHtml(p.thumb)}" alt="${escapeHtml(p.name)}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
           <div class="ph-icon" style="display:none; position:absolute; inset:0; align-items:center; justify-content:center;">${carIconSvg}</div>
-          <span class="stock-chip${p.stock==='품절'?' out':''}">${p.stock}</span>
-          <span class="brand-chip">${brandLabel[p.brand] || p.brand}</span>
+          <span class="stock-chip${p.stock==='품절'?' out':''}">${escapeHtml(p.stock)}</span>
+          <span class="brand-chip">${escapeHtml(brandLabel(p.brand))}</span>
         </div>
         <div class="part-body">
-          <div class="pname">${p.name}</div>
-          <div class="pmeta">${p.category}</div>
+          <div class="pname">${escapeHtml(p.name)}</div>
+          <div class="pmeta">${escapeHtml(p.category)}</div>
           <div class="pprice">${priceFmt(p.price)}</div>
-          <div class="ptags">${p.tags.slice(0,2).map(t=>`<span class="ptag">${t}</span>`).join('')}</div>
+          <div class="ptags">${(p.tags || []).slice(0,2).map(function (t) { return '<span class="ptag">' + escapeHtml(t) + '</span>'; }).join('')}</div>
         </div>
-      </a>
-    `).join('');
-
-    document.getElementById('loadMoreWrap').style.display = list.length > state.visible ? 'flex' : 'none';
+      </a>`;
+    }).join('');
   }
 
-  document.querySelectorAll('.brand-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.brand-tab').forEach(t => t.classList.remove('active'));
+  function resetFilters() {
+    state.brand = 'all';
+    state.sort = 'latest';
+    document.querySelectorAll('.brand-tab').forEach(function (t) {
+      t.classList.toggle('active', t.dataset.brand === 'all');
+    });
+    document.getElementById('fName').value = '';
+    document.getElementById('sortSelect').value = 'latest';
+    populateFilterOptions();
+    renderGrid();
+  }
+
+  document.querySelectorAll('.brand-tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      document.querySelectorAll('.brand-tab').forEach(function (t) { t.classList.remove('active'); });
       tab.classList.add('active');
       state.brand = tab.dataset.brand;
-      state.visible = 8;
+      populateFilterOptions();
       renderGrid();
     });
   });
 
-  document.getElementById('btnLoadMore').addEventListener('click', () => {
-    state.visible += 8;
+  document.getElementById('fCategory').addEventListener('change', renderGrid);
+  document.getElementById('fName').addEventListener('input', renderGrid);
+  document.getElementById('sortSelect').addEventListener('change', function () {
+    state.sort = this.value;
     renderGrid();
   });
+  document.getElementById('btnReset').addEventListener('click', resetFilters);
 
-  document.getElementById('btnReset').addEventListener('click', () => {
-    document.getElementById('fCategory').value = '';
-    document.getElementById('fName').value = '';
-  });
-
-  async function initPage() {
+  async function reloadParts() {
     if (window.PurpleLeaseData && window.PurpleLeaseData.isConfigured()) {
       try {
         const rows = await window.PurpleLeaseData.fetchParts();
@@ -337,8 +384,20 @@ p { margin:0; }
         console.warn('[PurpleLease] parts load failed:', err);
       }
     }
+    populateFilterOptions();
     renderGrid();
   }
+
+  async function initPage() {
+    await reloadParts();
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') reloadParts();
+  });
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted) reloadParts();
+  });
 
   initPage();
 </script>

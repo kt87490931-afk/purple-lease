@@ -71,11 +71,35 @@
     return out;
   }
 
+  function loadFileAsImage(file) {
+    return new Promise(function (resolve, reject) {
+      if (!file) return reject(new Error('파일 없음'));
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        URL.revokeObjectURL(url);
+        resolve(img);
+      };
+      img.onerror = function () {
+        URL.revokeObjectURL(url);
+        reject(new Error('파일 로드 실패'));
+      };
+      img.src = url;
+    });
+  }
+
+  async function resizeFileToBlob(file, width, height, quality) {
+    var img = await loadFileAsImage(file);
+    return resizeImageToBlob(img, width, height, quality);
+  }
+
   return {
     SIZES: SIZES,
     loadImage: loadImage,
+    loadFileAsImage: loadFileAsImage,
     resizeUrlToBlob: resizeUrlToBlob,
     resizeUrlToBlobs: resizeUrlToBlobs,
-    resizeImageToBlob: resizeImageToBlob
+    resizeImageToBlob: resizeImageToBlob,
+    resizeFileToBlob: resizeFileToBlob
   };
 }));

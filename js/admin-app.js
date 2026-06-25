@@ -17,7 +17,17 @@
   var leaseBrands = [];
   var selectedLeaseBrand = null;
 
-  var partsBrandLabel = { tesla: '테슬라', benz: '벤츠', bmw: 'BMW', audi: '아우디' };
+  var pendingPartListingId = null;
+
+  function parsePartPhotoLines(text) {
+    return String(text || '').split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+  }
+
+  function appendPartPhotoUrls(urls) {
+    var ta = document.getElementById('partPhotos');
+    var existing = parsePartPhotoLines(ta.value);
+    ta.value = existing.concat(urls).join('\n');
+  }
 
   function showError(err) {
     alert((err && err.message) ? err.message : String(err));
@@ -307,10 +317,14 @@
     document.getElementById('partBrand').value = p.brand;
     document.getElementById('partCategory').value = p.category;
     document.getElementById('partCompatible').value = p.compatible || '';
+    document.getElementById('partMaker').value = p.maker || '';
     document.getElementById('partPrice').value = p.price;
     document.getElementById('partStock').value = p.stock;
-    document.getElementById('partThumb').value = p.thumb;
+    document.getElementById('partPhotos').value = (p.photos && p.photos.length) ? p.photos.join('\n') : (p.thumb || '');
+    document.getElementById('partTags').value = (p.tags || []).join(', ');
     document.getElementById('partDesc').value = p.description || '';
+    document.getElementById('partPhotosFiles').value = '';
+    pendingPartListingId = id;
     openModal('modalPart');
   }
 
@@ -590,31 +604,53 @@
 
     document.getElementById('btnAddPart').addEventListener('click', function () {
       editingId = null;
+      pendingPartListingId = null;
       document.getElementById('modalPartTitle').textContent = '부품 등록';
-      ['partName', 'partCategory', 'partCompatible', 'partPrice', 'partThumb', 'partDesc'].forEach(function (id) { document.getElementById(id).value = ''; });
+      ['partName', 'partCategory', 'partCompatible', 'partMaker', 'partPrice', 'partPhotos', 'partTags', 'partDesc'].forEach(function (id) { document.getElementById(id).value = ''; });
       document.getElementById('partBrand').value = 'tesla';
       document.getElementById('partStock').value = '재고있음';
+      document.getElementById('partPhotosFiles').value = '';
       openModal('modalPart');
     });
     document.getElementById('btnSavePart').addEventListener('click', async function () {
       try {
+        var photoFiles = document.getElementById('partPhotosFiles').files;
+        var listingId = editingId || pendingPartListingId || null;
         await API.savePart({
           name: document.getElementById('partName').value.trim(),
           brand: document.getElementById('partBrand').value,
           category: document.getElementById('partCategory').value.trim(),
           compatible: document.getElementById('partCompatible').value.trim(),
+          maker: document.getElementById('partMaker').value.trim(),
           price: parseInt(document.getElementById('partPrice').value, 10),
           stock: document.getElementById('partStock').value,
-          thumb: document.getElementById('partThumb').value.trim(),
-          description: document.getElementById('partDesc').value.trim()
+          photos: parsePartPhotoLines(document.getElementById('partPhotos').value),
+          tags: document.getElementById('partTags').value.trim(),
+          description: document.getElementById('partDesc').value.trim(),
+          photoFiles: photoFiles && photoFiles.length ? Array.prototype.slice.call(photoFiles) : [],
+          listingId: listingId
         }, editingId);
+        pendingPartListingId = null;
         closeModal('modalPart');
         partsData = await API.listParts();
         renderPartsTable();
       } catch (err) { showError(err); }
     });
-    document.getElementById('btnUploadPartThumb').addEventListener('click', function () {
-      bindUpload('partThumbFile', 'partThumb', 'parts');
+    document.getElementById('btnUploadPartPhotos').addEventListener('click', async function () {
+      var fileInput = document.getElementById('partPhotosFiles');
+      if (!fileInput.files || !fileInput.files.length) {
+        alert('업로드할 사진을 선택해 주세요.');
+        return;
+      }
+      try {
+        var listingId = editingId || pendingPartListingId || await API.getNextPartListingId();
+        pendingPartListingId = listingId;
+        var existing = parsePartPhotoLines(document.getElementById('partPhotos').value);
+        var urls = await API.uploadPartPhotoFiles(listingId, Array.prototype.slice.call(fileInput.files), existing.length);
+        appendPartPhotoUrls(urls);
+        fileInput.value = '';
+        alert('사진 ' + urls.length + '장이 업로드되었습니다.');
+      } catch (err) { showError(err); }
     });
 
     document.getElementById('btnSyncSwautopia').addEventListener('click', async function () {
