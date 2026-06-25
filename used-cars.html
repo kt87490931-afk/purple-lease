@@ -277,10 +277,6 @@ input, select { font-family: inherit; }
 
     <div class="usedcar-grid" id="usedcarGrid"><!-- JS 렌더 --></div>
 
-    <div class="load-more-wrap" id="loadMoreWrap">
-      <button type="button" class="btn btn-outline" id="btnLoadMore">매물 더 보기</button>
-    </div>
-
   </div>
 </main>
 
@@ -339,7 +335,7 @@ input, select { font-family: inherit; }
     { id: 484, origin:'domestic', name:'기아 디 올뉴니로EV 에어', year:2023, fuel:'전기', mileage:5214, price:2950, brand:'기아', segment:'SUV', status:'판매중', photoCount:20, thumb:'/assets/usedcars/484-1.jpg', tags:['제작사A/S','세이프6','무사고','풀옵션','짧은주행'] },
   ];
 
-  let state = { type:'all', visible: 8 };
+  let state = { type:'all' };
 
   function priceFmt(n) { return n.toLocaleString('ko-KR') + '만원'; }
   function kmFmt(n) { return n.toLocaleString('ko-KR') + 'km'; }
@@ -357,12 +353,10 @@ input, select { font-family: inherit; }
 
     if (list.length === 0) {
       grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:60px 0; color:var(--ink-400); font-size:13px;">등록된 매물이 없습니다.</div>`;
-      document.getElementById('loadMoreWrap').style.display = 'none';
       return;
     }
 
-    const shown = list.slice(0, state.visible);
-    grid.innerHTML = shown.map(c => `
+    grid.innerHTML = list.map(c => `
       <a class="usedcar-card" href="used-car-detail.html?id=${c.id}">
         <div class="usedcar-thumb">
           <img src="${c.thumb}" alt="${c.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
@@ -379,8 +373,6 @@ input, select { font-family: inherit; }
         </div>
       </a>
     `).join('');
-
-    document.getElementById('loadMoreWrap').style.display = list.length > state.visible ? 'flex' : 'none';
   }
 
   document.querySelectorAll('.type-tab').forEach(tab => {
@@ -388,14 +380,8 @@ input, select { font-family: inherit; }
       document.querySelectorAll('.type-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       state.type = tab.dataset.type;
-      state.visible = 8;
       renderGrid();
     });
-  });
-
-  document.getElementById('btnLoadMore').addEventListener('click', () => {
-    state.visible += 8;
-    renderGrid();
   });
 
   document.getElementById('btnReset').addEventListener('click', () => {
