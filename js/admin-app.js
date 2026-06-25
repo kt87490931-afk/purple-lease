@@ -193,6 +193,10 @@
     } catch (err) { showError(err); }
   }
 
+  function escapeAttr(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  }
+
   function renderBlogTable() {
     var body = document.getElementById('blogTableBody');
     document.getElementById('blogCount').textContent = blogData.length;
@@ -201,15 +205,20 @@
       return;
     }
     body.innerHTML = blogData.map(function (b) {
-      return '<tr>' +
-        '<td class="thumb-cell"><img src="' + b.thumb + '" onerror="this.style.opacity=0.15"></td>' +
+      return '<tr data-blog-row="' + b.id + '">' +
+        '<td class="thumb-cell"><img src="' + escapeAttr(b.thumb) + '" onerror="this.style.opacity=0.15"></td>' +
         '<td class="title-cell">' + b.title + '</td>' +
         '<td><a href="' + b.url + '" target="_blank" rel="noopener" style="color:var(--purple-600);text-decoration:underline;">바로가기</a></td>' +
-        '<td class="num-cell">' + b.date + '</td>' +
-        '<td class="num-cell">' + (b.viewCount || 0).toLocaleString('ko-KR') + '</td>' +
-        '<td class="row-actions"><button class="btn btn-outline btn-sm" data-edit-blog="' + b.id + '">수정</button>' +
-        '<button class="btn-danger-text" data-del-blog="' + b.id + '">삭제</button></td></tr>';
+        '<td><input type="text" class="inline-edit-input" data-blog-date="' + b.id + '" value="' + escapeAttr(b.date) + '" placeholder="2026.06.25" aria-label="등록일"></td>' +
+        '<td><input type="number" class="inline-edit-input" data-blog-views="' + b.id + '" value="' + (b.viewCount || 0) + '" min="0" step="1" aria-label="조회수"></td>' +
+        '<td class="row-actions">' +
+        '<button type="button" class="btn btn-primary btn-sm" data-save-blog-meta="' + b.id + '">저장</button> ' +
+        '<button type="button" class="btn btn-outline btn-sm" data-edit-blog="' + b.id + '">수정</button> ' +
+        '<button type="button" class="btn-danger-text" data-del-blog="' + b.id + '">삭제</button></td></tr>';
     }).join('');
+    body.querySelectorAll('[data-save-blog-meta]').forEach(function (btn) {
+      btn.addEventListener('click', function () { saveBlogMetaInline(parseInt(btn.dataset.saveBlogMeta, 10), btn); });
+    });
     body.querySelectorAll('[data-edit-blog]').forEach(function (b) {
       b.addEventListener('click', function () { editBlog(parseInt(b.dataset.editBlog, 10)); });
     });
@@ -219,15 +228,46 @@
     updateKpis();
   }
 
+  async function saveBlogMetaInline(id, btn) {
+    var dateEl = document.querySelector('[data-blog-date="' + id + '"]');
+    var viewsEl = document.querySelector('[data-blog-views="' + id + '"]');
+    if (!dateEl || !viewsEl) return;
+    var prevText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '저장 중…';
+    try {
+      await API.patchBlogMeta(id, {
+        date: dateEl.value.trim(),
+        viewCount: viewsEl.value.trim()
+      });
+      var item = blogData.find(function (x) { return x.id === id; });
+      if (item) {
+        item.date = dateEl.value.trim();
+        item.viewCount = parseInt(viewsEl.value, 10) || 0;
+      }
+      btn.textContent = '저장됨';
+      setTimeout(function () {
+        btn.textContent = prevText;
+        btn.disabled = false;
+      }, 1200);
+    } catch (err) {
+      btn.textContent = prevText;
+      btn.disabled = false;
+      showError(err);
+    }
+  }
+
   function editBlog(id) {
     var b = blogData.find(function (x) { return x.id === id; });
+    var dateEl = document.querySelector('[data-blog-date="' + id + '"]');
+    var viewsEl = document.querySelector('[data-blog-views="' + id + '"]');
     editingId = id;
     document.getElementById('modalBlogTitle').textContent = '블로그 글 수정';
     document.getElementById('blogTitle').value = b.title;
     document.getElementById('blogUrl').value = b.url;
     document.getElementById('blogThumb').value = b.thumb;
-    document.getElementById('blogDate').value = b.date;
-    document.getElementById('blogViewCount').value = b.viewCount || 0;
+    document.getElementById('blogDate').value = dateEl ? dateEl.value.trim() : (b.date || '');
+    document.getElementById('blogViewCount').value = viewsEl ? viewsEl.value : (b.viewCount || 0);
     openModal('modalBlog');
   }
 

@@ -330,6 +330,17 @@
     return ins.data;
   }
 
+  async function patchBlogMeta(id, payload) {
+    if (!id) throw new Error('글 ID가 필요합니다.');
+    var row = {
+      published_at: parseDotDate(payload.date),
+      view_count: parseInt(payload.viewCount, 10) || 0
+    };
+    var up = await db().from('blog_posts').update(row).eq('id', id).select().single();
+    if (up.error) throw up.error;
+    return up.data;
+  }
+
   async function deleteBlog(id) {
     var res = await db().from('blog_posts').delete().eq('id', id);
     if (res.error) throw res.error;
@@ -812,6 +823,7 @@
     deleteYoutube: deleteYoutube,
     listBlog: listBlog,
     saveBlog: saveBlog,
+    patchBlogMeta: patchBlogMeta,
     deleteBlog: deleteBlog,
     listReviews: listReviews,
     saveReview: saveReview,
