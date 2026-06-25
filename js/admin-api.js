@@ -526,6 +526,12 @@
     return res.count || 0;
   }
 
+  async function countTotalInquiries() {
+    var res = await db().from('inquiries').select('id', { count: 'exact', head: true });
+    if (res.error) throw res.error;
+    return res.count || 0;
+  }
+
   async function markAllInquiriesRead() {
     var res = await db().from('inquiries').update({ is_read: true }).eq('is_read', false);
     if (res.error) throw res.error;
@@ -567,6 +573,7 @@
     deleteLeaseModel: deleteLeaseModel,
     listInquiries: listInquiries,
     countUnreadInquiries: countUnreadInquiries,
+    countTotalInquiries: countTotalInquiries,
     markAllInquiriesRead: markAllInquiriesRead,
     deleteInquiries: deleteInquiries
   };

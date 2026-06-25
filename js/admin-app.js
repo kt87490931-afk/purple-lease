@@ -13,6 +13,7 @@
   var usedcarsData = [];
   var inquiryData = [];
   var inquiryUnread = 0;
+  var inquiryTotal = 0;
   var leaseBrands = [];
   var selectedLeaseBrand = null;
 
@@ -39,6 +40,8 @@
   function closeModal(id) { document.getElementById(id).classList.remove('open'); editingId = null; }
 
   function updateKpis() {
+    var kpiInquiry = document.getElementById('kpiInquiry');
+    if (kpiInquiry) kpiInquiry.textContent = inquiryTotal;
     document.getElementById('kpiYoutube').textContent = youtubeData.length;
     document.getElementById('kpiBlog').textContent = blogData.length;
     document.getElementById('kpiReview').textContent = reviewData.length;
@@ -90,6 +93,8 @@
     try {
       var n = await API.countUnreadInquiries();
       updateInquiryBadge(n);
+      inquiryTotal = await API.countTotalInquiries();
+      updateKpis();
     } catch (err) {
       console.warn('[Admin] inquiry badge:', err);
     }
@@ -100,7 +105,9 @@
       await API.markAllInquiriesRead();
       updateInquiryBadge(0);
       inquiryData = await API.listInquiries();
+      inquiryTotal = inquiryData.length;
       renderInquiriesTable();
+      updateKpis();
     } catch (err) {
       showError(err);
     }
@@ -478,6 +485,7 @@
       try {
         await API.deleteInquiries(ids);
         inquiryData = await API.listInquiries();
+        inquiryTotal = inquiryData.length;
         renderInquiriesTable();
         await refreshInquiryBadge();
       } catch (err) { showError(err); }

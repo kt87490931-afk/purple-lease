@@ -144,7 +144,8 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
 .modal-foot { display:flex; justify-content:flex-end; gap:8px; padding:16px 20px; border-top:1px solid var(--line-soft); }
 
 .kpi-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-bottom:22px; }
-@media (min-width:760px){ .kpi-grid{ grid-template-columns:repeat(5,1fr); } }
+@media (min-width:760px){ .kpi-grid{ grid-template-columns:repeat(3,1fr); } }
+@media (min-width:1020px){ .kpi-grid{ grid-template-columns:repeat(6,1fr); } }
 .kpi-card { background:#fff; border-radius: var(--radius-md); padding:16px; box-shadow: var(--shadow-sm); }
 .kpi-card .kpi-label { font-size:11.5px; color: var(--ink-500); font-weight:700; }
 .kpi-card .kpi-value { font-family: var(--font-mono); font-size:22px; font-weight:800; color: var(--ink-900); margin-top:6px; }
@@ -224,6 +225,7 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
 
       <section class="panel active" id="panel-dashboard">
         <div class="kpi-grid">
+          <div class="kpi-card"><div class="kpi-label">견적문의</div><div class="kpi-value" id="kpiInquiry">0</div><div class="kpi-sub" style="font-size:11px;color:var(--ink-400);margin-top:4px;">총건수</div></div>
           <div class="kpi-card"><div class="kpi-label">등록된 유튜브 영상</div><div class="kpi-value" id="kpiYoutube">0</div></div>
           <div class="kpi-card"><div class="kpi-label">등록된 블로그 글</div><div class="kpi-value" id="kpiBlog">0</div></div>
           <div class="kpi-card"><div class="kpi-label">등록된 고객후기</div><div class="kpi-value" id="kpiReview">0</div></div>
