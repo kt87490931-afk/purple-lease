@@ -92,6 +92,11 @@ ALTER TABLE used_cars ADD COLUMN IF NOT EXISTS thumb_url TEXT DEFAULT '';
 ALTER TABLE used_cars ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}';
 ALTER TABLE used_cars ADD COLUMN IF NOT EXISTS detail_json JSONB;
 
+ALTER TABLE used_cars ADD COLUMN IF NOT EXISTS sync_source TEXT NOT NULL DEFAULT '';
+ALTER TABLE used_cars ADD COLUMN IF NOT EXISTS source_url TEXT NOT NULL DEFAULT '';
+ALTER TABLE used_cars ADD COLUMN IF NOT EXISTS last_synced_at TIMESTAMPTZ;
+CREATE INDEX IF NOT EXISTS idx_used_cars_sync_source ON used_cars (sync_source) WHERE sync_source <> '';
+
 CREATE TABLE IF NOT EXISTS parts (
   id            BIGSERIAL PRIMARY KEY,
   listing_id    INT NOT NULL UNIQUE,

@@ -413,6 +413,33 @@
     if (res.error) throw res.error;
   }
 
+  async function syncSwautopiaUsedCars() {
+    var Sync = window.SwautopiaSync;
+    if (!Sync) throw new Error('SwautopiaSync 모듈이 로드되지 않았습니다.');
+    var cars = await Sync.fetchAllCars();
+    var rows = cars.map(function (c) { return Sync.mapCarToRow(c); });
+    var activeIds = rows.map(function (r) { return r.listing_id; });
+    var upserted = 0;
+
+    for (var i = 0; i < rows.length; i += 40) {
+      var batch = rows.slice(i, i + 40);
+      var up = await db().from('used_cars').upsert(batch, { onConflict: 'listing_id' });
+      if (up.error) throw up.error;
+      upserted += batch.length;
+    }
+
+    var ex = await db().from('used_cars').select('listing_id').eq('sync_source', 'swautopia');
+    if (ex.error) throw ex.error;
+    var deactivate = (ex.data || []).map(function (r) { return r.listing_id; }).filter(function (id) {
+      return activeIds.indexOf(id) < 0;
+    });
+    if (deactivate.length) {
+      var de = await db().from('used_cars').update({ is_active: false }).in('listing_id', deactivate);
+      if (de.error) throw de.error;
+    }
+    return { count: upserted, deactivated: deactivate.length };
+  }
+
   /* ---------- Lease ---------- */
   async function listLeaseBrands() {
     var res = await db().from('lease_brands').select('*').order('sort_order', { ascending: true });
@@ -566,6 +593,7 @@
     listUsedcars: listUsedcars,
     saveUsedcar: saveUsedcar,
     deleteUsedcar: deleteUsedcar,
+    syncSwautopiaUsedCars: syncSwautopiaUsedCars,
     listLeaseBrands: listLeaseBrands,
     listLeaseModels: listLeaseModels,
     saveLeaseBrand: saveLeaseBrand,

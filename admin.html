@@ -314,8 +314,11 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
 
       <section class="panel" id="panel-usedcars">
         <div class="toolbar">
-          <div class="toolbar-left">등록된 매물 <b id="usedcarsCount">0</b>대</div>
-          <button class="btn btn-primary" id="btnAddUsedcar">+ 매물 등록</button>
+          <div class="toolbar-left">등록된 매물 <b id="usedcarsCount">0</b>대 — swautopia 동기화 매물은 <code>listing_id</code> = 오토피아 ID</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-outline" type="button" id="btnSyncSwautopia">수동파싱 (swautopia)</button>
+            <button class="btn btn-primary" id="btnAddUsedcar">+ 매물 등록</button>
+          </div>
         </div>
         <table class="data-table">
           <thead><tr><th>썸네일</th><th>차량명</th><th>연식</th><th>주행거리</th><th>가격</th><th>상태</th><th></th></tr></thead>
@@ -417,6 +420,7 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="/js/supabase-config.js"></script>
 <script src="/js/youtube-utils.js"></script>
+<script src="/js/swautopia-sync.js"></script>
 <script src="/js/admin-auth.js"></script>
 <script src="/js/admin-api.js"></script>
 <script src="/js/admin-app.js"></script>

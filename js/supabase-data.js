@@ -171,17 +171,31 @@
     if (res.error) throw res.error;
     if (!res.data) return null;
     var d = res.data.detail_json || {};
+    var photos = (d.photos && d.photos.length) ? d.photos : (res.data.thumb_url ? [res.data.thumb_url] : []);
     return Object.assign({
       name: res.data.name,
-      origin: res.data.origin,
-      status: res.data.status,
+      origin: res.data.origin || 'domestic',
+      status: res.data.status || '판매중',
       year: res.data.year,
       mileage: res.data.mileage,
       fuel: res.data.fuel,
       price: res.data.price_num,
       tags: res.data.tags || [],
-      photos: res.data.thumb_url ? [res.data.thumb_url] : []
-    }, d);
+      photos: photos,
+      plate: d.plate || '',
+      color: d.color || '',
+      parkLocation: d.parkLocation || '',
+      registeredDate: d.registeredDate || '',
+      cost: d.cost || [],
+      description: d.description || '',
+      options: d.options || {},
+      perfDocs: d.perfDocs || [],
+      perfLinks: d.perfLinks || [],
+      underbodyDocs: d.underbodyDocs || [],
+      isEV: !!d.isEV,
+      battery: d.battery || null,
+      batteryDocs: d.batteryDocs || []
+    }, d, { photos: photos, seller: null });
   }
 
   async function fetchParts() {

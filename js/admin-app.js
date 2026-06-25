@@ -609,6 +609,25 @@
       bindUpload('partThumbFile', 'partThumb', 'parts');
     });
 
+    document.getElementById('btnSyncSwautopia').addEventListener('click', async function () {
+      var btn = document.getElementById('btnSyncSwautopia');
+      if (!confirm('swautopia.co.kr 매물을 동기화하시겠습니까?\n판매완료·삭제된 매물은 목록에서 제외됩니다.')) return;
+      btn.disabled = true;
+      var prev = btn.textContent;
+      btn.textContent = '동기화 중…';
+      try {
+        var result = await API.syncSwautopiaUsedCars();
+        usedcarsData = await API.listUsedcars();
+        renderUsedcarsTable();
+        alert('동기화 완료: ' + (result.count || 0) + '대 반영, 비활성 ' + (result.deactivated || 0) + '대');
+      } catch (err) {
+        showError(err);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = prev;
+      }
+    });
+
     document.getElementById('btnAddUsedcar').addEventListener('click', function () {
       editingId = null;
       document.getElementById('modalUsedcarTitle').textContent = '매물 등록';
