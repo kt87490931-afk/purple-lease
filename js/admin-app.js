@@ -47,13 +47,16 @@
   }
 
   function updateInquiryBadge(count) {
-    inquiryUnread = count || 0;
+    inquiryUnread = Math.max(0, parseInt(count, 10) || 0);
     var badge = document.getElementById('inquiryNavBadge');
     if (!badge) return;
-    if (inquiryUnread > 0) {
+    if (inquiryUnread >= 1) {
       badge.textContent = inquiryUnread > 99 ? '99+' : String(inquiryUnread);
+      badge.style.display = 'inline-flex';
       badge.hidden = false;
     } else {
+      badge.textContent = '';
+      badge.style.display = 'none';
       badge.hidden = true;
     }
   }
