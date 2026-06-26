@@ -407,7 +407,7 @@
       slug: slugify(ksBrand.name, 'b-' + ksId),
       name: ksBrand.name || '',
       origin: country,
-      logo_url: '',
+      logo_url: absKsUrl('/data/dbrand/e' + ksId + '.png'),
       sort_order: parseInt(ksBrand.sort, 10) || ksId,
       is_active: true,
       ks_brand_id: ksId,

@@ -328,7 +328,7 @@
     if (!client) return null;
     var brandsRes = await client
       .from('lease_brands')
-      .select('id,slug,name,origin,logo_url,sort_order')
+      .select('id,slug,name,origin,logo_url,ks_brand_id,sort_order')
       .eq('is_active', true)
       .order('sort_order', { ascending: true });
     if (brandsRes.error) throw brandsRes.error;
@@ -361,6 +361,7 @@
         id: b.slug,
         name: b.name,
         logo: b.logo_url,
+        ksBrandId: b.ks_brand_id != null ? parseInt(b.ks_brand_id, 10) : null,
         models: modelsByBrand[b.id] || []
       };
       if (b.origin === 'import') imported.push(item);
