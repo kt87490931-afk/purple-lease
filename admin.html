@@ -200,6 +200,11 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
         <span class="nav-label">견적문의</span>
         <span class="nav-badge" id="inquiryNavBadge" aria-label="미확인 견적문의"></span>
       </a>
+      <a class="admin-nav-item" data-panel="lease-quotes">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span class="nav-label">신차리스 견적</span>
+        <span class="nav-badge" id="leaseQuoteNavBadge" aria-label="미확인 신차리스 견적"></span>
+      </a>
       <a class="admin-nav-item" data-panel="youtube">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
         유튜브 영상
@@ -265,6 +270,20 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
             <th>날짜</th><th>시간</th><th>브랜드</th><th>이용방식</th><th>성함</th><th>연락처</th>
           </tr></thead>
           <tbody id="inquiryTableBody"></tbody>
+        </table>
+      </section>
+
+      <section class="panel" id="panel-lease-quotes">
+        <div class="toolbar">
+          <div class="toolbar-left">신차리스 견적 <b id="leaseQuoteCount">0</b>건 — estimate.html 「최종 견적서 제출」 접수 내역</div>
+          <button class="btn btn-outline" type="button" id="btnDeleteLeaseQuotes">선택 삭제</button>
+        </div>
+        <table class="data-table">
+          <thead><tr>
+            <th style="width:36px;text-align:center;"><input type="checkbox" id="leaseQuoteCheckAll" aria-label="전체 선택"></th>
+            <th>날짜</th><th>시간</th><th>구분</th><th>브랜드</th><th>차종</th><th>성함</th><th>연락처</th><th></th>
+          </tr></thead>
+          <tbody id="leaseQuoteTableBody"></tbody>
         </table>
       </section>
 
@@ -462,6 +481,14 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
       <div class="form-row"><label>대표 이미지</label><input type="text" id="ucThumb" placeholder="/assets/usedcars/481-1.jpg"><div style="display:flex;gap:8px;align-items:center;margin-top:6px;"><input type="file" id="ucThumbFile" accept="image/jpeg,image/png,image/webp,image/gif"><button type="button" class="btn btn-outline btn-sm" id="btnUploadUcThumb">업로드</button></div></div>
     </div>
     <div class="modal-foot"><button class="btn btn-outline" data-close="modalUsedcar">취소</button><button class="btn btn-primary" id="btnSaveUsedcar">저장</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalLeaseQuoteDetail">
+  <div class="modal-box" style="max-width:640px;">
+    <div class="modal-head"><h3 id="modalLeaseQuoteTitle">신차리스 견적 상세</h3><button class="modal-close" data-close="modalLeaseQuoteDetail">✕</button></div>
+    <div class="modal-body" id="modalLeaseQuoteBody" style="font-size:13px;line-height:1.6;"></div>
+    <div class="modal-foot"><button class="btn btn-outline" data-close="modalLeaseQuoteDetail">닫기</button></div>
   </div>
 </div>
 

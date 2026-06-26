@@ -448,6 +448,26 @@
     return res.data;
   }
 
+  async function submitLeaseQuote(payload) {
+    var client = getClient();
+    if (!client) throw new Error('Supabase not configured');
+    var quote = payload.quote || {};
+    var row = {
+      name: String(payload.name || '').trim(),
+      phone: String(payload.phone || '').trim(),
+      origin: quote.origin || payload.origin || 'domestic',
+      brand_name: quote.brand_name || payload.brand_name || '',
+      model_name: quote.model_name || payload.model_name || '',
+      quote_json: quote,
+      source_page: payload.source_page || 'estimate',
+      is_read: false
+    };
+    if (!row.name || !row.phone) throw new Error('성함과 연락처를 입력해 주세요.');
+    var res = await client.from('lease_quotes').insert([row]);
+    if (res.error) throw res.error;
+    return res.data;
+  }
+
   window.PurpleLeaseData = {
     fetchYoutubeVideos: fetchYoutubeVideos,
     fetchYoutubeHomeMain: fetchYoutubeHomeMain,
@@ -469,6 +489,7 @@
     fetchBlogHomePopular: fetchBlogHomePopular,
     incrementBlogViews: incrementBlogViews,
     submitInquiry: submitInquiry,
+    submitLeaseQuote: submitLeaseQuote,
     isConfigured: function () { return !!getClient(); }
   };
 })();

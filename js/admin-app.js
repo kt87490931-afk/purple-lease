@@ -14,6 +14,8 @@
   var inquiryData = [];
   var inquiryUnread = 0;
   var inquiryTotal = 0;
+  var leaseQuoteData = [];
+  var leaseQuoteUnread = 0;
   var leaseBrands = [];
   var selectedLeaseBrand = null;
   var lastKsSyncCountry = null;
@@ -120,6 +122,116 @@
       inquiryTotal = inquiryData.length;
       renderInquiriesTable();
       updateKpis();
+    } catch (err) {
+      showError(err);
+    }
+  }
+
+  function updateLeaseQuoteBadge(count) {
+    leaseQuoteUnread = Math.max(0, parseInt(count, 10) || 0);
+    var badge = document.getElementById('leaseQuoteNavBadge');
+    if (!badge) return;
+    if (leaseQuoteUnread >= 1) {
+      badge.textContent = leaseQuoteUnread > 99 ? '99+' : String(leaseQuoteUnread);
+      badge.style.display = 'inline-flex';
+      badge.hidden = false;
+    } else {
+      badge.textContent = '';
+      badge.style.display = 'none';
+      badge.hidden = true;
+    }
+  }
+
+  function fmtWon(n) {
+    var v = parseInt(n, 10);
+    if (isNaN(v)) return String(n || '');
+    return v.toLocaleString('ko-KR') + '원';
+  }
+
+  function renderLeaseQuoteDetailHtml(row) {
+    var q = row.quote || {};
+    var opts = (q.options || []).map(function (o) {
+      return '<li>' + (o.name || '') + (o.price ? ' (+' + fmtWon(o.price) + ')' : '') + '</li>';
+    }).join('') || '<li>없음</li>';
+    var cond = q.conditions || {};
+    var labels = cond.labels || {};
+    return '<div style="display:grid;gap:12px;">' +
+      '<div><b>고객</b><br>' + row.name + ' · ' + row.phone + '</div>' +
+      '<div><b>차량</b><br>' + (q.origin_label || row.originLabel) + ' · ' + (q.brand_name || row.brandName) + ' · ' + (q.model_name || row.modelName) + '</div>' +
+      '<div><b>외장색상</b><br>' + (q.color_name || '-') + (q.color_surcharge ? ' (+' + fmtWon(q.color_surcharge) + ')' : '') + '</div>' +
+      '<div><b>세부모델(트림)</b><br>' + (q.trim_group ? q.trim_group + ' — ' : '') + (q.trim_name || '-') + (q.trim_price ? ' · ' + fmtWon(q.trim_price) : '') + '</div>' +
+      '<div><b>추가 옵션</b><ul style="margin:6px 0 0 18px;padding:0;">' + opts + '</ul></div>' +
+      '<div><b>이용조건</b><ul style="margin:6px 0 0 18px;padding:0;">' +
+      '<li>이용방법: ' + (labels.method || cond.method || '-') + '</li>' +
+      '<li>이용기간: ' + (labels.period || (cond.period ? cond.period + '개월' : '-')) + '</li>' +
+      '<li>보증금: ' + (labels.deposit || cond.deposit || '-') + (cond.deposit_amount ? ' (' + cond.deposit_amount + ')' : '') + '</li>' +
+      '<li>선납금: ' + (labels.prepay || cond.prepay || '-') + (cond.prepay_amount ? ' (' + cond.prepay_amount + ')' : '') + '</li>' +
+      '<li>보험연령: ' + (labels.insAge || cond.insAge || '-') + '</li>' +
+      '<li>자동차세: ' + (labels.carTax || cond.carTax || '-') + '</li>' +
+      '<li>연간 주행: ' + (labels.mileage || cond.mileage || '-') + '</li>' +
+      '<li>신용도: ' + (labels.credit || cond.credit || '-') + '</li>' +
+      '</ul></div>' +
+      (q.pricing ? '<div><b>참고 금액</b><br>기본 ' + (q.pricing.base || '-') + ' · 색상 ' + (q.pricing.color || '-') + ' · 옵션 ' + (q.pricing.options || '-') + ' · 합계 ' + (q.pricing.total || '-') + '</div>' : '') +
+      '</div>';
+  }
+
+  function openLeaseQuoteDetail(id) {
+    var row = leaseQuoteData.find(function (r) { return r.id === id; });
+    if (!row) return;
+    document.getElementById('modalLeaseQuoteTitle').textContent = '신차리스 견적 — ' + row.brandName + ' ' + row.modelName;
+    document.getElementById('modalLeaseQuoteBody').innerHTML = renderLeaseQuoteDetailHtml(row);
+    openModal('modalLeaseQuoteDetail');
+  }
+
+  function renderLeaseQuotesTable() {
+    var body = document.getElementById('leaseQuoteTableBody');
+    var countEl = document.getElementById('leaseQuoteCount');
+    if (countEl) countEl.textContent = leaseQuoteData.length;
+    var checkAll = document.getElementById('leaseQuoteCheckAll');
+    if (checkAll) checkAll.checked = false;
+    if (!body) return;
+
+    if (!leaseQuoteData.length) {
+      body.innerHTML = '<tr><td colspan="9"><div class="empty-row">접수된 신차리스 견적이 없습니다.</div></td></tr>';
+      return;
+    }
+
+    body.innerHTML = leaseQuoteData.map(function (row) {
+      return '<tr>' +
+        '<td style="text-align:center;"><input type="checkbox" class="lease-quote-check" value="' + row.id + '" aria-label="선택"></td>' +
+        '<td class="num-cell">' + row.date + '</td>' +
+        '<td class="num-cell">' + row.time + '</td>' +
+        '<td>' + row.originLabel + '</td>' +
+        '<td>' + row.brandName + '</td>' +
+        '<td class="title-cell">' + row.modelName + '</td>' +
+        '<td class="title-cell">' + row.name + '</td>' +
+        '<td class="num-cell">' + row.phone + '</td>' +
+        '<td><button type="button" class="btn btn-outline btn-sm" data-view-lq="' + row.id + '">상세</button></td>' +
+        '</tr>';
+    }).join('');
+
+    body.querySelectorAll('[data-view-lq]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        openLeaseQuoteDetail(parseInt(btn.dataset.viewLq, 10));
+      });
+    });
+  }
+
+  async function refreshLeaseQuoteBadge() {
+    try {
+      var n = await API.countUnreadLeaseQuotes();
+      updateLeaseQuoteBadge(n);
+    } catch (err) {
+      console.warn('[Admin] lease quote badge:', err);
+    }
+  }
+
+  async function openLeaseQuotesPanel() {
+    try {
+      await API.markAllLeaseQuotesRead();
+      updateLeaseQuoteBadge(0);
+      leaseQuoteData = await API.listLeaseQuotes();
+      renderLeaseQuotesTable();
     } catch (err) {
       showError(err);
     }
@@ -647,6 +759,7 @@
     await renderLeaseBrandList();
     await renderLeaseSyncLogArea();
     await refreshInquiryBadge();
+    await refreshLeaseQuoteBadge();
   }
 
   function bindEvents() {
@@ -660,6 +773,9 @@
         document.getElementById('topbarTitle').textContent = labelEl ? labelEl.textContent.trim() : item.textContent.trim();
         if (item.dataset.panel === 'inquiries') {
           await openInquiriesPanel();
+        }
+        if (item.dataset.panel === 'lease-quotes') {
+          await openLeaseQuotesPanel();
         }
       });
     });
@@ -694,6 +810,29 @@
     document.getElementById('inquiryCheckAll').addEventListener('change', function () {
       var checked = document.getElementById('inquiryCheckAll').checked;
       document.querySelectorAll('.inquiry-check').forEach(function (el) { el.checked = checked; });
+    });
+
+    document.getElementById('btnDeleteLeaseQuotes').addEventListener('click', async function () {
+      var ids = [];
+      document.querySelectorAll('.lease-quote-check:checked').forEach(function (el) {
+        ids.push(parseInt(el.value, 10));
+      });
+      if (!ids.length) {
+        alert('삭제할 항목을 선택해 주세요.');
+        return;
+      }
+      if (!confirm('선택한 ' + ids.length + '건을 삭제하시겠습니까?')) return;
+      try {
+        await API.deleteLeaseQuotes(ids);
+        leaseQuoteData = await API.listLeaseQuotes();
+        renderLeaseQuotesTable();
+        await refreshLeaseQuoteBadge();
+      } catch (err) { showError(err); }
+    });
+
+    document.getElementById('leaseQuoteCheckAll').addEventListener('change', function () {
+      var checked = document.getElementById('leaseQuoteCheckAll').checked;
+      document.querySelectorAll('.lease-quote-check').forEach(function (el) { el.checked = checked; });
     });
 
     document.getElementById('btnSyncYoutube').addEventListener('click', async function () {

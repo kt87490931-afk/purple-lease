@@ -496,6 +496,55 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 }
 .helper-note svg { flex-shrink: 0; margin-top: 1px; width: 15px; height: 15px; }
 
+/* 무료 견적 신청 모달 */
+.quote-modal-overlay {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(15,15,25,.55);
+  display: none; align-items: center; justify-content: center;
+  padding: 20px 16px;
+}
+.quote-modal-overlay.open { display: flex; }
+.quote-modal-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  max-width: 420px;
+}
+.quote-modal-card::before {
+  content: '';
+  position: absolute; top: -60px; right: -60px;
+  width: 180px; height: 180px;
+  background: var(--grad-main);
+  opacity: 0.08;
+  border-radius: 50%;
+}
+.quote-modal-card h2 { font-size: 19px; margin-bottom: 4px; position: relative; }
+.quote-modal-card p.lead { font-size: 12.5px; color: var(--ink-500); margin-bottom: 18px; position: relative; }
+.quote-form-row { display: flex; gap: 8px; margin-bottom: 10px; position: relative; }
+.quote-form-row input {
+  flex: 1; min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink-900);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  font-size: 13.5px;
+  font-family: inherit;
+}
+.quote-form-row input:focus { border-color: var(--purple-600); outline: none; }
+.quote-modal-consent { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--ink-500); margin: 10px 0 16px; position: relative; }
+.quote-modal-close {
+  position: absolute; top: 14px; right: 14px;
+  width: 28px; height: 28px; border: none; border-radius: 50%;
+  background: var(--surface); color: var(--ink-500); cursor: pointer;
+  z-index: 1;
+}
+
 /* step page toggle */
 .step-page { display: none; }
 .step-page.active { display: block; }
@@ -692,6 +741,25 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   </section>
 
 </main>
+
+<div class="quote-modal-overlay" id="quoteModal" aria-hidden="true">
+  <div class="quote-modal-card" role="dialog" aria-labelledby="quoteModalTitle">
+    <button type="button" class="quote-modal-close" id="quoteModalClose" aria-label="닫기">✕</button>
+    <h2 id="quoteModalTitle">무료 견적 신청</h2>
+    <p class="lead">간단한 정보만 입력하면 비교 견적을 보내드려요.</p>
+    <div class="quote-form-row">
+      <input type="text" id="quoteName" placeholder="성함" autocomplete="name">
+    </div>
+    <div class="quote-form-row">
+      <input type="tel" id="quotePhone" placeholder="연락처 (010-0000-0000)" autocomplete="tel">
+    </div>
+    <label class="quote-modal-consent">
+      <input type="checkbox" id="quoteConsent" style="accent-color:#6C3CE0; width:15px; height:15px;">
+      개인정보 수집·이용에 동의합니다 <a href="#" style="color:var(--purple-600); text-decoration:underline;">[보기]</a>
+    </label>
+    <button type="button" class="btn btn-primary btn-block" id="btnQuoteModalSubmit">무료 견적 받아보기</button>
+  </div>
+</div>
 
 <footer class="site-footer">
   <div class="wrap">
@@ -1175,25 +1243,147 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   document.getElementById('btnGoStep2').addEventListener('click', goToStep2);
   document.getElementById('btnBackStep1').addEventListener('click', goToStep1);
 
-  // ---- 최종 견적서 제출 ----
-  document.getElementById('btnSubmit').addEventListener('click', () => {
-    if (!document.getElementById('consentCheck').checked) {
-      alert('개인정보 수집·이용·제공 동의가 필요합니다.');
-      return;
+  function getConditionLabels() {
+    const labels = {};
+    document.querySelectorAll('.cond-options').forEach(group => {
+      const key = group.dataset.cond;
+      const sel = group.querySelector('.cond-pill.selected');
+      labels[key] = sel ? sel.textContent.trim() : (state.cond[key] || '');
+    });
+    return labels;
+  }
+
+  function buildQuoteSnapshot() {
+    const detail = getDetail();
+    const allBrands = brandData.domestic.concat(brandData.import);
+    const brand = allBrands.find(b => b.id === state.brandId);
+    const model = (modelData[state.brandId] || []).find(m => m.id === state.modelId);
+    const trimGroup = detail?.trimGroups?.[state.trimGroupIdx];
+    const trim = trimGroup?.trims?.[state.trimIdx];
+    const color = detail?.colors?.[state.colorIdx];
+    const options = detail ? Array.from(state.selectedOptions).map(i => ({
+      name: detail.options[i]?.name || '',
+      price: detail.options[i]?.price || 0
+    })) : [];
+
+    return {
+      origin: state.origin,
+      origin_label: state.origin === 'import' ? '수입차' : '국산차',
+      brand_id: state.brandId,
+      brand_name: brand?.name || detail?.brandName || '',
+      model_id: state.modelId,
+      model_name: model?.name || detail?.modelName || '',
+      color_name: color?.name || '',
+      color_hex: color?.hex || '',
+      color_surcharge: color?.surcharge || 0,
+      trim_group: trimGroup?.label || '',
+      trim_name: trim?.name || '',
+      trim_price: trim?.price || 0,
+      options: options,
+      conditions: {
+        ...state.cond,
+        labels: getConditionLabels(),
+        deposit_amount: document.getElementById('depositAmount')?.value || '',
+        prepay_amount: document.getElementById('prepayAmount')?.value || ''
+      },
+      pricing: {
+        base: document.getElementById('sumBase')?.textContent || '',
+        color: document.getElementById('sumColor')?.textContent || '',
+        options: document.getElementById('sumOpt')?.textContent || '',
+        total: document.getElementById('sumTotal')?.textContent || '',
+        option_count: state.selectedOptions.size
+      }
+    };
+  }
+
+  function validateQuoteReady() {
+    if (!state.brandId || !state.modelId) {
+      alert('브랜드와 차종을 선택해 주세요.');
+      goToStep1();
+      return false;
     }
     const detail = getDetail();
-    const payload = {
-      origin: state.origin,
-      brandId: state.brandId,
-      modelId: state.modelId,
-      color: detail ? detail.colors[state.colorIdx]?.name : null,
-      trim: detail ? detail.trimGroups[state.trimGroupIdx]?.trims[state.trimIdx]?.name : null,
-      options: detail ? Array.from(state.selectedOptions).map(i => detail.options[i].name) : [],
-      condition: state.cond,
-      total: document.getElementById('sumTotal').textContent
-    };
-    console.log('견적 제출 payload', payload);
-    alert('최저가 견적서 요청이 접수되었습니다.\n담당 플래너가 곧 연락드리겠습니다.');
+    if (!detail || !detail.trimGroups?.length) {
+      alert('선택하신 차량의 트림 정보가 없습니다.');
+      return false;
+    }
+    const trim = detail.trimGroups[state.trimGroupIdx]?.trims?.[state.trimIdx];
+    if (!trim) {
+      alert('세부모델(트림)을 선택해 주세요.');
+      return false;
+    }
+    return true;
+  }
+
+  let pendingQuoteSnapshot = null;
+
+  function openQuoteModal() {
+    document.getElementById('quoteModal').classList.add('open');
+    document.getElementById('quoteModal').setAttribute('aria-hidden', 'false');
+    document.getElementById('quoteName').focus();
+  }
+
+  function closeQuoteModal() {
+    document.getElementById('quoteModal').classList.remove('open');
+    document.getElementById('quoteModal').setAttribute('aria-hidden', 'true');
+  }
+
+  document.getElementById('btnSubmit').addEventListener('click', () => {
+    if (!validateQuoteReady()) return;
+    pendingQuoteSnapshot = buildQuoteSnapshot();
+    openQuoteModal();
+  });
+
+  document.getElementById('quoteModalClose').addEventListener('click', closeQuoteModal);
+  document.getElementById('quoteModal').addEventListener('click', (e) => {
+    if (e.target.id === 'quoteModal') closeQuoteModal();
+  });
+
+  document.getElementById('btnQuoteModalSubmit').addEventListener('click', async () => {
+    const name = document.getElementById('quoteName').value.trim();
+    const phone = document.getElementById('quotePhone').value.trim();
+    if (!name) {
+      alert('성함을 입력해 주세요.');
+      return;
+    }
+    if (!phone || phone.replace(/\D/g, '').length < 9) {
+      alert('연락처를 올바르게 입력해 주세요.');
+      return;
+    }
+    if (!document.getElementById('quoteConsent').checked) {
+      alert('개인정보 수집·이용에 동의해 주세요.');
+      return;
+    }
+    if (!pendingQuoteSnapshot) {
+      pendingQuoteSnapshot = buildQuoteSnapshot();
+    }
+    const btn = document.getElementById('btnQuoteModalSubmit');
+    btn.disabled = true;
+    const prevText = btn.textContent;
+    btn.textContent = '접수 중…';
+    try {
+      if (window.PurpleLeaseData && window.PurpleLeaseData.isConfigured()) {
+        await window.PurpleLeaseData.submitLeaseQuote({
+          name: name,
+          phone: phone,
+          quote: pendingQuoteSnapshot,
+          source_page: 'estimate'
+        });
+      } else {
+        console.log('[estimate] quote payload (no supabase):', { name, phone, quote: pendingQuoteSnapshot });
+      }
+      closeQuoteModal();
+      alert('최저가 견적서 요청이 접수되었습니다.\n담당 플래너가 곧 연락드리겠습니다.');
+      document.getElementById('quoteName').value = '';
+      document.getElementById('quotePhone').value = '';
+      pendingQuoteSnapshot = null;
+    } catch (err) {
+      console.error('[estimate] quote submit failed:', err);
+      alert('접수 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = prevText;
+    }
   });
 
   // ---- 최초 렌더 ----

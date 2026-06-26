@@ -848,6 +848,46 @@
     if (res.error) throw res.error;
   }
 
+  function mapLeaseQuoteRow(r) {
+    return {
+      id: r.id,
+      date: fmtDate(r.created_at),
+      time: fmtTime(r.created_at),
+      name: r.name,
+      phone: r.phone,
+      origin: r.origin || 'domestic',
+      originLabel: r.origin === 'import' ? '수입차' : '국산차',
+      brandName: r.brand_name || '',
+      modelName: r.model_name || '',
+      quote: r.quote_json || {},
+      isRead: !!r.is_read,
+      createdAt: r.created_at
+    };
+  }
+
+  async function listLeaseQuotes() {
+    var res = await db().from('lease_quotes').select('*').order('created_at', { ascending: false });
+    if (res.error) throw res.error;
+    return (res.data || []).map(mapLeaseQuoteRow);
+  }
+
+  async function countUnreadLeaseQuotes() {
+    var res = await db().from('lease_quotes').select('id', { count: 'exact', head: true }).eq('is_read', false);
+    if (res.error) throw res.error;
+    return res.count || 0;
+  }
+
+  async function markAllLeaseQuotesRead() {
+    var res = await db().from('lease_quotes').update({ is_read: true }).eq('is_read', false);
+    if (res.error) throw res.error;
+  }
+
+  async function deleteLeaseQuotes(ids) {
+    if (!ids || !ids.length) return;
+    var res = await db().from('lease_quotes').delete().in('id', ids);
+    if (res.error) throw res.error;
+  }
+
   window.PurpleAdminAPI = {
     fmtDate: fmtDate,
     parseDotDate: parseDotDate,
@@ -888,6 +928,10 @@
     countUnreadInquiries: countUnreadInquiries,
     countTotalInquiries: countTotalInquiries,
     markAllInquiriesRead: markAllInquiriesRead,
-    deleteInquiries: deleteInquiries
+    deleteInquiries: deleteInquiries,
+    listLeaseQuotes: listLeaseQuotes,
+    countUnreadLeaseQuotes: countUnreadLeaseQuotes,
+    markAllLeaseQuotesRead: markAllLeaseQuotesRead,
+    deleteLeaseQuotes: deleteLeaseQuotes
   };
 })();
