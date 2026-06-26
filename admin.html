@@ -170,6 +170,8 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
 .tree-item:hover { background: var(--surface); }
 .tree-item.active { background: var(--purple-50); color: var(--purple-600); }
 .tree-item:last-child { border-bottom:none; }
+.tree-section-label { padding:9px 14px 6px; font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-400); background:var(--surface); border-bottom:1px solid var(--line-soft); }
+.tree-section-label:not(:first-child) { border-top:1px solid var(--line-soft); }
 
 @media (max-width: 860px) {
   .admin-sidebar { position:fixed; left:-220px; transition: left .2s ease; z-index:150; }
@@ -322,7 +324,8 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
             <button class="btn btn-primary" id="btnAddLeaseBrand" type="button">+ 브랜드 추가</button>
           </div>
         </div>
-        <div id="leaseSyncLogArea" style="margin-bottom:12px;font-size:12px;color:var(--ink-400);"></div>
+        <div id="leaseSyncLogArea" style="margin-bottom:8px;font-size:12px;color:var(--ink-400);"></div>
+        <p style="margin:0 0 12px;font-size:11.5px;color:var(--ink-400);">KS 서버 IP 차단 시 어드민 버튼은 실패할 수 있습니다. GitHub Actions 「Sync KS Lease」에서 <b>domestic</b>·<b>import</b> 각각 실행하면 Supabase에 반영됩니다.</p>
         <div class="tree-cols">
           <div class="tree-list" id="leaseBrandList"></div>
           <div id="leaseModelArea">

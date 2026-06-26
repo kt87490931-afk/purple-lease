@@ -683,7 +683,13 @@
   async function listLeaseBrands() {
     var res = await db().from('lease_brands').select('*').order('sort_order', { ascending: true });
     if (res.error) throw res.error;
-    return (res.data || []).map(function (r) {
+    var rows = (res.data || []).slice().sort(function (a, b) {
+      var oa = a.origin === 'import' ? 1 : 0;
+      var ob = b.origin === 'import' ? 1 : 0;
+      if (oa !== ob) return oa - ob;
+      return (a.sort_order || 0) - (b.sort_order || 0);
+    });
+    return rows.map(function (r) {
       return {
         id: r.slug,
         dbId: r.id,

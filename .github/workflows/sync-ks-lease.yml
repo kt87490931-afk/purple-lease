@@ -1,42 +1,46 @@
-name: Sync KS Lease
-
-# Required repository secrets:
-#   SUPABASE_URL              — Supabase project URL
-#   SUPABASE_SERVICE_ROLE_KEY — service role key for lease_brands / lease_models writes
-
-on:
-  workflow_dispatch:
-    inputs:
-      country:
-        description: "Country (domestic/import)"
-        required: true
-        default: domestic
-        type: choice
-        options:
-          - domestic
-          - import
-  schedule:
-    - cron: "0 4 * * *"
-
-jobs:
-  sync:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Sync KS lease data
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: |
-          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
-            echo "::error::Missing secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY — add them in Repository Settings > Secrets and variables > Actions"
-            exit 1
-          fi
-          COUNTRY="${{ github.event.inputs.country || 'domestic' }}"
-          echo "Running sync for country=$COUNTRY"
-          node scripts/sync-ks-lease.js "$COUNTRY"
+name: Sync KS Lease
+
+# Required repository secrets:
+#   SUPABASE_URL              — Supabase project URL
+#   SUPABASE_SERVICE_ROLE_KEY — service role key for lease_brands / lease_models writes
+
+on:
+  workflow_dispatch:
+    inputs:
+      country:
+        description: "Country (domestic/import)"
+        required: true
+        default: domestic
+        type: choice
+        options:
+          - domestic
+          - import
+  schedule:
+    - cron: "0 4 * * *"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        country: [domestic, import]
+    if: github.event_name == 'schedule' || github.event.inputs.country == matrix.country
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Sync KS lease data (${{ matrix.country }})
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::error::Missing secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY — add them in Repository Settings > Secrets and variables > Actions"
+            exit 1
+          fi
+          echo "Running sync for country=${{ matrix.country }}"
+          node scripts/sync-ks-lease.js "${{ matrix.country }}"
+

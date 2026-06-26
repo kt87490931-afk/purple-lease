@@ -438,11 +438,25 @@
     } catch (err) { showError(err); }
   }
 
-  async function renderLeaseBrandList() {
-    var list = document.getElementById('leaseBrandList');
-    list.innerHTML = leaseBrands.map(function (b) {
+  function leaseBrandTreeHtml(brands) {
+    return brands.map(function (b) {
       return '<div class="tree-item' + (b.id === selectedLeaseBrand ? ' active' : '') + '" data-brand="' + b.id + '">' + b.name + '</div>';
     }).join('');
+  }
+
+  async function renderLeaseBrandList() {
+    var list = document.getElementById('leaseBrandList');
+    var domestic = leaseBrands.filter(function (b) { return b.origin !== 'import'; });
+    var imported = leaseBrands.filter(function (b) { return b.origin === 'import'; });
+    var html = '';
+    if (domestic.length) {
+      html += '<div class="tree-section-label">국산차</div>' + leaseBrandTreeHtml(domestic);
+    }
+    if (imported.length) {
+      html += '<div class="tree-section-label">수입차</div>' + leaseBrandTreeHtml(imported);
+    }
+    if (!html) html = '<div class="empty-row" style="padding:14px;">등록된 브랜드가 없습니다.</div>';
+    list.innerHTML = html;
     list.querySelectorAll('.tree-item').forEach(function (el) {
       el.addEventListener('click', function () {
         selectedLeaseBrand = el.dataset.brand;
