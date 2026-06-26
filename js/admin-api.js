@@ -898,6 +898,49 @@
     if (res.error) throw res.error;
   }
 
+  function mapUsedCarInquiryRow(r) {
+    return {
+      id: r.id,
+      date: fmtDate(r.created_at),
+      time: fmtTime(r.created_at),
+      name: r.name,
+      phone: r.phone,
+      listingId: r.listing_id,
+      brand: r.brand || '',
+      vehicleName: r.vehicle_name || '',
+      productTitle: r.product_title || '',
+      price: r.price || 0,
+      thumbUrl: r.thumb_url || '',
+      detailUrl: r.detail_url || '',
+      vehicle: r.vehicle_json || {},
+      isRead: !!r.is_read,
+      createdAt: r.created_at
+    };
+  }
+
+  async function listUsedCarInquiries() {
+    var res = await db().from('used_car_inquiries').select('*').order('created_at', { ascending: false });
+    if (res.error) throw res.error;
+    return (res.data || []).map(mapUsedCarInquiryRow);
+  }
+
+  async function countUnreadUsedCarInquiries() {
+    var res = await db().from('used_car_inquiries').select('id', { count: 'exact', head: true }).eq('is_read', false);
+    if (res.error) throw res.error;
+    return res.count || 0;
+  }
+
+  async function markAllUsedCarInquiriesRead() {
+    var res = await db().from('used_car_inquiries').update({ is_read: true }).eq('is_read', false);
+    if (res.error) throw res.error;
+  }
+
+  async function deleteUsedCarInquiries(ids) {
+    if (!ids || !ids.length) return;
+    var res = await db().from('used_car_inquiries').delete().in('id', ids);
+    if (res.error) throw res.error;
+  }
+
   window.PurpleAdminAPI = {
     fmtDate: fmtDate,
     parseDotDate: parseDotDate,
@@ -943,6 +986,10 @@
     listLeaseQuotes: listLeaseQuotes,
     countUnreadLeaseQuotes: countUnreadLeaseQuotes,
     markAllLeaseQuotesRead: markAllLeaseQuotesRead,
-    deleteLeaseQuotes: deleteLeaseQuotes
+    deleteLeaseQuotes: deleteLeaseQuotes,
+    listUsedCarInquiries: listUsedCarInquiries,
+    countUnreadUsedCarInquiries: countUnreadUsedCarInquiries,
+    markAllUsedCarInquiriesRead: markAllUsedCarInquiriesRead,
+    deleteUsedCarInquiries: deleteUsedCarInquiries
   };
 })();

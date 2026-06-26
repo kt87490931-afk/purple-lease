@@ -16,6 +16,9 @@
   var inquiryTotal = 0;
   var leaseQuoteData = [];
   var leaseQuoteUnread = 0;
+  var usedCarInquiryData = [];
+  var usedCarInquiryUnread = 0;
+  var activeInquiryTab = 'general';
   var leaseBrands = [];
   var selectedLeaseBrand = null;
   var lastKsSyncCountry = null;
@@ -64,12 +67,12 @@
     document.getElementById('kpiUsedcars').textContent = usedcarsData.length;
   }
 
-  function updateInquiryBadge(count) {
-    inquiryUnread = Math.max(0, parseInt(count, 10) || 0);
+  function updateInquiryNavBadge(totalUnread) {
     var badge = document.getElementById('inquiryNavBadge');
     if (!badge) return;
-    if (inquiryUnread >= 1) {
-      badge.textContent = inquiryUnread > 99 ? '99+' : String(inquiryUnread);
+    var n = Math.max(0, parseInt(totalUnread, 10) || 0);
+    if (n >= 1) {
+      badge.textContent = n > 99 ? '99+' : String(n);
       badge.style.display = 'inline-flex';
       badge.hidden = false;
     } else {
@@ -77,6 +80,55 @@
       badge.style.display = 'none';
       badge.hidden = true;
     }
+  }
+
+  function updateTabBadge(elId, count) {
+    var el = document.getElementById(elId);
+    if (!el) return;
+    var n = Math.max(0, parseInt(count, 10) || 0);
+    if (n >= 1) {
+      el.textContent = n > 99 ? '99+' : String(n);
+      el.classList.add('show');
+    } else {
+      el.textContent = '';
+      el.classList.remove('show');
+    }
+  }
+
+  function updateInquiryTabBadges() {
+    updateTabBadge('inquiryTabBadgeGeneral', inquiryUnread);
+    updateTabBadge('inquiryTabBadgeNewcar', leaseQuoteUnread);
+    updateTabBadge('inquiryTabBadgeUsedcar', usedCarInquiryUnread);
+    updateInquiryNavBadge(inquiryUnread + leaseQuoteUnread + usedCarInquiryUnread);
+  }
+
+  function setActiveInquiryTab(tab) {
+    activeInquiryTab = tab;
+    document.querySelectorAll('.inquiry-tab').forEach(function (btn) {
+      btn.classList.toggle('active', btn.dataset.inquiryTab === tab);
+    });
+    document.querySelectorAll('.inquiry-tab-panel').forEach(function (panel) {
+      panel.classList.remove('active');
+    });
+    var panelId = tab === 'general' ? 'inquiryTabGeneral' : (tab === 'newcar' ? 'inquiryTabNewcar' : 'inquiryTabUsedcar');
+    var panel = document.getElementById(panelId);
+    if (panel) panel.classList.add('active');
+  }
+
+  async function refreshUnifiedInquiryBadge() {
+    try {
+      inquiryUnread = await API.countUnreadInquiries();
+      leaseQuoteUnread = await API.countUnreadLeaseQuotes();
+      usedCarInquiryUnread = await API.countUnreadUsedCarInquiries();
+      updateInquiryTabBadges();
+    } catch (err) {
+      console.warn('[Admin] inquiry badge:', err);
+    }
+  }
+
+  function updateInquiryBadge(count) {
+    inquiryUnread = Math.max(0, parseInt(count, 10) || 0);
+    updateInquiryTabBadges();
   }
 
   function renderInquiriesTable() {
@@ -106,23 +158,61 @@
 
   async function refreshInquiryBadge() {
     try {
-      var n = await API.countUnreadInquiries();
-      updateInquiryBadge(n);
       inquiryTotal = await API.countTotalInquiries();
+      await refreshUnifiedInquiryBadge();
       updateKpis();
     } catch (err) {
       console.warn('[Admin] inquiry badge:', err);
     }
   }
 
+  async function markInquiryTabRead(tab) {
+    if (tab === 'general') {
+      await API.markAllInquiriesRead();
+      inquiryUnread = 0;
+    } else if (tab === 'newcar') {
+      await API.markAllLeaseQuotesRead();
+      leaseQuoteUnread = 0;
+    } else if (tab === 'usedcar') {
+      await API.markAllUsedCarInquiriesRead();
+      usedCarInquiryUnread = 0;
+    }
+    updateInquiryTabBadges();
+  }
+
+  async function switchInquiryTab(tab) {
+    activeInquiryTab = tab;
+    setActiveInquiryTab(tab);
+    try {
+      await markInquiryTabRead(tab);
+      if (tab === 'general') {
+        inquiryData = await API.listInquiries();
+        inquiryTotal = inquiryData.length;
+        renderInquiriesTable();
+        updateKpis();
+      } else if (tab === 'newcar') {
+        leaseQuoteData = await API.listLeaseQuotes();
+        renderLeaseQuotesTable();
+      } else if (tab === 'usedcar') {
+        usedCarInquiryData = await API.listUsedCarInquiries();
+        renderUsedCarInquiriesTable();
+      }
+    } catch (err) {
+      showError(err);
+    }
+  }
+
   async function openInquiriesPanel() {
     try {
-      await API.markAllInquiriesRead();
-      updateInquiryBadge(0);
       inquiryData = await API.listInquiries();
+      leaseQuoteData = await API.listLeaseQuotes();
+      usedCarInquiryData = await API.listUsedCarInquiries();
       inquiryTotal = inquiryData.length;
       renderInquiriesTable();
+      renderLeaseQuotesTable();
+      renderUsedCarInquiriesTable();
       updateKpis();
+      setActiveInquiryTab(activeInquiryTab || 'general');
     } catch (err) {
       showError(err);
     }
@@ -130,17 +220,7 @@
 
   function updateLeaseQuoteBadge(count) {
     leaseQuoteUnread = Math.max(0, parseInt(count, 10) || 0);
-    var badge = document.getElementById('leaseQuoteNavBadge');
-    if (!badge) return;
-    if (leaseQuoteUnread >= 1) {
-      badge.textContent = leaseQuoteUnread > 99 ? '99+' : String(leaseQuoteUnread);
-      badge.style.display = 'inline-flex';
-      badge.hidden = false;
-    } else {
-      badge.textContent = '';
-      badge.style.display = 'none';
-      badge.hidden = true;
-    }
+    updateInquiryTabBadges();
   }
 
   function fmtWon(n) {
@@ -179,7 +259,7 @@
   function openLeaseQuoteDetail(id) {
     var row = leaseQuoteData.find(function (r) { return r.id === id; });
     if (!row) return;
-    document.getElementById('modalLeaseQuoteTitle').textContent = '신차리스 견적 — ' + row.brandName + ' ' + row.modelName;
+    document.getElementById('modalLeaseQuoteTitle').textContent = '신차문의 — ' + row.brandName + ' ' + row.modelName;
     document.getElementById('modalLeaseQuoteBody').innerHTML = renderLeaseQuoteDetailHtml(row);
     openModal('modalLeaseQuoteDetail');
   }
@@ -220,22 +300,85 @@
 
   async function refreshLeaseQuoteBadge() {
     try {
-      var n = await API.countUnreadLeaseQuotes();
-      updateLeaseQuoteBadge(n);
+      await refreshUnifiedInquiryBadge();
     } catch (err) {
       console.warn('[Admin] lease quote badge:', err);
     }
   }
 
-  async function openLeaseQuotesPanel() {
-    try {
-      await API.markAllLeaseQuotesRead();
-      updateLeaseQuoteBadge(0);
-      leaseQuoteData = await API.listLeaseQuotes();
-      renderLeaseQuotesTable();
-    } catch (err) {
-      showError(err);
+  function fmtPriceMan(n) {
+    var v = parseInt(n, 10);
+    if (isNaN(v) || v <= 0) return '-';
+    if (v >= 10000) return Math.round(v / 10000).toLocaleString('ko-KR') + '만원';
+    return v.toLocaleString('ko-KR') + '원';
+  }
+
+  function renderUsedCarInquiryDetailHtml(row) {
+    var img = row.thumbUrl
+      ? '<img class="uc-inquiry-thumb" src="' + row.thumbUrl + '" alt="" data-uc-link="' + (row.detailUrl || '') + '">'
+      : '<div class="uc-inquiry-thumb" style="display:flex;align-items:center;justify-content:center;color:var(--ink-400);font-size:12px;">이미지 없음</div>';
+    return '<div class="uc-inquiry-detail-grid">' +
+      '<div>' + img + '</div>' +
+      '<div><div class="row-label">브랜드</div><div>' + (row.brand || '-') + '</div></div>' +
+      '<div><div class="row-label">차량명</div><div>' + (row.vehicleName || '-') + '</div></div>' +
+      '<div><div class="row-label">상품제목</div><div>' + (row.productTitle || '-') + '</div></div>' +
+      '<div><div class="row-label">차량가격</div><div>' + fmtPriceMan(row.price) + '</div></div>' +
+      '<div><div class="row-label">성함</div><div>' + row.name + '</div></div>' +
+      '<div><div class="row-label">연락처</div><div>' + row.phone + '</div></div>' +
+      '</div>';
+  }
+
+  function openUsedCarInquiryDetail(id) {
+    var row = usedCarInquiryData.find(function (r) { return r.id === id; });
+    if (!row) return;
+    document.getElementById('modalUsedCarInquiryTitle').textContent = '중고차문의 — ' + (row.productTitle || row.vehicleName || '상세');
+    document.getElementById('modalUsedCarInquiryBody').innerHTML = renderUsedCarInquiryDetailHtml(row);
+    var img = document.querySelector('#modalUsedCarInquiryBody .uc-inquiry-thumb[data-uc-link]');
+    if (img && img.dataset.ucLink) {
+      img.addEventListener('click', function () {
+        window.open(img.dataset.ucLink, '_blank');
+      });
     }
+    openModal('modalUsedCarInquiryDetail');
+  }
+
+  function renderUsedCarInquiriesTable() {
+    var body = document.getElementById('usedCarInquiryTableBody');
+    var countEl = document.getElementById('usedCarInquiryCount');
+    if (countEl) countEl.textContent = usedCarInquiryData.length;
+    var checkAll = document.getElementById('usedCarInquiryCheckAll');
+    if (checkAll) checkAll.checked = false;
+    if (!body) return;
+
+    if (!usedCarInquiryData.length) {
+      body.innerHTML = '<tr><td colspan="9"><div class="empty-row">접수된 중고차문의가 없습니다.</div></td></tr>';
+      return;
+    }
+
+    body.innerHTML = usedCarInquiryData.map(function (row) {
+      return '<tr>' +
+        '<td style="text-align:center;"><input type="checkbox" class="used-car-inquiry-check" value="' + row.id + '" aria-label="선택"></td>' +
+        '<td class="num-cell">' + row.date + '</td>' +
+        '<td class="num-cell">' + row.time + '</td>' +
+        '<td>' + (row.brand || '-') + '</td>' +
+        '<td class="title-cell">' + (row.vehicleName || '-') + '</td>' +
+        '<td class="title-cell">' + (row.productTitle || '-') + '</td>' +
+        '<td class="title-cell">' + row.name + '</td>' +
+        '<td class="num-cell">' + row.phone + '</td>' +
+        '<td><button type="button" class="btn btn-outline btn-sm" data-view-uci="' + row.id + '">상세</button></td>' +
+        '</tr>';
+    }).join('');
+
+    body.querySelectorAll('[data-view-uci]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        openUsedCarInquiryDetail(parseInt(btn.dataset.viewUci, 10));
+      });
+    });
+  }
+
+  async function openLeaseQuotesPanel() {
+    activeInquiryTab = 'newcar';
+    await openInquiriesPanel();
   }
 
   function renderYoutubeTable() {
@@ -895,8 +1038,7 @@
     renderUsedcarsTable();
     await renderLeaseBrandList();
     await renderLeaseSyncLogArea();
-    await refreshInquiryBadge();
-    await refreshLeaseQuoteBadge();
+    await refreshUnifiedInquiryBadge();
   }
 
   function bindEvents() {
@@ -911,9 +1053,12 @@
         if (item.dataset.panel === 'inquiries') {
           await openInquiriesPanel();
         }
-        if (item.dataset.panel === 'lease-quotes') {
-          await openLeaseQuotesPanel();
-        }
+      });
+    });
+
+    document.querySelectorAll('.inquiry-tab').forEach(function (btn) {
+      btn.addEventListener('click', async function () {
+        await switchInquiryTab(btn.dataset.inquiryTab);
       });
     });
 
@@ -940,7 +1085,7 @@
         inquiryData = await API.listInquiries();
         inquiryTotal = inquiryData.length;
         renderInquiriesTable();
-        await refreshInquiryBadge();
+        await refreshUnifiedInquiryBadge();
       } catch (err) { showError(err); }
     });
 
@@ -963,13 +1108,36 @@
         await API.deleteLeaseQuotes(ids);
         leaseQuoteData = await API.listLeaseQuotes();
         renderLeaseQuotesTable();
-        await refreshLeaseQuoteBadge();
+        await refreshUnifiedInquiryBadge();
       } catch (err) { showError(err); }
     });
 
     document.getElementById('leaseQuoteCheckAll').addEventListener('change', function () {
       var checked = document.getElementById('leaseQuoteCheckAll').checked;
       document.querySelectorAll('.lease-quote-check').forEach(function (el) { el.checked = checked; });
+    });
+
+    document.getElementById('btnDeleteUsedCarInquiries').addEventListener('click', async function () {
+      var ids = [];
+      document.querySelectorAll('.used-car-inquiry-check:checked').forEach(function (el) {
+        ids.push(parseInt(el.value, 10));
+      });
+      if (!ids.length) {
+        alert('삭제할 항목을 선택해 주세요.');
+        return;
+      }
+      if (!confirm('선택한 ' + ids.length + '건을 삭제하시겠습니까?')) return;
+      try {
+        await API.deleteUsedCarInquiries(ids);
+        usedCarInquiryData = await API.listUsedCarInquiries();
+        renderUsedCarInquiriesTable();
+        await refreshUnifiedInquiryBadge();
+      } catch (err) { showError(err); }
+    });
+
+    document.getElementById('usedCarInquiryCheckAll').addEventListener('change', function () {
+      var checked = document.getElementById('usedCarInquiryCheckAll').checked;
+      document.querySelectorAll('.used-car-inquiry-check').forEach(function (el) { el.checked = checked; });
     });
 
     document.getElementById('btnSyncYoutube').addEventListener('click', async function () {

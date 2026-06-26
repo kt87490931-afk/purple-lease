@@ -96,6 +96,27 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
 .panel { display:none; }
 .panel.active { display:block; }
 
+.inquiry-tabs { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+.inquiry-tab {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:10px 16px; border-radius:999px; border:1px solid var(--line);
+  background:#fff; font-size:13px; font-weight:700; color:var(--ink-500);
+  cursor:pointer; transition:all .15s ease;
+}
+.inquiry-tab:hover { border-color:var(--purple-600); color:var(--purple-600); }
+.inquiry-tab.active { border-color:var(--purple-600); color:var(--purple-600); background:var(--purple-50); }
+.inquiry-tab-panel { display:none; }
+.inquiry-tab-panel.active { display:block; }
+.tab-badge {
+  display:none; min-width:18px; height:18px; padding:0 5px; border-radius:999px;
+  background:var(--danger-600); color:#fff; font-size:10px; font-weight:800;
+  font-family:var(--font-mono); line-height:18px; text-align:center;
+}
+.tab-badge.show { display:inline-block; }
+.uc-inquiry-thumb { width:120px; height:80px; object-fit:cover; border-radius:8px; background:var(--surface-alt); cursor:pointer; }
+.uc-inquiry-detail-grid { display:grid; gap:10px; font-size:13px; line-height:1.55; }
+.uc-inquiry-detail-grid .row-label { font-size:11.5px; color:var(--ink-400); font-weight:700; margin-bottom:2px; }
+
 .toolbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; gap:10px; flex-wrap:wrap; }
 .toolbar-left { font-size:12.5px; color: var(--ink-500); }
 .toolbar-left b { color: var(--ink-900); }
@@ -200,11 +221,6 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
         <span class="nav-label">견적문의</span>
         <span class="nav-badge" id="inquiryNavBadge" aria-label="미확인 견적문의"></span>
       </a>
-      <a class="admin-nav-item" data-panel="lease-quotes">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        <span class="nav-label">신차리스 견적</span>
-        <span class="nav-badge" id="leaseQuoteNavBadge" aria-label="미확인 신차리스 견적"></span>
-      </a>
       <a class="admin-nav-item" data-panel="youtube">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
         유튜브 영상
@@ -260,31 +276,53 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
       </section>
 
       <section class="panel" id="panel-inquiries">
-        <div class="toolbar">
-          <div class="toolbar-left">견적문의 <b id="inquiryCount">0</b>건 — 메인페이지 「무료 견적 신청」 접수 내역</div>
-          <button class="btn btn-outline" type="button" id="btnDeleteInquiries">선택 삭제</button>
+        <div class="inquiry-tabs">
+          <button type="button" class="inquiry-tab active" data-inquiry-tab="general">일반문의 <span class="tab-badge" id="inquiryTabBadgeGeneral"></span></button>
+          <button type="button" class="inquiry-tab" data-inquiry-tab="newcar">신차문의 <span class="tab-badge" id="inquiryTabBadgeNewcar"></span></button>
+          <button type="button" class="inquiry-tab" data-inquiry-tab="usedcar">중고차문의 <span class="tab-badge" id="inquiryTabBadgeUsedcar"></span></button>
         </div>
-        <table class="data-table">
-          <thead><tr>
-            <th style="width:36px;text-align:center;"><input type="checkbox" id="inquiryCheckAll" aria-label="전체 선택"></th>
-            <th>날짜</th><th>시간</th><th>브랜드</th><th>이용방식</th><th>성함</th><th>연락처</th>
-          </tr></thead>
-          <tbody id="inquiryTableBody"></tbody>
-        </table>
-      </section>
 
-      <section class="panel" id="panel-lease-quotes">
-        <div class="toolbar">
-          <div class="toolbar-left">신차리스 견적 <b id="leaseQuoteCount">0</b>건 — estimate.html 「최종 견적서 제출」 접수 내역</div>
-          <button class="btn btn-outline" type="button" id="btnDeleteLeaseQuotes">선택 삭제</button>
+        <div class="inquiry-tab-panel active" id="inquiryTabGeneral">
+          <div class="toolbar">
+            <div class="toolbar-left">일반문의 <b id="inquiryCount">0</b>건 — 메인페이지 「무료 견적 신청」 접수 내역</div>
+            <button class="btn btn-outline" type="button" id="btnDeleteInquiries">선택 삭제</button>
+          </div>
+          <table class="data-table">
+            <thead><tr>
+              <th style="width:36px;text-align:center;"><input type="checkbox" id="inquiryCheckAll" aria-label="전체 선택"></th>
+              <th>날짜</th><th>시간</th><th>브랜드</th><th>이용방식</th><th>성함</th><th>연락처</th>
+            </tr></thead>
+            <tbody id="inquiryTableBody"></tbody>
+          </table>
         </div>
-        <table class="data-table">
-          <thead><tr>
-            <th style="width:36px;text-align:center;"><input type="checkbox" id="leaseQuoteCheckAll" aria-label="전체 선택"></th>
-            <th>날짜</th><th>시간</th><th>구분</th><th>브랜드</th><th>차종</th><th>성함</th><th>연락처</th><th></th>
-          </tr></thead>
-          <tbody id="leaseQuoteTableBody"></tbody>
-        </table>
+
+        <div class="inquiry-tab-panel" id="inquiryTabNewcar">
+          <div class="toolbar">
+            <div class="toolbar-left">신차문의 <b id="leaseQuoteCount">0</b>건 — estimate.html 「최종 견적서 제출」 접수 내역</div>
+            <button class="btn btn-outline" type="button" id="btnDeleteLeaseQuotes">선택 삭제</button>
+          </div>
+          <table class="data-table">
+            <thead><tr>
+              <th style="width:36px;text-align:center;"><input type="checkbox" id="leaseQuoteCheckAll" aria-label="전체 선택"></th>
+              <th>날짜</th><th>시간</th><th>구분</th><th>브랜드</th><th>차종</th><th>성함</th><th>연락처</th><th></th>
+            </tr></thead>
+            <tbody id="leaseQuoteTableBody"></tbody>
+          </table>
+        </div>
+
+        <div class="inquiry-tab-panel" id="inquiryTabUsedcar">
+          <div class="toolbar">
+            <div class="toolbar-left">중고차문의 <b id="usedCarInquiryCount">0</b>건 — 중고차 상세 「상담신청」 접수 내역</div>
+            <button class="btn btn-outline" type="button" id="btnDeleteUsedCarInquiries">선택 삭제</button>
+          </div>
+          <table class="data-table">
+            <thead><tr>
+              <th style="width:36px;text-align:center;"><input type="checkbox" id="usedCarInquiryCheckAll" aria-label="전체 선택"></th>
+              <th>날짜</th><th>시간</th><th>브랜드</th><th>차량명</th><th>상품제목</th><th>성함</th><th>연락처</th><th></th>
+            </tr></thead>
+            <tbody id="usedCarInquiryTableBody"></tbody>
+          </table>
+        </div>
       </section>
 
       <section class="panel" id="panel-youtube">
@@ -487,9 +525,17 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
 
 <div class="modal-overlay" id="modalLeaseQuoteDetail">
   <div class="modal-box" style="max-width:640px;">
-    <div class="modal-head"><h3 id="modalLeaseQuoteTitle">신차리스 견적 상세</h3><button class="modal-close" data-close="modalLeaseQuoteDetail">✕</button></div>
+    <div class="modal-head"><h3 id="modalLeaseQuoteTitle">신차문의 상세</h3><button class="modal-close" data-close="modalLeaseQuoteDetail">✕</button></div>
     <div class="modal-body" id="modalLeaseQuoteBody" style="font-size:13px;line-height:1.6;"></div>
     <div class="modal-foot"><button class="btn btn-outline" data-close="modalLeaseQuoteDetail">닫기</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalUsedCarInquiryDetail">
+  <div class="modal-box" style="max-width:560px;">
+    <div class="modal-head"><h3 id="modalUsedCarInquiryTitle">중고차문의 상세</h3><button class="modal-close" data-close="modalUsedCarInquiryDetail">✕</button></div>
+    <div class="modal-body" id="modalUsedCarInquiryBody"></div>
+    <div class="modal-foot"><button class="btn btn-outline" data-close="modalUsedCarInquiryDetail">닫기</button></div>
   </div>
 </div>
 

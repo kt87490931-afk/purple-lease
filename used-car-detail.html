@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -193,6 +193,55 @@ p { margin:0; }
   body { padding-bottom: 0; }
 }
 
+/* 상담신청 모달 */
+.quote-modal-overlay {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(15,15,25,.55);
+  display: none; align-items: center; justify-content: center;
+  padding: 20px 16px;
+}
+.quote-modal-overlay.open { display: flex; }
+.quote-modal-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  max-width: 420px;
+}
+.quote-modal-card::before {
+  content: '';
+  position: absolute; top: -60px; right: -60px;
+  width: 180px; height: 180px;
+  background: var(--grad-main);
+  opacity: 0.08;
+  border-radius: 50%;
+}
+.quote-modal-card h2 { font-size: 19px; margin-bottom: 4px; position: relative; }
+.quote-modal-card p.lead { font-size: 12.5px; color: var(--ink-500); margin-bottom: 18px; position: relative; }
+.quote-form-row { display: flex; gap: 8px; margin-bottom: 10px; position: relative; }
+.quote-form-row input {
+  flex: 1; min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink-900);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  font-size: 13.5px;
+  font-family: inherit;
+}
+.quote-form-row input:focus { border-color: var(--purple-600); outline: none; }
+.quote-modal-consent { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--ink-500); margin: 10px 0 16px; position: relative; }
+.quote-modal-close {
+  position: absolute; top: 14px; right: 14px;
+  width: 28px; height: 28px; border: none; border-radius: 50%;
+  background: var(--surface); color: var(--ink-500); cursor: pointer;
+  z-index: 1;
+}
+
 /* ============ 첨부자료 모달 ============ */
 .doc-modal-overlay {
   position: fixed; inset: 0; z-index: 200;
@@ -261,7 +310,7 @@ p { margin:0; }
       <a href="estimate.html">신차·리스·장기렌트카</a>
       <a href="used-cars.html" class="active">중고차</a>
       <a href="parts-register.html">수입차부품</a>
-      <a href="reviews-customer.html">후기</a>
+      <a href="reviews-customer.html">퍼플리뷰</a>
     </div>
   </nav>
 </header>
@@ -367,8 +416,8 @@ p { margin:0; }
         </div>
 
         <div class="action-stack">
-          <button type="button" class="btn btn-primary btn-block" id="btnChat">💬 채팅 문의하기</button>
-          <button type="button" class="btn btn-outline btn-block" id="btnVisit">📅 방문 예약하기</button>
+          <button type="button" class="btn btn-primary btn-block" id="btnChat">상담신청</button>
+          <button type="button" class="btn btn-outline btn-block" id="btnVisit">유선상담</button>
         </div>
 
         <div class="share-row">
@@ -407,8 +456,27 @@ p { margin:0; }
     <span class="pm-label">판매가</span>
     <span class="pm-value" id="mobilePrice">-</span>
   </div>
-  <button type="button" class="btn btn-outline" id="btnVisitMobile">방문예약</button>
-  <button type="button" class="btn btn-primary" id="btnChatMobile">채팅문의</button>
+  <button type="button" class="btn btn-outline" id="btnVisitMobile">유선상담</button>
+  <button type="button" class="btn btn-primary" id="btnChatMobile">상담신청</button>
+</div>
+
+<div class="quote-modal-overlay" id="quoteModal" aria-hidden="true">
+  <div class="quote-modal-card" role="dialog" aria-labelledby="quoteModalTitle">
+    <button type="button" class="quote-modal-close" id="quoteModalClose" aria-label="닫기">✕</button>
+    <h2 id="quoteModalTitle">상담 신청</h2>
+    <p class="lead">간단한 정보만 입력하면 담당자가 연락드립니다.</p>
+    <div class="quote-form-row">
+      <input type="text" id="quoteName" placeholder="성함" autocomplete="name">
+    </div>
+    <div class="quote-form-row">
+      <input type="tel" id="quotePhone" placeholder="연락처 (010-0000-0000)" autocomplete="tel">
+    </div>
+    <label class="quote-modal-consent">
+      <input type="checkbox" id="quoteConsent" style="accent-color:#6C3CE0; width:15px; height:15px;">
+      개인정보 수집·이용에 동의합니다 <a href="#" style="color:var(--purple-600); text-decoration:underline;">[보기]</a>
+    </label>
+    <button type="button" class="btn btn-primary btn-block" id="btnQuoteModalSubmit">상담 신청하기</button>
+  </div>
 </div>
 
 <!-- 첨부자료 모달 (성능점검기록부 / 하체사진 / 배터리진단서 공용) -->
@@ -663,6 +731,11 @@ p { margin:0; }
   function priceFmt(n) { return n.toLocaleString('ko-KR') + '만원'; }
   function wonFmt(n) { return n.toLocaleString('ko-KR') + '원'; }
   function kmFmt(n) { return n.toLocaleString('ko-KR') + 'km'; }
+  function formatProductTitle(car) {
+    var name = car.name || '';
+    if (car.year && name.indexOf(String(car.year)) === -1) return car.year + '년식 ' + name;
+    return name;
+  }
 
   const params = new URLSearchParams(window.location.search);
   const id = parseInt(params.get('id'), 10);
@@ -817,7 +890,7 @@ p { margin:0; }
     var brandName = v.brand || (v.name ? v.name.split(' ')[0] : '');
     document.getElementById('infoTable').innerHTML = `
       <div class="it"><span class="it-label">브랜드</span><span class="it-value">${brandName}</span></div>
-      <div class="it"><span class="it-label">모델</span><span class="it-value">${v.name}</span></div>
+      <div class="it"><span class="it-label">모델</span><span class="it-value">${formatProductTitle(v)}</span></div>
       <div class="it"><span class="it-label">차량번호</span><span class="it-value">${v.plate || '-'}</span></div>
       <div class="it"><span class="it-label">연식</span><span class="it-value">${v.year}년식</span></div>
       <div class="it"><span class="it-label">주행거리</span><span class="it-value">${kmFmt(v.mileage)}</span></div>
@@ -893,7 +966,7 @@ p { margin:0; }
     document.getElementById('statusPill').textContent = v.status;
     document.getElementById('originPill').textContent =
       v.origin === 'import' ? '수입차' : (v.origin === 'export' ? '수출차량' : (v.origin === 'other' ? '기타' : '국산차'));
-    document.getElementById('vehicleTitle').textContent = v.name;
+    document.getElementById('vehicleTitle').textContent = formatProductTitle(v);
     document.getElementById('vehicleMeta').textContent = `${v.origin==='domestic'?'국산차':'수입차'} · ${v.name} · ${v.year}년식`;
     document.getElementById('vehiclePrice').textContent = priceFmt(v.price);
     document.getElementById('vehicleTags').innerHTML = v.tags.map(t => `<span class="utag">${t}</span>`).join('');
@@ -941,15 +1014,102 @@ p { margin:0; }
 
   bootstrap();
 
-  // 액션 버튼 (데모: 알림으로 대체)
-  ['btnChat','btnChatMobile'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('click', () => { window.location.href = 'tel:1555-6362'; });
+  function openQuoteModal() {
+    document.getElementById('quoteModal').classList.add('open');
+    document.getElementById('quoteModal').setAttribute('aria-hidden', 'false');
+    document.getElementById('quoteName').focus();
+  }
+
+  function closeQuoteModal() {
+    document.getElementById('quoteModal').classList.remove('open');
+    document.getElementById('quoteModal').setAttribute('aria-hidden', 'true');
+  }
+
+  function buildUsedCarInquiryPayload(name, phone) {
+    if (!v) return null;
+    var productTitle = document.getElementById('vehicleTitle').textContent.trim();
+    var brandName = v.brand || (v.name ? v.name.split(' ')[0] : '');
+    var thumb = (v.photos && v.photos.length) ? v.photos[0] : '';
+    var listingId = v.listingId || v.id || id;
+    return {
+      name: name,
+      phone: phone,
+      listing_id: listingId,
+      brand: brandName,
+      vehicle_name: formatProductTitle(v),
+      product_title: productTitle,
+      price: parseInt(v.price, 10) || 0,
+      thumb_url: thumb,
+      detail_url: window.location.href.split('#')[0],
+      vehicle_json: {
+        origin: v.origin,
+        year: v.year,
+        fuel: v.fuel,
+        mileage: v.mileage,
+        status: v.status
+      },
+      source_page: 'used-car-detail'
+    };
+  }
+
+  ['btnChat', 'btnChatMobile'].forEach(function (btnId) {
+    var el = document.getElementById(btnId);
+    if (el) el.addEventListener('click', openQuoteModal);
   });
-  ['btnVisit','btnVisitMobile'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('click', () => { window.location.href = 'tel:1555-6362'; });
+  ['btnVisit', 'btnVisitMobile'].forEach(function (btnId) {
+    var el = document.getElementById(btnId);
+    if (el) el.addEventListener('click', function () { window.location.href = 'tel:1555-6362'; });
   });
+
+  document.getElementById('quoteModalClose').addEventListener('click', closeQuoteModal);
+  document.getElementById('quoteModal').addEventListener('click', function (e) {
+    if (e.target.id === 'quoteModal') closeQuoteModal();
+  });
+
+  document.getElementById('btnQuoteModalSubmit').addEventListener('click', async function () {
+    var name = document.getElementById('quoteName').value.trim();
+    var phone = document.getElementById('quotePhone').value.trim();
+    if (!name) {
+      alert('성함을 입력해 주세요.');
+      return;
+    }
+    if (!phone || phone.replace(/\D/g, '').length < 9) {
+      alert('연락처를 올바르게 입력해 주세요.');
+      return;
+    }
+    if (!document.getElementById('quoteConsent').checked) {
+      alert('개인정보 수집·이용에 동의해 주세요.');
+      return;
+    }
+    if (!v) {
+      alert('차량 정보를 불러오지 못했습니다.');
+      return;
+    }
+    var payload = buildUsedCarInquiryPayload(name, phone);
+    var btn = document.getElementById('btnQuoteModalSubmit');
+    btn.disabled = true;
+    var prevText = btn.textContent;
+    btn.textContent = '접수 중…';
+    try {
+      if (window.PurpleLeaseData && window.PurpleLeaseData.isConfigured()) {
+        await window.PurpleLeaseData.submitUsedCarInquiry(payload);
+        alert('상담 신청이 접수되었습니다.\n빠른 시일 내에 연락드리겠습니다.');
+        closeQuoteModal();
+        document.getElementById('quoteName').value = '';
+        document.getElementById('quotePhone').value = '';
+        document.getElementById('quoteConsent').checked = false;
+      } else {
+        alert('상담 신청(데모)\n성함: ' + name + '\n연락처: ' + phone + '\n차량: ' + payload.product_title);
+        closeQuoteModal();
+      }
+    } catch (err) {
+      alert((err && err.message) ? err.message : '접수 중 오류가 발생했습니다.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = prevText;
+    }
+  });
+
   const copyBtn = document.getElementById('btnCopyLink');
   if (copyBtn) copyBtn.addEventListener('click', () => {
     navigator.clipboard?.writeText(window.location.href);

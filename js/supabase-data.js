@@ -179,6 +179,9 @@
     var d = res.data.detail_json || {};
     var photos = (d.photos && d.photos.length) ? d.photos : (res.data.thumb_url ? [res.data.thumb_url] : []);
     return Object.assign({
+      id: res.data.listing_id,
+      listingId: res.data.listing_id,
+      brand: res.data.brand || '',
       name: res.data.name,
       origin: res.data.origin || 'domestic',
       status: res.data.status || '판매중',
@@ -470,6 +473,30 @@
     return res.data;
   }
 
+  async function submitUsedCarInquiry(payload) {
+    var client = getClient();
+    if (!client) throw new Error('Supabase not configured');
+    var row = {
+      name: String(payload.name || '').trim(),
+      phone: String(payload.phone || '').trim(),
+      listing_id: parseInt(payload.listing_id, 10) || 0,
+      brand: payload.brand || '',
+      vehicle_name: payload.vehicle_name || '',
+      product_title: payload.product_title || '',
+      price: parseInt(payload.price, 10) || 0,
+      thumb_url: payload.thumb_url || '',
+      detail_url: payload.detail_url || '',
+      vehicle_json: payload.vehicle_json || {},
+      source_page: payload.source_page || 'used-car-detail',
+      is_read: false
+    };
+    if (!row.name || !row.phone) throw new Error('성함과 연락처를 입력해 주세요.');
+    if (!row.listing_id) throw new Error('차량 정보를 확인할 수 없습니다.');
+    var res = await client.from('used_car_inquiries').insert([row]);
+    if (res.error) throw res.error;
+    return res.data;
+  }
+
   window.PurpleLeaseData = {
     fetchYoutubeVideos: fetchYoutubeVideos,
     fetchYoutubeHomeMain: fetchYoutubeHomeMain,
@@ -492,6 +519,7 @@
     incrementBlogViews: incrementBlogViews,
     submitInquiry: submitInquiry,
     submitLeaseQuote: submitLeaseQuote,
+    submitUsedCarInquiry: submitUsedCarInquiry,
     isConfigured: function () { return !!getClient(); }
   };
 })();
