@@ -499,6 +499,19 @@
     });
   }
 
+  function ksSyncErrorText(result) {
+    var parts = [result && result.msg || ''];
+    var pending = (result && result.resumeState && result.resumeState.pending_brands || [])
+      .concat(result && result.resumeState && result.resumeState.pending_models || []);
+    pending.forEach(function (e) { parts.push(e.error || ''); });
+    return parts.join(' ');
+  }
+
+  function isKsIpBlockedError(result) {
+    var errText = ksSyncErrorText(result).toLowerCase();
+    return /447|403|upstream/.test(errText);
+  }
+
   function renderKsSyncModal(result) {
     var title = document.getElementById('modalKsSyncTitle');
     var body = document.getElementById('modalKsSyncBody');
@@ -522,6 +535,9 @@
         }).join('') +
         (errors.length > 30 ? '<li>… 외 ' + (errors.length - 30) + '건</li>' : '') +
         '</ul>';
+    }
+    if (!result.ok && isKsIpBlockedError(result)) {
+      html += '<p style="color:#b45309;margin-top:8px;">서버 IP가 KS에서 차단됨. Edge Function 배포 후 재시도 또는 GitHub Actions sync-ks-lease 실행</p>';
     }
     if (!result.ok && result.complete) {
       html += '<p class="hint">브라우저 CORS 오류 시 서버에서 <code>node scripts/sync-ks-lease.js ' + result.country + '</code> 를 실행하세요.</p>';

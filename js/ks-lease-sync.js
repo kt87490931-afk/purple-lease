@@ -14,20 +14,43 @@
   var BASE = 'https://ks-rentcar.com';
   var AJAX = '/lib/ajax/infoCar2024/index/';
 
+  function getConfig() {
+    if (typeof window !== 'undefined' && window.SUPABASE_CONFIG) return window.SUPABASE_CONFIG;
+    if (typeof global !== 'undefined' && global.SUPABASE_CONFIG) return global.SUPABASE_CONFIG;
+    return {};
+  }
+
   function getBaseUrl() {
-    var cfg = (typeof window !== 'undefined' && window.SUPABASE_CONFIG) || {};
+    var cfg = getConfig();
+    return (cfg.ksRentcarBaseUrl || BASE).replace(/\/$/, '');
+  }
+
+  function buildKsUrl(path) {
+    var cfg = getConfig();
+    var p = !path ? '' : (path.indexOf('/') === 0 ? path : '/' + path);
+    if (cfg.ksRentcarEdgeProxyUrl) {
+      return cfg.ksRentcarEdgeProxyUrl.replace(/\/$/, '') + '?path=' + encodeURIComponent(p);
+    }
     if (typeof window !== 'undefined' && window.location && window.location.origin) {
       var proxy = cfg.ksRentcarProxyPath;
       if (proxy) {
-        var p = proxy.indexOf('/') === 0 ? proxy : '/' + proxy;
-        return (window.location.origin + p).replace(/\/$/, '');
+        var proxyPath = proxy.indexOf('/') === 0 ? proxy : '/' + proxy;
+        return (window.location.origin + proxyPath.replace(/\/$/, '') + p).replace(/([^:]\/)\/+/g, '$1');
       }
     }
-    return (cfg.ksRentcarBaseUrl || BASE).replace(/\/$/, '');
+    return getBaseUrl() + p;
+  }
+
+  function isEdgeProxyUrl(url) {
+    var cfg = getConfig();
+    if (!cfg.ksRentcarEdgeProxyUrl) return false;
+    var base = cfg.ksRentcarEdgeProxyUrl.replace(/\/$/, '');
+    return String(url || '').indexOf(base) === 0;
   }
 
   function isSameOriginKs(url) {
     if (typeof window === 'undefined' || !window.location) return false;
+    if (isEdgeProxyUrl(url)) return false;
     return String(url || '').indexOf(window.location.origin) === 0;
   }
 
@@ -131,10 +154,15 @@
 
     async function request(method, url, body) {
       if (!fetchFn) throw new Error('fetch 미지원 환경');
+      var cfg = getConfig();
       var headers = {
         'User-Agent': 'Mozilla/5.0 (compatible; PurpleLeaseSync/1.0)',
         Accept: 'application/json, text/html, */*'
       };
+      if (isEdgeProxyUrl(url) && cfg.anonKey) {
+        headers.apikey = cfg.anonKey;
+        headers.Authorization = 'Bearer ' + cfg.anonKey;
+      }
       if (cookie) headers.Cookie = cookie;
       var opts = { method: method, headers: headers, credentials: isSameOriginKs(url) ? 'include' : 'omit' };
       if (body != null) {
@@ -151,15 +179,15 @@
 
     return {
       warmSession: async function () {
-        await request('GET', getBaseUrl() + '/estimate');
+        await request('GET', buildKsUrl('/estimate'));
       },
       getHtml: async function (path) {
-        var res = await request('GET', getBaseUrl() + path);
+        var res = await request('GET', buildKsUrl(path));
         if (!res.ok) throw new Error('KS HTTP ' + res.status + ' ' + path);
         return res.text();
       },
       postAjax: async function (mode, formBody) {
-        var res = await request('POST', getBaseUrl() + AJAX + mode, formBody);
+        var res = await request('POST', buildKsUrl(AJAX + mode), formBody);
         if (!res.ok) throw new Error('KS AJAX ' + mode + ' HTTP ' + res.status);
         var json = await res.json();
         if (!json || json.successYN !== 'Y') {
@@ -706,6 +734,7 @@
   return {
     BASE: BASE,
     getBaseUrl: getBaseUrl,
+    buildKsUrl: buildKsUrl,
     ksCountryParam: ksCountryParam,
     createHttp: createHttp,
     fetchBrands: fetchBrands,

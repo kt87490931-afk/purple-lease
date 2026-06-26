@@ -10,7 +10,9 @@ window.SUPABASE_CONFIG = {
   youtubeChannelHandle: 'purplelease',
   /** 오토피아 중고차 동기화 API 베이스 URL */
   swautopiaBaseUrl: 'https://swautopia.co.kr',
-  /** KS오토플랜 견적 동기화 — 브라우저는 동일 출처 프록시 사용 (CORS 우회) */
+  /** KS오토플랜 견적 동기화 — Supabase Edge Function 프록시 (IP 차단 우회) */
+  ksRentcarEdgeProxyUrl: 'https://zliclwgiaqvilnnookyi.supabase.co/functions/v1/ks-rentcar-proxy',
+  /** 동일 출처 프록시 fallback (CORS 우회) */
   ksRentcarProxyPath: '/api/ks',
   /** Node CLI·서버 직접 호출용 */
   ksRentcarBaseUrl: 'https://ks-rentcar.com'
