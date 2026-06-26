@@ -480,8 +480,14 @@
       '<button class="btn btn-primary btn-sm" id="btnAddLeaseModel">+ 모델 추가</button></div>' +
       '<table class="data-table"><thead><tr><th>모델명</th><th>가격대(만원)</th><th></th></tr></thead><tbody>' +
       models.map(function (m) {
+        var sum = (window.PurpleLeaseCatalog && PurpleLeaseCatalog.trimConfigSummary)
+          ? PurpleLeaseCatalog.trimConfigSummary(m.config)
+          : { label: '트림/옵션(준비중)', trims: 0 };
+        var trimBtn = sum.trims > 0
+          ? '<span class="btn btn-outline btn-sm" style="pointer-events:none;">' + sum.label + '</span>'
+          : '<button class="btn btn-outline btn-sm" type="button" disabled>트림/옵션(준비중)</button>';
         return '<tr><td class="title-cell">' + m.name + '</td><td class="num-cell">' + m.priceFrom + '~' + m.priceTo + '</td>' +
-          '<td class="row-actions"><button class="btn btn-outline btn-sm" disabled>트림/옵션(준비중)</button>' +
+          '<td class="row-actions">' + trimBtn +
           '<button class="btn-danger-text" data-del-model="' + m.dbId + '">삭제</button></td></tr>';
       }).join('') +
       '</tbody></table>' +

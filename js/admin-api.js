@@ -714,7 +714,8 @@
         name: r.name,
         priceFrom: r.price_from,
         priceTo: r.price_to,
-        img: r.img_url
+        img: r.img_url,
+        config: r.config_json || {}
       };
     });
   }

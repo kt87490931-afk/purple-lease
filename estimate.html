@@ -265,6 +265,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   overflow: hidden;
 }
 .brand-card .logo-wrap img { width: 100%; height: 100%; object-fit: contain; padding: 6px; }
+.brand-card .logo-fallback { display:flex; align-items:center; justify-content:center; width:100%; height:100%; font-size:15px; font-weight:800; color:var(--purple-600); }
 .brand-card .bname { font-size: 12.5px; font-weight: 700; color: var(--ink-900); }
 
 .section-label {
@@ -714,6 +715,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="/js/supabase-config.js"></script>
 <script src="/js/supabase-data.js"></script>
+<script src="/js/lease-catalog-map.js"></script>
 <script>
 /* ============================================================
    데이터 정의부 — 운영자 관리자페이지에서 등록/수정하는 영역.
@@ -848,13 +850,22 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
   const fmt = (n) => n.toLocaleString('ko-KR');
 
+  function brandLogoHtml(b) {
+    const src = b.logo || (window.PurpleLeaseCatalog && PurpleLeaseCatalog.resolveBrandLogo(b.name, ''));
+    const fb = b.name ? b.name.charAt(0) : '?';
+    if (src) {
+      return `<img src="${src}" alt="${b.name} 로고" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="logo-fallback" style="display:none">${fb}</span>`;
+    }
+    return `<span class="logo-fallback">${fb}</span>`;
+  }
+
   // ---- 브랜드 렌더 ----
   function renderBrands() {
     const grid = document.getElementById('brandGrid');
     const list = brandData[state.origin] || [];
     grid.innerHTML = list.map(b => `
       <div class="brand-card${state.brandId===b.id?' selected':''}" data-brand="${b.id}">
-        <div class="logo-wrap"><img src="${b.logo}" alt="${b.name} 로고" onerror="this.style.opacity=0.15"></div>
+        <div class="logo-wrap">${brandLogoHtml(b)}</div>
         <div class="bname">${b.name}</div>
       </div>
     `).join('');
@@ -869,6 +880,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     renderBrands();
     renderModels();
     updateStep1NextButton();
+    const section = document.getElementById('modelSection');
+    if (section && section.style.display !== 'none') {
+      section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
   }
 
   // ---- 모델 렌더 ----
@@ -980,6 +995,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
   function renderSwatches(detail) {
     const row = document.getElementById('swatchRow');
+    if (!detail.colors || !detail.colors.length) {
+      row.innerHTML = '<div class="helper-note" style="margin:0;">등록된 외장색상이 없습니다.</div>';
+      return;
+    }
     row.innerHTML = detail.colors.map((c, i) => `
       <div class="swatch${state.colorIdx===i?' selected':''}" style="background:${c.hex};" data-idx="${i}" title="${c.name}${c.surcharge>0?' (+'+fmt(c.surcharge)+'원)':''}"></div>
     `).join('');
@@ -994,6 +1013,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
   function renderTrimGroups(detail) {
     const wrap = document.getElementById('trimGroups');
+    if (!detail.trimGroups || !detail.trimGroups.length) {
+      wrap.innerHTML = '<div class="helper-note" style="margin:0;">등록된 세부모델(트림)이 없습니다.</div>';
+      return;
+    }
     wrap.innerHTML = detail.trimGroups.map((g, gi) => `
       <div class="trim-group${gi===state.trimGroupIdx?' open':''}" data-gi="${gi}">
         <div class="trim-group-head">
@@ -1023,7 +1046,14 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
       opt.addEventListener('click', () => {
         state.trimGroupIdx = parseInt(opt.dataset.gi, 10);
         state.trimIdx = parseInt(opt.dataset.ti, 10);
+        state.colorIdx = 0;
+        state.selectedOptions = new Set();
+        if (window.PurpleLeaseCatalog) {
+          PurpleLeaseCatalog.applyTrimToDetail(detail, state.trimGroupIdx, state.trimIdx);
+        }
         renderTrimGroups(detail);
+        renderSwatches(detail);
+        renderOptions(detail);
         updateSummaryPrice();
       });
     });
@@ -1115,6 +1145,14 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
   function goToStep2() {
     if (!(state.brandId && state.modelId)) return;
+    state.colorIdx = 0;
+    state.trimGroupIdx = 0;
+    state.trimIdx = 0;
+    state.selectedOptions = new Set();
+    const detail = getDetail();
+    if (detail && window.PurpleLeaseCatalog) {
+      PurpleLeaseCatalog.applyTrimToDetail(detail, 0, 0);
+    }
     document.getElementById('page1').classList.remove('active');
     document.getElementById('page2').classList.add('active');
     document.getElementById('stickyNextStep1').style.display = 'none';
@@ -1163,7 +1201,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     if (window.PurpleLeaseData && window.PurpleLeaseData.isConfigured()) {
       try {
         const catalog = await window.PurpleLeaseData.fetchLeaseCatalog();
-        if (catalog) {
+        if (catalog && window.PurpleLeaseCatalog) {
+          PurpleLeaseCatalog.applyCatalog(catalog, brandData, modelData, vehicleDetail);
+        } else if (catalog) {
           if (catalog.domestic && catalog.domestic.length) {
             brandData.domestic.splice(0, brandData.domestic.length);
             catalog.domestic.forEach(function (b) { brandData.domestic.push(b); });
