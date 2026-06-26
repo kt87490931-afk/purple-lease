@@ -199,21 +199,32 @@
       };
     }
 
-    async function request(method, url, body) {
-      var path = url;
-      if (typeof url === 'string' && url.indexOf('path=') >= 0) {
+    async function request(method, urlOrPath, body) {
+      var path = urlOrPath;
+      if (typeof path === 'string' && path.indexOf('http') === 0) {
         try {
-          var u = new URL(url, 'http://local');
-          path = decodeURIComponent(u.searchParams.get('path') || '');
-        } catch (_) { /* keep url */ }
+          var parsed = new URL(path);
+          if (parsed.searchParams.get('path')) {
+            path = decodeURIComponent(parsed.searchParams.get('path') || '');
+          }
+        } catch (_) { /* keep */ }
       }
-      if (supabaseClient && getConfig().ksRentcarEdgeProxyUrl) {
+      if (typeof path === 'string' && path.indexOf('/') !== 0 && path.indexOf('http') !== 0) {
+        path = '/' + path;
+      }
+
+      if (supabaseClient && getConfig().ksRentcarEdgeProxyUrl && typeof window !== 'undefined') {
         return invokeProxy(method, path, body);
       }
       if (!fetchFn) throw new Error('fetch 미지원 환경');
+
+      var url = (typeof urlOrPath === 'string' && urlOrPath.indexOf('http') === 0)
+        ? urlOrPath
+        : buildKsUrl(path);
+
       var cfg = getConfig();
       var headers = {
-        'User-Agent': 'Mozilla/5.0 (compatible; PurpleLeaseSync/1.0)',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         Accept: 'application/json, text/html, */*'
       };
       if (isEdgeProxyUrl(url) && cfg.anonKey) {
