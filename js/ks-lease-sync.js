@@ -151,8 +151,65 @@
   function createHttp() {
     var cookie = '';
     var fetchFn = (typeof fetch !== 'undefined') ? fetch.bind(globalThis) : null;
+    var supabaseClient = null;
+    if (typeof window !== 'undefined' && window.PurpleAdminAuth) {
+      supabaseClient = window.PurpleAdminAuth.getClient();
+    }
+
+    async function invokeProxy(method, path, body) {
+      if (!supabaseClient) throw new Error('Supabase 클라이언트 없음');
+      var res = await supabaseClient.functions.invoke('ks-rentcar-proxy', {
+        body: { method: method, path: path, body: body != null ? body : null }
+      });
+      if (res.error) {
+        var msg = res.error.message || String(res.error);
+        if (/not found|404/i.test(msg)) {
+          throw new Error('KS 프록시 Edge Function 미배포. Supabase Dashboard에서 ks-rentcar-proxy 함수를 배포하거나 GitHub Actions「Sync KS Lease」를 실행하세요.');
+        }
+        throw new Error(msg);
+      }
+      var data = res.data;
+      if (data && data._purpleProxy) {
+        var st = data.status || 200;
+        var b = data.body || '';
+        return {
+          ok: st >= 200 && st < 400,
+          status: st,
+          text: async function () { return b; },
+          json: async function () { return JSON.parse(b); },
+          headers: { get: function () { return null; } }
+        };
+      }
+      if (data && typeof data === 'object' && data.error) {
+        throw new Error(data.error + (data.message ? ': ' + data.message : ''));
+      }
+      return {
+        ok: true,
+        status: 200,
+        text: async function () {
+          if (typeof data === 'string') return data;
+          if (data == null) return '';
+          return typeof data === 'object' ? JSON.stringify(data) : String(data);
+        },
+        json: async function () {
+          if (typeof data === 'string') return JSON.parse(data);
+          return data;
+        },
+        headers: { get: function () { return null; } }
+      };
+    }
 
     async function request(method, url, body) {
+      var path = url;
+      if (typeof url === 'string' && url.indexOf('path=') >= 0) {
+        try {
+          var u = new URL(url, 'http://local');
+          path = decodeURIComponent(u.searchParams.get('path') || '');
+        } catch (_) { /* keep url */ }
+      }
+      if (supabaseClient && getConfig().ksRentcarEdgeProxyUrl) {
+        return invokeProxy(method, path, body);
+      }
       if (!fetchFn) throw new Error('fetch 미지원 환경');
       var cfg = getConfig();
       var headers = {
@@ -179,16 +236,16 @@
 
     return {
       warmSession: async function () {
-        await request('GET', buildKsUrl('/estimate'));
+        await request('GET', '/estimate');
       },
       getHtml: async function (path) {
-        var res = await request('GET', buildKsUrl(path));
-        if (!res.ok) throw new Error('KS HTTP ' + res.status + ' ' + path);
+        var res = await request('GET', path);
+        if (!res.ok && res.status !== 200) throw new Error('KS HTTP ' + (res.status || 'error') + ' ' + path);
         return res.text();
       },
       postAjax: async function (mode, formBody) {
-        var res = await request('POST', buildKsUrl(AJAX + mode), formBody);
-        if (!res.ok) throw new Error('KS AJAX ' + mode + ' HTTP ' + res.status);
+        var res = await request('POST', AJAX + mode, formBody);
+        if (!res.ok && res.status !== 200) throw new Error('KS AJAX ' + mode + ' HTTP ' + (res.status || 'error'));
         var json = await res.json();
         if (!json || json.successYN !== 'Y') {
           throw new Error('KS AJAX ' + mode + ' 실패: ' + ((json && json.message) || 'unknown'));
