@@ -120,4 +120,27 @@ jobs:
 
           fi
 
+      - name: Fetch vehicle images (self-hosted assets)
+        run: node scripts/fetch-vehicle-images.js --skip-existing
+
+      - name: Upload vehicle images to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "assets/vehicles"
+          target: /var/www/purple-lease/assets
+          strip_components: 0
+          overwrite: true
+
+      - name: Fix vehicle image permissions
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            chown -R www-data:www-data /var/www/purple-lease/assets/vehicles 2>/dev/null || true
+            find /var/www/purple-lease/assets/vehicles -type f -name '*.png' -exec chmod 644 {} \; 2>/dev/null || true
 

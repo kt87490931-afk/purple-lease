@@ -336,7 +336,7 @@
 
     var modelsRes = await client
       .from('lease_models')
-      .select('brand_id,slug,name,price_from,price_to,img_url,config_json,sort_order')
+      .select('brand_id,slug,name,price_from,price_to,img_url,ks_model_id,config_json,sort_order')
       .eq('is_active', true)
       .order('sort_order', { ascending: true });
     if (modelsRes.error) throw modelsRes.error;
@@ -350,6 +350,7 @@
         priceFrom: m.price_from,
         priceTo: m.price_to,
         img: m.img_url,
+        ksModelId: m.ks_model_id != null ? parseInt(m.ks_model_id, 10) : null,
         config: m.config_json || {}
       });
     });

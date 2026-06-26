@@ -27,6 +27,16 @@
     return key ? '/assets/brand-logos/' + key + '.png' : '';
   }
 
+  function resolveModelImage(imgUrl, ksModelId, slug) {
+    if (imgUrl && String(imgUrl).trim() && imgUrl.indexOf('ks-rentcar.com') < 0 && imgUrl.indexOf('/data/customInfo/') < 0) {
+      return imgUrl;
+    }
+    var id = parseInt(ksModelId, 10);
+    if (id) return '/assets/vehicles/m-' + id + '.png';
+    if (slug) return '/assets/vehicles/' + slug + '.png';
+    return '';
+  }
+
   function mapOuterColors(trim) {
     var out = (trim && trim.colors && trim.colors.out) || [];
     return out.map(function (c) {
@@ -97,7 +107,7 @@
       brandName: brand.name,
       brandLogo: resolveBrandLogo(brand.name, brand.logo),
       modelName: model.name,
-      img: model.img || '',
+      img: resolveModelImage(model.img, model.ksModelId, model.id),
       meta: (trims[0] && trims[0].lineupName) ? decodeHtml(trims[0].lineupName) : '',
       trimGroups: buildTrimGroups(trims),
       colors: [],
@@ -123,7 +133,7 @@
           name: m.name,
           priceFrom: m.priceFrom,
           priceTo: m.priceTo,
-          img: m.img || ''
+          img: resolveModelImage(m.img, m.ksModelId, m.id)
         };
       });
       models.forEach(function (m) {
@@ -163,6 +173,7 @@
     applyCatalog: applyCatalog,
     applyTrimToDetail: applyTrimToDetail,
     resolveBrandLogo: resolveBrandLogo,
+    resolveModelImage: resolveModelImage,
     trimConfigSummary: trimConfigSummary
   };
 })(typeof window !== 'undefined' ? window : global);

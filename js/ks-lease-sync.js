@@ -97,7 +97,7 @@
     return getBaseUrl() + (s.indexOf('/') === 0 ? s : '/' + s);
   }
 
-  function pickModelImage(model) {
+  function pickModelImageKsUrl(model) {
     if (model.carImgArr && model.carImgArr[0] && model.carImgArr[0].fileSrc) {
       return absKsUrl(model.carImgArr[0].fileSrc);
     }
@@ -108,6 +108,12 @@
       } catch (_) { /* ignore */ }
     }
     return '';
+  }
+
+  function localModelImagePath(ksModelId) {
+    var id = parseInt(ksModelId, 10);
+    if (!id) return '';
+    return '/assets/vehicles/m-' + id + '.png';
   }
 
   function extractJsObject(html, varName) {
@@ -449,7 +455,7 @@
       name: ksModel.name || '',
       price_from: minMan,
       price_to: maxMan || minMan,
-      img_url: pickModelImage(ksModel),
+      img_url: localModelImagePath(ksId),
       config_json: {
         ks: {
           brand_id: String(brandId),
@@ -932,6 +938,8 @@
     fetchTrimExtras: fetchTrimExtras,
     mapBrandRow: mapBrandRow,
     mapModelRow: mapModelRow,
+    pickModelImageKsUrl: pickModelImageKsUrl,
+    localModelImagePath: localModelImagePath,
     runSync: runSync,
     loadLatestResumeState: loadLatestResumeState,
     loadResumeStateByLogId: loadResumeStateByLogId
