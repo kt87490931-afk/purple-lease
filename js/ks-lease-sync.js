@@ -129,6 +129,48 @@
     return null;
   }
 
+  function decodeHtmlText(s) {
+    if (!s) return '';
+    return String(s)
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&#(\d+);/g, function (_, n) { return String.fromCharCode(parseInt(n, 10)); });
+  }
+
+  function parseLineupMapFromHtml(html) {
+    var map = {};
+    var blocks = html.split('class="input-arrow2"');
+    for (var i = 1; i < blocks.length; i++) {
+      var block = blocks[i];
+      var lineupId = (block.match(/data-lineup="(\d+)"/) || [])[1];
+      var name = (block.match(/data-lineupName>([^<]*)/) || [])[1];
+      if (lineupId && name) map[lineupId] = decodeHtmlText(name.trim());
+    }
+    return map;
+  }
+
+  function parseTrimLabelsFromHtml(html) {
+    var map = {};
+    var re = /id="trim_(\d+)"[^>]*value="(\d+)"[\s\S]*?<label[^>]*for="trim_\1"[\s\S]*?<span class="txt">([^<]*)/gi;
+    var m;
+    while ((m = re.exec(html))) {
+      map[m[1]] = decodeHtmlText((m[3] || '').trim());
+    }
+    return map;
+  }
+
+  function enrichTrimsFromHtml(html, trims) {
+    var lineupMap = parseLineupMapFromHtml(html);
+    var labelMap = parseTrimLabelsFromHtml(html);
+    (trims || []).forEach(function (t) {
+      var tid = String(t.id);
+      if (labelMap[tid]) t.name = labelMap[tid];
+      if (t.lineupId && lineupMap[t.lineupId]) t.lineupName = lineupMap[t.lineupId];
+    });
+    return { lineupMap: lineupMap, trims: trims };
+  }
+
   function parseTrimsFromHtml(html) {
     var trims = [];
     var re = /<input[^>]+name="input\[trim\]"[^>]*>/gi;
@@ -145,7 +187,16 @@
         name: ''
       });
     }
-    return trims;
+    return enrichTrimsFromHtml(html, trims).trims;
+  }
+
+  function isUsableTrimRow(row) {
+    if (!row) return false;
+    var hasName = row.name && String(row.name).trim();
+    var opts = (row.options || []).length;
+    var out = (row.colors && row.colors.out || []).length;
+    var inn = (row.innerColors || []).length || (row.colors && row.colors.in || []).length;
+    return !!(hasName || opts > 0 || out > 0 || inn > 0);
   }
 
   function createHttp() {
@@ -317,22 +368,25 @@
   }
 
   function buildTrimConfig(trims, optionMap, extrasByTrim) {
-    return trims.map(function (t) {
+    var rows = (trims || []).map(function (t) {
       var trimId = String(t.id);
       var extras = extrasByTrim[trimId] || {};
       var embeddedOpts = optionMap[trimId] || optionMap[parseInt(trimId, 10)] || [];
+      if (!Array.isArray(embeddedOpts)) embeddedOpts = embeddedOpts ? [embeddedOpts] : [];
       var ajaxOpts = extras.options || [];
+      if (!Array.isArray(ajaxOpts)) ajaxOpts = ajaxOpts ? Object.values(ajaxOpts) : [];
       var options = ajaxOpts.length ? ajaxOpts : embeddedOpts;
+      var firstOpt = options[0] || embeddedOpts[0] || null;
       return {
         id: trimId,
         lineupId: t.lineupId || '',
-        name: t.name || (options[0] && options[0].trimName) || '',
-        lineupName: (options[0] && options[0].lineupName) || '',
+        name: t.name || (firstOpt && firstOpt.trimName) || '',
+        lineupName: t.lineupName || (firstOpt && firstOpt.lineupName) || '',
         basePriceMan: t.basePriceMan || 0,
         options: options.map(function (o) {
           return {
             idx: o.idx,
-            name: o.name,
+            name: decodeHtmlText(o.name || ''),
             priceWon: parseInt(o.price, 10) || 0,
             priceMan: Math.round((parseInt(o.price, 10) || 0) / 10000),
             code: o.code || '',
@@ -344,6 +398,7 @@
         innerColors: extras.innerColor || []
       };
     });
+    return rows.filter(isUsableTrimRow);
   }
 
   function mapBrandRow(ksBrand, country) {
@@ -417,6 +472,8 @@
     var opts = options || {};
     var onProgress = opts.onProgress || function () {};
     var resume = !!opts.resume;
+    var brandIdsFilter = uniqueInts(opts.brandIds || []);
+    var partialBrandSync = brandIdsFilter.length > 0;
     var started = Date.now();
     var http = createHttp();
     var state = emptyResumeState();
@@ -427,12 +484,19 @@
       modelsFail: 0,
       inserted: 0,
       updated: 0,
-      deactivated: 0
+      deactivated: 0,
+      trimsFiltered: 0
     };
 
     if (opts.resumeState) {
       state = Object.assign(emptyResumeState(), opts.resumeState);
       resume = true;
+    } else if (opts.resumeLogId && dbClient) {
+      var logState = await loadResumeStateByLogId(dbClient, opts.resumeLogId);
+      if (logState && logState.resume_state) {
+        state = Object.assign(emptyResumeState(), logState.resume_state);
+        resume = true;
+      }
     } else if (resume && dbClient) {
       var lastLog = await loadLatestResumeState(dbClient, country);
       if (lastLog) state = Object.assign(emptyResumeState(), lastLog);
@@ -462,6 +526,16 @@
         return { ks_brand_id: parseInt(b.idx, 10), name: b.name, raw: b };
       });
       state.all_brand_ids = brandJobs.map(function (b) { return b.ks_brand_id; });
+      if (partialBrandSync) {
+        brandJobs = brandJobs.filter(function (b) {
+          return brandIdsFilter.indexOf(b.ks_brand_id) >= 0;
+        });
+        state.selected_brand_ids = brandIdsFilter.slice();
+        state.mode = 'partial';
+        if (!brandJobs.length) {
+          throw new Error('선택한 브랜드를 KS에서 찾을 수 없습니다.');
+        }
+      }
     }
 
     var brandIdToDb = {};
@@ -614,6 +688,7 @@
             }
           }
           var trimConfig = buildTrimConfig(stepBundle.trims, stepBundle.optionMap, extrasByTrim);
+          stats.trimsFiltered += Math.max(0, (stepBundle.trims || []).length - trimConfig.length);
           var brandDb = brandIdToDb[brandRow.ks_brand_id];
           if (!brandDb || !brandDb.id) throw new Error('브랜드 DB ID 없음');
 
@@ -643,7 +718,7 @@
     state.all_model_ids = uniqueInts(state.all_model_ids || []);
 
     var complete = !nextPendingBrands.length && !nextPendingModels.length;
-    if (complete && state.mode === 'full' && state.all_model_ids.length) {
+    if (complete && state.mode === 'full' && state.all_model_ids.length && !partialBrandSync) {
       onProgress({ phase: 'deactivate', country: country });
       stats.deactivated = await deactivateMissing(dbClient, country, state);
     }
@@ -660,6 +735,9 @@
       msg: msg,
       diag: {
         mode: state.mode,
+        brand_ids: state.selected_brand_ids || brandIdsFilter,
+        brand_names: brandJobs.map(function (b) { return b.name; }),
+        trims_filtered: stats.trimsFiltered,
         errors: nextPendingBrands.concat(nextPendingModels).map(function (e) {
           return { type: e.ks_model_id ? 'model' : 'brand', id: e.ks_model_id || e.ks_brand_id, name: e.name, error: e.error };
         })
@@ -743,6 +821,15 @@
     return { inserted: true, skipped: false };
   }
 
+  async function loadResumeStateByLogId(dbClient, logId) {
+    var res = await dbClient.from('lease_sync_logs')
+      .select('resume_state,country,ok,models_ok,models_fail')
+      .eq('id', logId)
+      .maybeSingle();
+    if (res.error || !res.data) return null;
+    return res.data;
+  }
+
   async function loadLatestResumeState(dbClient, country) {
     var res = await dbClient.from('lease_sync_logs')
       .select('resume_state,ok')
@@ -812,6 +899,7 @@
     mapBrandRow: mapBrandRow,
     mapModelRow: mapModelRow,
     runSync: runSync,
-    loadLatestResumeState: loadLatestResumeState
+    loadLatestResumeState: loadLatestResumeState,
+    loadResumeStateByLogId: loadResumeStateByLogId
   };
 }));

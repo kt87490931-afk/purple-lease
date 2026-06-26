@@ -1,49 +1,123 @@
-name: Sync KS Lease
-
-# Required repository secrets:
-#   SUPABASE_URL              — Supabase project URL
-#   SUPABASE_SERVICE_ROLE_KEY — service role key for lease_brands / lease_models writes
-
-on:
-  workflow_dispatch:
-    inputs:
-      country:
-        description: "Country (domestic/import)"
-        required: true
-        default: domestic
-        type: choice
-        options:
-          - domestic
-          - import
-  schedule:
-    - cron: "0 4 * * *"
-
-jobs:
-  sync:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Sync KS lease data
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: |
-          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
-            echo "::error::Missing secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY — add them in Repository Settings > Secrets and variables > Actions"
-            exit 1
-          fi
-          if [ "${{ github.event_name }}" = "schedule" ]; then
-            echo "Scheduled sync: domestic + import"
-            node scripts/sync-ks-lease.js domestic
-            node scripts/sync-ks-lease.js import
-          else
-            COUNTRY="${{ github.event.inputs.country }}"
-            echo "Manual sync for country=$COUNTRY"
-            node scripts/sync-ks-lease.js "$COUNTRY"
-          fi
-
+name: Sync KS Lease
+
+
+
+# Required repository secrets:
+
+#   SUPABASE_URL              — Supabase project URL
+
+#   SUPABASE_SERVICE_ROLE_KEY — service role key for lease_brands / lease_models writes
+
+
+
+on:
+
+  workflow_dispatch:
+
+    inputs:
+
+      country:
+
+        description: "Country (domestic/import)"
+
+        required: true
+
+        default: domestic
+
+        type: choice
+
+        options:
+
+          - domestic
+
+          - import
+
+      brands:
+
+        description: "Optional KS brand IDs (comma-separated, e.g. 303,307)"
+
+        required: false
+
+        default: ""
+
+      resume_log:
+
+        description: "Optional lease_sync_logs.id to resume failed items"
+
+        required: false
+
+        default: ""
+
+  schedule:
+
+    - cron: "0 4 * * *"
+
+
+
+jobs:
+
+  sync:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/checkout@v4
+
+
+
+      - uses: actions/setup-node@v4
+
+        with:
+
+          node-version: "20"
+
+
+
+      - name: Sync KS lease data
+
+        env:
+
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+        run: |
+
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+
+            echo "::error::Missing secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY — add them in Repository Settings > Secrets and variables > Actions"
+
+            exit 1
+
+          fi
+
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+
+            echo "Scheduled sync: domestic + import"
+
+            node scripts/sync-ks-lease.js domestic
+
+            node scripts/sync-ks-lease.js import
+
+          else
+
+            COUNTRY="${{ github.event.inputs.country }}"
+
+            BRANDS="${{ github.event.inputs.brands }}"
+
+            RESUME_LOG="${{ github.event.inputs.resume_log }}"
+
+            EXTRA=""
+
+            if [ -n "$BRANDS" ]; then EXTRA="$EXTRA --brands=$BRANDS"; fi
+
+            if [ -n "$RESUME_LOG" ]; then EXTRA="$EXTRA --resume-log=$RESUME_LOG"; fi
+
+            echo "Manual sync for country=$COUNTRY brands=$BRANDS resume_log=$RESUME_LOG"
+
+            node scripts/sync-ks-lease.js "$COUNTRY" $EXTRA
+
+          fi
+
+

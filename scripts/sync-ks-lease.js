@@ -6,6 +6,8 @@
  *   node scripts/sync-ks-lease.js domestic
  *   node scripts/sync-ks-lease.js import
  *   node scripts/sync-ks-lease.js domestic --resume
+ *   node scripts/sync-ks-lease.js domestic --brands=303,307
+ *   node scripts/sync-ks-lease.js domestic --resume-log=UUID
  *
  * 환경변수:
  *   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (또는 SUPABASE_ANON_KEY)
@@ -21,6 +23,16 @@ var SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE
 
 var country = process.argv[2] || 'domestic';
 var resume = process.argv.indexOf('--resume') >= 0;
+var brandIds = [];
+var resumeLogId = null;
+
+process.argv.slice(3).forEach(function (arg) {
+  if (arg.indexOf('--brands=') === 0) {
+    brandIds = arg.slice(9).split(',').map(function (s) { return parseInt(s.trim(), 10); }).filter(function (n) { return n > 0; });
+  } else if (arg.indexOf('--resume-log=') === 0) {
+    resumeLogId = arg.slice(13).trim() || null;
+  }
+});
 
 if (country !== 'domestic' && country !== 'import') {
   console.error('[ks-lease] country는 domestic 또는 import');
@@ -182,11 +194,14 @@ function createDbAdapter() {
 
 async function main() {
   var started = new Date();
-  console.log('[ks-lease] start', country, resume ? '(resume)' : '(full)', started.toISOString());
+  var modeLabel = resumeLogId ? '(resume-log=' + resumeLogId + ')' : (resume ? '(resume)' : (brandIds.length ? '(brands=' + brandIds.join(',') + ')' : '(full)'));
+  console.log('[ks-lease] start', country, modeLabel, started.toISOString());
 
   var db = createDbAdapter();
   var result = await KsLeaseSync.runSync(db, country, {
     resume: resume,
+    brandIds: brandIds,
+    resumeLogId: resumeLogId,
     onProgress: function (p) {
       if (p.phase === 'model') {
         console.log('[ks-lease]', p.brand, '-', p.name, '(' + p.index + '/' + p.total + ')');

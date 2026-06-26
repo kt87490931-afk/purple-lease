@@ -341,6 +341,7 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
             <button class="btn btn-outline" type="button" id="btnSyncKsDomestic">국산차 동기화</button>
             <button class="btn btn-outline" type="button" id="btnSyncKsImport">수입차 동기화</button>
             <button class="btn btn-primary" id="btnAddLeaseBrand" type="button">+ 브랜드 추가</button>
+            <button class="btn btn-outline" type="button" id="btnLeaseSyncLogs">동기화 로그기록</button>
           </div>
         </div>
         <div id="leaseSyncLogArea" style="margin-bottom:8px;font-size:12px;color:var(--ink-400);"></div>
@@ -500,6 +501,25 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
       <button class="btn btn-outline" data-close="modalKsSync">닫기</button>
       <button class="btn btn-primary" type="button" id="btnKsSyncResume" style="display:none;">실패 항목 이어서 동기화</button>
     </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalKsSyncBrandPick">
+  <div class="modal-box" style="max-width:520px;">
+    <div class="modal-head"><h3 id="modalKsSyncBrandPickTitle">동기화할 브랜드 선택</h3><button class="modal-close" data-close="modalKsSyncBrandPick">✕</button></div>
+    <div class="modal-body" id="modalKsSyncBrandPickBody" style="max-height:55vh;overflow:auto;font-size:13px;"></div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" data-close="modalKsSyncBrandPick">취소</button>
+      <button class="btn btn-primary" type="button" id="btnKsSyncBrandPickStart">선택 브랜드 동기화</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalKsSyncLogs">
+  <div class="modal-box" style="max-width:640px;">
+    <div class="modal-head"><h3>동기화 로그기록</h3><button class="modal-close" data-close="modalKsSyncLogs">✕</button></div>
+    <div class="modal-body" id="modalKsSyncLogsBody" style="max-height:60vh;overflow:auto;font-size:13px;line-height:1.6;"></div>
+    <div class="modal-foot"><button class="btn btn-outline" data-close="modalKsSyncLogs">닫기</button></div>
   </div>
 </div>
 

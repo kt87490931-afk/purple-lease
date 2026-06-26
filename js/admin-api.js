@@ -696,6 +696,8 @@
         name: r.name,
         origin: r.origin,
         logo: r.logo_url,
+        ksBrandId: r.ks_brand_id != null ? parseInt(r.ks_brand_id, 10) : null,
+        syncSource: r.sync_source || '',
         models: []
       };
     });
@@ -779,8 +781,16 @@
     return Sync.runSync(db(), country, {
       resume: !!opts.resume,
       resumeState: opts.resumeState || null,
+      brandIds: opts.brandIds || [],
+      resumeLogId: opts.resumeLogId || null,
       onProgress: onProgress || function () {}
     });
+  }
+
+  async function getLeaseSyncLog(logId) {
+    var res = await db().from('lease_sync_logs').select('*').eq('id', logId).maybeSingle();
+    if (res.error) throw res.error;
+    return res.data;
   }
 
   async function listLeaseSyncLogs(country, limit) {
@@ -923,6 +933,7 @@
     deleteLeaseModel: deleteLeaseModel,
     syncKsLease: syncKsLease,
     listLeaseSyncLogs: listLeaseSyncLogs,
+    getLeaseSyncLog: getLeaseSyncLog,
     getLatestLeaseSyncLog: getLatestLeaseSyncLog,
     listInquiries: listInquiries,
     countUnreadInquiries: countUnreadInquiries,
