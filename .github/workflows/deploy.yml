@@ -18,7 +18,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "*.html,js,assets,robots.txt,scripts"
+          source: "*.html,js,assets,robots.txt,scripts,deploy"
           target: /var/www/purple-lease
           strip_components: 0
           overwrite: true
@@ -32,5 +32,7 @@ jobs:
           script: |
             rm -f /var/www/purple-lease/used-cars_1.html /var/www/purple-lease/Easyquote.html
             chmod 644 /var/www/purple-lease/robots.txt 2>/dev/null || true
+            chmod +x /var/www/purple-lease/deploy/install-ks-nginx-proxy.sh 2>/dev/null || true
+            bash /var/www/purple-lease/deploy/install-ks-nginx-proxy.sh 2>&1 || echo "[deploy] ks nginx proxy install skipped"
             chown -R www-data:www-data /var/www/purple-lease
             chmod -R 755 /var/www/purple-lease

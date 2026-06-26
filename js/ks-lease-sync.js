@@ -16,7 +16,19 @@
 
   function getBaseUrl() {
     var cfg = (typeof window !== 'undefined' && window.SUPABASE_CONFIG) || {};
+    if (typeof window !== 'undefined' && window.location && window.location.origin) {
+      var proxy = cfg.ksRentcarProxyPath;
+      if (proxy) {
+        var p = proxy.indexOf('/') === 0 ? proxy : '/' + proxy;
+        return (window.location.origin + p).replace(/\/$/, '');
+      }
+    }
     return (cfg.ksRentcarBaseUrl || BASE).replace(/\/$/, '');
+  }
+
+  function isSameOriginKs(url) {
+    if (typeof window === 'undefined' || !window.location) return false;
+    return String(url || '').indexOf(window.location.origin) === 0;
   }
 
   function ksCountryParam(origin) {
@@ -124,7 +136,7 @@
         Accept: 'application/json, text/html, */*'
       };
       if (cookie) headers.Cookie = cookie;
-      var opts = { method: method, headers: headers, credentials: 'omit' };
+      var opts = { method: method, headers: headers, credentials: isSameOriginKs(url) ? 'include' : 'omit' };
       if (body != null) {
         headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8';
         opts.body = body;
