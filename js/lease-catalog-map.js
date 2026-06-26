@@ -13,27 +13,6 @@
     '링컨': 'lincoln', '캐딜락': 'cadillac', '마세라티': 'maserati', '로터스': 'lotus', 'BYD': 'byd'
   };
 
-  var BRAND_KS_ID_BY_NAME = {
-    '현대': 303, '기아': 307, '제네시스': 304, '쉐보레': 312, '르노코리아': 321, 'KGM': 326,
-    'BMW': 362, '벤츠': 349, '아우디': 371, '폴스타': 458, '볼보': 459, '폭스바겐': 376,
-    '토요타': 491, '렉서스': 486, '포드': 569, '미니': 367, '포르쉐': 381, '혼다': 500,
-    '지프': 587, '랜드로버': 399, '푸조': 413, '테슬라': 611, '링컨': 573, '캐딜락': 546,
-    '마세라티': 445, '로터스': 408, 'BYD': 380
-  };
-
-  function getKsRentcarBase() {
-    if (typeof window !== 'undefined' && window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.ksRentcarBaseUrl) {
-      return String(window.SUPABASE_CONFIG.ksRentcarBaseUrl).replace(/\/$/, '');
-    }
-    return 'https://ks-rentcar.com';
-  }
-
-  function resolveKsBrandLogoUrl(ksBrandId) {
-    var id = parseInt(ksBrandId, 10);
-    if (!id) return '';
-    return getKsRentcarBase() + '/data/dbrand/e' + id + '.png';
-  }
-
   function decodeHtml(s) {
     if (!s) return '';
     if (typeof document === 'undefined') return String(s).replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
@@ -42,10 +21,8 @@
     return el.value;
   }
 
-  function resolveBrandLogo(name, logoUrl, ksBrandId) {
+  function resolveBrandLogo(name, logoUrl) {
     if (logoUrl && String(logoUrl).trim()) return logoUrl;
-    var ksId = ksBrandId || BRAND_KS_ID_BY_NAME[name];
-    if (ksId) return resolveKsBrandLogoUrl(ksId);
     var key = BRAND_LOGO_BY_NAME[name];
     return key ? '/assets/brand-logos/' + key + '.png' : '';
   }
@@ -118,7 +95,7 @@
     var trims = cfg.trims || [];
     var detail = {
       brandName: brand.name,
-      brandLogo: resolveBrandLogo(brand.name, brand.logo, brand.ksBrandId),
+      brandLogo: resolveBrandLogo(brand.name, brand.logo),
       modelName: model.name,
       img: model.img || '',
       meta: (trims[0] && trims[0].lineupName) ? decodeHtml(trims[0].lineupName) : '',
@@ -136,8 +113,8 @@
 
   function ingestBrandList(brands, brandData, modelData, vehicleDetail) {
     (brands || []).forEach(function (b) {
-      var logo = resolveBrandLogo(b.name, b.logo, b.ksBrandId);
-      brandData.push({ id: b.id, name: b.name, logo: logo, ksBrandId: b.ksBrandId || null });
+      var logo = resolveBrandLogo(b.name, b.logo);
+      brandData.push({ id: b.id, name: b.name, logo: logo });
       var models = b.models || [];
       if (!models.length) return;
       modelData[b.id] = models.map(function (m) {
@@ -186,7 +163,6 @@
     applyCatalog: applyCatalog,
     applyTrimToDetail: applyTrimToDetail,
     resolveBrandLogo: resolveBrandLogo,
-    resolveKsBrandLogoUrl: resolveKsBrandLogoUrl,
     trimConfigSummary: trimConfigSummary
   };
 })(typeof window !== 'undefined' ? window : global);

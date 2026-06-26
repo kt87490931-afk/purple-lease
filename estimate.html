@@ -791,29 +791,29 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
    - 실제 운영 시에는 이 객체들을 서버 API(/api/brands, /api/models 등) 응답으로 교체하세요.
    ============================================================ */
 
-  // 브랜드 목록 — logo 비우면 KS dbrand 이미지 또는 Supabase catalog logo_url 사용
+  // 브랜드 목록 — logo_url /assets/brand-logos/*.png (자체 호스팅 PNG)
   const brandData = {
     domestic: [
-      { id: 'hyundai',  name: '현대',     logo: '' },
-      { id: 'kia',      name: '기아',     logo: '' },
-      { id: 'genesis',  name: '제네시스', logo: '' },
-      { id: 'chevrolet',name: '쉐보레',   logo: '' },
-      { id: 'renault',  name: '르노코리아', logo: '' },
-      { id: 'kgm',      name: 'KGM',      logo: '' },
+      { id: 'hyundai',  name: '현대',     logo: '/assets/brand-logos/hyundai.png' },
+      { id: 'kia',      name: '기아',     logo: '/assets/brand-logos/kia.png' },
+      { id: 'genesis',  name: '제네시스', logo: '/assets/brand-logos/genesis.png' },
+      { id: 'chevrolet',name: '쉐보레',   logo: '/assets/brand-logos/chevrolet.png' },
+      { id: 'renault',  name: '르노코리아', logo: '/assets/brand-logos/renault.png' },
+      { id: 'kgm',      name: 'KGM',      logo: '/assets/brand-logos/kgm.png' },
     ],
     import: [
-      { id: 'bmw',      name: 'BMW',      logo: '' },
-      { id: 'benz',     name: '벤츠',     logo: '' },
-      { id: 'audi',     name: '아우디',   logo: '' },
-      { id: 'polestar', name: '폴스타',   logo: '' },
-      { id: 'volvo',    name: '볼보',     logo: '' },
-      { id: 'vw',       name: '폭스바겐', logo: '' },
-      { id: 'toyota',   name: '토요타',   logo: '' },
-      { id: 'lexus',    name: '렉서스',   logo: '' },
-      { id: 'ford',     name: '포드',     logo: '' },
-      { id: 'mini',     name: '미니',     logo: '' },
-      { id: 'porsche',  name: '포르쉐',   logo: '' },
-      { id: 'tesla',    name: '테슬라',   logo: '' },
+      { id: 'bmw',      name: 'BMW',      logo: '/assets/brand-logos/bmw.png' },
+      { id: 'benz',     name: '벤츠',     logo: '/assets/brand-logos/benz.png' },
+      { id: 'audi',     name: '아우디',   logo: '/assets/brand-logos/audi.png' },
+      { id: 'polestar', name: '폴스타',   logo: '/assets/brand-logos/polestar.png' },
+      { id: 'volvo',    name: '볼보',     logo: '/assets/brand-logos/volvo.png' },
+      { id: 'vw',       name: '폭스바겐', logo: '/assets/brand-logos/vw.png' },
+      { id: 'toyota',   name: '토요타',   logo: '/assets/brand-logos/toyota.png' },
+      { id: 'lexus',    name: '렉서스',   logo: '/assets/brand-logos/lexus.png' },
+      { id: 'ford',     name: '포드',     logo: '/assets/brand-logos/ford.png' },
+      { id: 'mini',     name: '미니',     logo: '/assets/brand-logos/mini.png' },
+      { id: 'porsche',  name: '포르쉐',   logo: '/assets/brand-logos/porsche.png' },
+      { id: 'tesla',    name: '테슬라',   logo: '/assets/brand-logos/tesla.png' },
     ]
   };
 
@@ -919,7 +919,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   const fmt = (n) => n.toLocaleString('ko-KR');
 
   function brandLogoHtml(b) {
-    const src = b.logo || (window.PurpleLeaseCatalog && PurpleLeaseCatalog.resolveBrandLogo(b.name, '', b.ksBrandId));
+    const src = b.logo || (window.PurpleLeaseCatalog && PurpleLeaseCatalog.resolveBrandLogo(b.name, ''));
     const fb = b.name ? b.name.charAt(0) : '?';
     if (src) {
       return `<img src="${src}" alt="${b.name} 로고" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="logo-fallback" style="display:none">${fb}</span>`;

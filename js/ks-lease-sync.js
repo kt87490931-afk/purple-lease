@@ -73,6 +73,22 @@
     return n.toLocaleString('ko-KR');
   }
 
+  var BRAND_LOGO_FILE = {
+    '현대': 'hyundai', '기아': 'kia', '제네시스': 'genesis', '쉐보레': 'chevrolet',
+    '르노코리아': 'renault', 'KGM': 'kgm', 'BMW': 'bmw', '벤츠': 'benz', '아우디': 'audi',
+    '폭스타': 'polestar', '볼보': 'volvo', '폭스바겐': 'vw', '토요타': 'toyota',
+    '렉서스': 'lexus', '포드': 'ford', '미니': 'mini', '포르쉐': 'porsche', '혼다': 'honda',
+    '지프': 'jeep', '랜드로버': 'landrover', '푸조': 'peugeot', '테슬라': 'tesla',
+    '링컨': 'lincoln', '캐딜락': 'cadillac', '마세라티': 'maserati', '로터스': 'lotus', 'BYD': 'byd'
+  };
+
+  function localBrandLogoPath(name, slug) {
+    var key = BRAND_LOGO_FILE[name];
+    if (key) return '/assets/brand-logos/' + key + '.png';
+    if (slug) return '/assets/brand-logos/' + slug + '.png';
+    return '';
+  }
+
   function absKsUrl(path) {
     if (!path) return '';
     var s = String(path).trim();
@@ -403,11 +419,12 @@
 
   function mapBrandRow(ksBrand, country) {
     var ksId = parseInt(ksBrand.idx, 10);
+    var slug = slugify(ksBrand.name, 'b-' + ksId);
     return {
-      slug: slugify(ksBrand.name, 'b-' + ksId),
+      slug: slug,
       name: ksBrand.name || '',
       origin: country,
-      logo_url: absKsUrl('/data/dbrand/e' + ksId + '.png'),
+      logo_url: localBrandLogoPath(ksBrand.name, slug),
       sort_order: parseInt(ksBrand.sort, 10) || ksId,
       is_active: true,
       ks_brand_id: ksId,
