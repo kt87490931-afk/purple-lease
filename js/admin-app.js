@@ -683,6 +683,24 @@
     openModal('modalKsSync');
   }
 
+  function fmtKsSyncBrandScope(lg) {
+    var diag = lg.diag || {};
+    if (diag.brand_scope) return diag.brand_scope;
+    if (diag.brand_names && diag.brand_names.length) {
+      if (diag.brand_names.length === 1) return diag.brand_names[0];
+      if (diag.mode === 'partial' || (diag.brand_ids && diag.brand_ids.length)) {
+        return diag.brand_names.join(', ');
+      }
+    }
+    if (diag.mode === 'partial') return '선택';
+    if (diag.mode === 'resume') return '재시도';
+    if (diag.mode === 'full') return '전체';
+    var total = (lg.models_ok || 0) + (lg.models_fail || 0);
+    if (lg.country === 'import' && total >= 80) return '전체';
+    if (lg.country !== 'import' && total >= 40) return '전체';
+    return '전체';
+  }
+
   function fmtKsSyncLogLine(lg) {
     var d = new Date(lg.started_at);
     if (isNaN(d.getTime())) return '—';
@@ -690,7 +708,8 @@
     var tm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ':' + String(d.getSeconds()).padStart(2, '0');
     var total = (lg.models_ok || 0) + (lg.models_fail || 0);
     var country = lg.country === 'import' ? '수입' : '국산';
-    return country + ' ' + md + ' ' + tm + ' · ' + total + '건 · ' + (lg.models_ok || 0) + '성공 · ' + (lg.models_fail || 0) + '실패';
+    var scope = fmtKsSyncBrandScope(lg);
+    return country + ' / ' + scope + ' · ' + md + ' ' + tm + ' · ' + total + '건 · ' + (lg.models_ok || 0) + '성공 · ' + (lg.models_fail || 0) + '실패';
   }
 
   function ksSyncLogCanRetry(lg) {

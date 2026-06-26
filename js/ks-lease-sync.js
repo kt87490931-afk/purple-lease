@@ -468,6 +468,22 @@
     };
   }
 
+  function buildBrandScopeLabel(state, brandJobs, partialBrandSync) {
+    var names = (brandJobs || []).map(function (b) { return b.name; }).filter(Boolean);
+    if (partialBrandSync || state.mode === 'partial' || (state.selected_brand_ids && state.selected_brand_ids.length)) {
+      if (names.length === 1) return names[0];
+      if (names.length > 1) return names.join(', ');
+      var n = (state.selected_brand_ids || []).length;
+      return n ? ('브랜드 ' + n + '개') : '선택';
+    }
+    if (state.mode === 'resume') {
+      if (names.length === 1) return names[0] + ' 재시도';
+      if (names.length > 1) return names.join(', ') + ' 재시도';
+      return '재시도';
+    }
+    return '전체';
+  }
+
   async function runSync(dbClient, country, options) {
     var opts = options || {};
     var onProgress = opts.onProgress || function () {};
@@ -735,6 +751,7 @@
       msg: msg,
       diag: {
         mode: state.mode,
+        brand_scope: buildBrandScopeLabel(state, brandJobs, partialBrandSync),
         brand_ids: state.selected_brand_ids || brandIdsFilter,
         brand_names: brandJobs.map(function (b) { return b.name; }),
         trims_filtered: stats.trimsFiltered,
