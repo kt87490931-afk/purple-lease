@@ -316,8 +316,13 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
       <section class="panel" id="panel-lease">
         <div class="toolbar">
           <div class="toolbar-left">간편견적(estimate.html)에 노출되는 브랜드·모델·트림·옵션을 관리합니다.</div>
-          <button class="btn btn-primary" id="btnAddLeaseBrand" type="button">+ 브랜드 추가</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <button class="btn btn-outline" type="button" id="btnSyncKsDomestic">국산차 동기화</button>
+            <button class="btn btn-outline" type="button" id="btnSyncKsImport">수입차 동기화</button>
+            <button class="btn btn-primary" id="btnAddLeaseBrand" type="button">+ 브랜드 추가</button>
+          </div>
         </div>
+        <div id="leaseSyncLogArea" style="margin-bottom:12px;font-size:12px;color:var(--ink-400);"></div>
         <div class="tree-cols">
           <div class="tree-list" id="leaseBrandList"></div>
           <div id="leaseModelArea">
@@ -457,10 +462,22 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
   </div>
 </div>
 
+<div class="modal-overlay" id="modalKsSync">
+  <div class="modal-box" style="max-width:560px;">
+    <div class="modal-head"><h3 id="modalKsSyncTitle">KS 견적 동기화 결과</h3><button class="modal-close" data-close="modalKsSync">✕</button></div>
+    <div class="modal-body" id="modalKsSyncBody" style="max-height:60vh;overflow:auto;font-size:13px;line-height:1.55;"></div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" data-close="modalKsSync">닫기</button>
+      <button class="btn btn-primary" type="button" id="btnKsSyncResume" style="display:none;">실패 항목 이어서 동기화</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="/js/supabase-config.js"></script>
 <script src="/js/youtube-utils.js"></script>
 <script src="/js/swautopia-sync.js"></script>
+<script src="/js/ks-lease-sync.js"></script>
 <script src="/js/purple-image.js"></script>
 <script src="/js/part-utils.js"></script>
 <script src="/js/used-car-filters.js"></script>

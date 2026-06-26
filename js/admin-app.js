@@ -16,6 +16,8 @@
   var inquiryTotal = 0;
   var leaseBrands = [];
   var selectedLeaseBrand = null;
+  var lastKsSyncCountry = null;
+  var lastKsSyncCanResume = false;
 
   var pendingPartListingId = null;
 
@@ -469,7 +471,7 @@
           '<button class="btn-danger-text" data-del-model="' + m.dbId + '">삭제</button></td></tr>';
       }).join('') +
       '</tbody></table>' +
-      '<p style="font-size:11.5px;color:var(--ink-400);margin-top:10px;">트림·옵션·색상 상세는 estimate.html config_json 연동으로 확장 예정입니다.</p>';
+      '<p style="font-size:11.5px;color:var(--ink-400);margin-top:10px;">트림·옵션·색상은 KS 동기화 시 config_json에 저장됩니다. 수동 추가 항목(source=manual)은 동기화로 삭제되지 않습니다.</p>';
 
     var addBtn = document.getElementById('btnAddLeaseModel');
     if (addBtn) {
@@ -497,6 +499,103 @@
     });
   }
 
+  function renderKsSyncModal(result) {
+    var title = document.getElementById('modalKsSyncTitle');
+    var body = document.getElementById('modalKsSyncBody');
+    var resumeBtn = document.getElementById('btnKsSyncResume');
+    var countryLabel = result.country === 'import' ? '수입차' : '국산차';
+    title.textContent = countryLabel + ' KS 동기화 ' + (result.ok ? '완료' : (result.complete ? '부분 완료' : '진행 중단'));
+    var s = result.stats || {};
+    var html = '<p><b>' + (result.msg || '') + '</b></p>' +
+      '<ul style="margin:8px 0 12px 18px;padding:0;">' +
+      '<li>브랜드 성공 ' + (s.brandsOk || 0) + ' / 실패 ' + (s.brandsFail || 0) + '</li>' +
+      '<li>모델 성공 ' + (s.modelsOk || 0) + ' / 실패 ' + (s.modelsFail || 0) + '</li>' +
+      '<li>신규 ' + (s.inserted || 0) + ' · 갱신 ' + (s.updated || 0) + ' · 비활성 ' + (s.deactivated || 0) + '</li>' +
+      '<li>소요 ' + Math.round((result.durationMs || 0) / 1000) + '초</li>' +
+      '</ul>';
+    var errors = (result.resumeState && result.resumeState.pending_brands || []).concat(result.resumeState && result.resumeState.pending_models || []);
+    if (errors.length) {
+      html += '<p style="color:#b45309;margin-bottom:6px;">실패 ' + errors.length + '건 — 다음 동기화에서 이어서 처리됩니다.</p>' +
+        '<ul style="margin:0 0 8px 18px;padding:0;max-height:180px;overflow:auto;font-size:12px;">' +
+        errors.slice(0, 30).map(function (e) {
+          return '<li>' + (e.name || e.ks_model_id || e.ks_brand_id) + ': ' + (e.error || '') + '</li>';
+        }).join('') +
+        (errors.length > 30 ? '<li>… 외 ' + (errors.length - 30) + '건</li>' : '') +
+        '</ul>';
+    }
+    if (!result.ok && result.complete) {
+      html += '<p class="hint">브라우저 CORS 오류 시 서버에서 <code>node scripts/sync-ks-lease.js ' + result.country + '</code> 를 실행하세요.</p>';
+    }
+    body.innerHTML = html;
+    lastKsSyncCountry = result.country;
+    lastKsSyncCanResume = !!result.canResume;
+    resumeBtn.style.display = result.canResume ? 'inline-flex' : 'none';
+    openModal('modalKsSync');
+  }
+
+  async function renderLeaseSyncLogArea() {
+    var el = document.getElementById('leaseSyncLogArea');
+    if (!el) return;
+    try {
+      var logs = await API.listLeaseSyncLogs(null, 3);
+      if (!logs.length) {
+        el.innerHTML = '최근 KS 동기화 이력이 없습니다.';
+        return;
+      }
+      el.innerHTML = '<b>최근 동기화</b> — ' + logs.map(function (lg) {
+        var label = lg.country === 'import' ? '수입' : '국산';
+        var st = lg.ok ? '성공' : '부분실패';
+        return label + ' ' + st + ' (모델 ' + lg.models_ok + '/' + (lg.models_ok + lg.models_fail) + ', ' + Math.round((lg.duration_ms || 0) / 1000) + '초)';
+      }).join(' · ');
+    } catch (err) {
+      el.textContent = '';
+    }
+  }
+
+  async function runKsLeaseSync(country, resume) {
+    var btnDom = document.getElementById('btnSyncKsDomestic');
+    var btnImp = document.getElementById('btnSyncKsImport');
+    var btn = country === 'import' ? btnImp : btnDom;
+    var other = country === 'import' ? btnDom : btnImp;
+    var countryLabel = country === 'import' ? '수입차' : '국산차';
+    var willResume = !!resume;
+    if (!willResume) {
+      try {
+        var lastLog = await API.getLatestLeaseSyncLog(country);
+        var rs = lastLog && lastLog.resume_state;
+        var pendingN = ((rs && rs.pending_brands) || []).length + ((rs && rs.pending_models) || []).length;
+        if (pendingN > 0 && !lastLog.ok) {
+          willResume = confirm('이전 ' + countryLabel + ' 동기화에서 실패한 항목 ' + pendingN + '건이 있습니다.\n\n확인 = 실패 항목만 이어서 동기화\n취소 = 전체 새로 동기화');
+        }
+      } catch (_) { /* ignore */ }
+    }
+    var resumeNote = willResume ? '\n\n실패한 브랜드·모델만 이어서 upsert 합니다.' : '\n\nKS 소스 전체를 새로 조회합니다.';
+    if (!confirm('KS오토플랜 ' + countryLabel + ' 견적 데이터를 동기화하시겠습니까?' + resumeNote + '\n\n모델 수에 따라 수 분 이상 걸릴 수 있습니다.')) return;
+    btn.disabled = true;
+    other.disabled = true;
+    var prev = btn.textContent;
+    btn.textContent = '동기화 중…';
+    try {
+      var result = await API.syncKsLease(country, function (p) {
+        if (p.phase === 'brand') btn.textContent = '브랜드 ' + p.index + '/' + p.total;
+        else if (p.phase === 'model') btn.textContent = p.name + ' (' + p.index + '/' + p.total + ')';
+        else if (p.phase === 'resume') btn.textContent = '재개 (B' + p.brands + '/M' + p.models + ')';
+        else if (p.phase === 'deactivate') btn.textContent = '비활성 처리…';
+      }, { resume: willResume, forceFull: !willResume });
+      leaseBrands = await API.listLeaseBrands();
+      await renderLeaseBrandList();
+      if (selectedLeaseBrand) await renderLeaseModelArea();
+      await renderLeaseSyncLogArea();
+      renderKsSyncModal(result);
+    } catch (err) {
+      showError(err);
+    } finally {
+      btn.disabled = false;
+      other.disabled = false;
+      btn.textContent = prev;
+    }
+  }
+
   async function loadAll() {
     youtubeData = await API.listYoutube();
     blogData = await API.listBlog();
@@ -510,6 +609,7 @@
     renderPartsTable();
     renderUsedcarsTable();
     await renderLeaseBrandList();
+    await renderLeaseSyncLogArea();
     await refreshInquiryBadge();
   }
 
@@ -768,6 +868,17 @@
         await renderLeaseBrandList();
         await renderLeaseModelArea();
       } catch (err) { showError(err); }
+    });
+
+    document.getElementById('btnSyncKsDomestic').addEventListener('click', function () {
+      runKsLeaseSync('domestic', false);
+    });
+    document.getElementById('btnSyncKsImport').addEventListener('click', function () {
+      runKsLeaseSync('import', false);
+    });
+    document.getElementById('btnKsSyncResume').addEventListener('click', function () {
+      closeModal('modalKsSync');
+      if (lastKsSyncCountry) runKsLeaseSync(lastKsSyncCountry, true);
     });
   }
 

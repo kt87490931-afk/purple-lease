@@ -728,6 +728,7 @@
       return up.data;
     }
     row.sort_order = Date.now() % 100000;
+    row.sync_source = 'manual';
     var ins = await db().from('lease_brands').insert([row]).select().single();
     if (ins.error) throw ins.error;
     return ins.data;
@@ -750,6 +751,7 @@
       return up.data;
     }
     row.sort_order = Date.now() % 100000;
+    row.sync_source = 'manual';
     var ins = await db().from('lease_models').insert([row]).select().single();
     if (ins.error) throw ins.error;
     return ins.data;
@@ -758,6 +760,36 @@
   async function deleteLeaseModel(modelDbId) {
     var res = await db().from('lease_models').delete().eq('id', modelDbId);
     if (res.error) throw res.error;
+  }
+
+  async function syncKsLease(country, onProgress, options) {
+    var Sync = window.KsLeaseSync;
+    if (!Sync) throw new Error('KsLeaseSync 모듈이 로드되지 않았습니다.');
+    if (country !== 'domestic' && country !== 'import') {
+      throw new Error('country는 domestic 또는 import 입니다.');
+    }
+    var opts = options || {};
+    return Sync.runSync(db(), country, {
+      resume: !!opts.resume,
+      resumeState: opts.resumeState || null,
+      onProgress: onProgress || function () {}
+    });
+  }
+
+  async function listLeaseSyncLogs(country, limit) {
+    var q = db().from('lease_sync_logs')
+      .select('*')
+      .order('started_at', { ascending: false })
+      .limit(limit || 10);
+    if (country) q = q.eq('country', country);
+    var res = await q;
+    if (res.error) throw res.error;
+    return res.data || [];
+  }
+
+  async function getLatestLeaseSyncLog(country) {
+    var rows = await listLeaseSyncLogs(country, 1);
+    return rows[0] || null;
   }
 
   function fmtTime(iso) {
@@ -842,6 +874,9 @@
     saveLeaseBrand: saveLeaseBrand,
     saveLeaseModel: saveLeaseModel,
     deleteLeaseModel: deleteLeaseModel,
+    syncKsLease: syncKsLease,
+    listLeaseSyncLogs: listLeaseSyncLogs,
+    getLatestLeaseSyncLog: getLatestLeaseSyncLog,
     listInquiries: listInquiries,
     countUnreadInquiries: countUnreadInquiries,
     countTotalInquiries: countTotalInquiries,

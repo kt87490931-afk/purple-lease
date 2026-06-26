@@ -9,5 +9,7 @@ window.SUPABASE_CONFIG = {
   youtubeApiKey: 'AIzaSyBIsyVv2rbuwiE0-ib9dT1bwndP_bnzZVM',
   youtubeChannelHandle: 'purplelease',
   /** 오토피아 중고차 동기화 API 베이스 URL */
-  swautopiaBaseUrl: 'https://swautopia.co.kr'
+  swautopiaBaseUrl: 'https://swautopia.co.kr',
+  /** KS오토플랜 견적 동기화 API 베이스 URL */
+  ksRentcarBaseUrl: 'https://ks-rentcar.com'
 };
