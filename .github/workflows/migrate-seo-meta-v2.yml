@@ -1,0 +1,45 @@
+name: Run SEO Meta v2 Migration
+
+on:
+  workflow_dispatch:
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Upload migration SQL to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "supabase/migration-seo-meta-v2.sql,deploy/run-migration-seo-meta-v2.sh"
+          target: /var/www/purple-lease
+          strip_components: 0
+          overwrite: true
+
+      - name: Run migration on server (IPv6 direct DB)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            chmod +x /var/www/purple-lease/deploy/run-migration-seo-meta-v2.sh
+            export SUPABASE_DB_PASSWORD="${{ secrets.SUPABASE_DB_PASSWORD }}"
+            bash /var/www/purple-lease/deploy/run-migration-seo-meta-v2.sh
+
+      - name: Verify REST read
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::warning::SUPABASE_ANON_KEY missing — skip REST verify"
+            exit 0
+          fi
+          curl -sf "$SUPABASE_URL/rest/v1/seo_page_meta?page_path=eq./&select=title,meta_keywords,og_description" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY"
