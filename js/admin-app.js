@@ -1090,7 +1090,54 @@
     }
   }
 
+  async function runGenerateSitemap() {
+    var btn = document.getElementById('btnGenerateSitemap');
+    var statusEl = document.getElementById('seoSitemapStatus');
+    if (!btn || !statusEl) {
+      alert('사이트맵 UI를 찾을 수 없습니다. 페이지를 새로고침(Ctrl+F5)해 주세요.');
+      return;
+    }
+    if (btn.disabled) return;
+    btn.disabled = true;
+    statusEl.textContent = '사이트맵 생성 중…';
+    statusEl.style.color = 'var(--ink-600)';
+    try {
+      var result = await API.generateSitemap();
+      statusEl.innerHTML = '완료 — <b>' + result.count + '개</b> URL 반영 · ' +
+        '<a href="' + result.liveUrl + '?t=' + Date.now() + '" target="_blank" rel="noopener">' + result.liveUrl + '</a>';
+      statusEl.style.color = 'var(--green-700, #15803d)';
+    } catch (err) {
+      statusEl.textContent = err.message || String(err);
+      statusEl.style.color = '#c0392b';
+      showError(err);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function bindSeoPanelEvents() {
+    var panel = document.getElementById('panel-seo');
+    if (!panel) return;
+    panel.addEventListener('click', function (e) {
+      if (e.target.closest('#btnGenerateSitemap')) {
+        e.preventDefault();
+        runGenerateSitemap();
+        return;
+      }
+      if (e.target.closest('#btnPreviewSitemap')) {
+        e.preventDefault();
+        window.open('https://purpleauto.co.kr/sitemap.xml?t=' + Date.now(), '_blank');
+      }
+    });
+  }
+
+  function bindOptionalClick(id, handler) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('click', handler);
+  }
+
   function bindEvents() {
+    bindSeoPanelEvents();
     document.querySelectorAll('.admin-nav-item').forEach(function (item) {
       item.addEventListener('click', async function () {
         document.querySelectorAll('.admin-nav-item').forEach(function (i) { i.classList.remove('active'); });
@@ -1120,7 +1167,7 @@
       });
     });
 
-    document.getElementById('btnSaveSeoSettings').addEventListener('click', async function () {
+    bindOptionalClick('btnSaveSeoSettings', async function () {
       try {
         await API.saveSeoSettings({
           site_name: document.getElementById('seoSiteName').value.trim(),
@@ -1134,7 +1181,7 @@
       } catch (err) { showError(err); }
     });
 
-    document.getElementById('btnSaveSeoPages').addEventListener('click', async function () {
+    bindOptionalClick('btnSaveSeoPages', async function () {
       try {
         var rows = [];
         document.querySelectorAll('#seoPageTableBody tr[data-seo-idx]').forEach(function (tr) {
@@ -1157,30 +1204,6 @@
         renderSeoPageTable();
         alert('페이지 메타가 저장되었습니다.');
       } catch (err) { showError(err); }
-    });
-
-    document.getElementById('btnPreviewSitemap').addEventListener('click', function () {
-      window.open('https://purpleauto.co.kr/sitemap.xml?t=' + Date.now(), '_blank');
-    });
-
-    document.getElementById('btnGenerateSitemap').addEventListener('click', async function () {
-      var btn = document.getElementById('btnGenerateSitemap');
-      var statusEl = document.getElementById('seoSitemapStatus');
-      btn.disabled = true;
-      statusEl.textContent = '사이트맵 생성 중…';
-      statusEl.style.color = 'var(--ink-600)';
-      try {
-        var result = await API.generateSitemap();
-        statusEl.innerHTML = '완료 — <b>' + result.count + '개</b> URL 반영 · ' +
-          '<a href="' + result.liveUrl + '?t=' + Date.now() + '" target="_blank" rel="noopener">' + result.liveUrl + '</a>';
-        statusEl.style.color = 'var(--green-700, #15803d)';
-      } catch (err) {
-        statusEl.textContent = err.message || String(err);
-        statusEl.style.color = '#c0392b';
-        showError(err);
-      } finally {
-        btn.disabled = false;
-      }
     });
 
     document.querySelectorAll('[data-close]').forEach(function (btn) {
