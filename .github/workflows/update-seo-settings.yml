@@ -29,9 +29,9 @@ jobs:
           fi
           BODY='{}'
           if [ -n "$GOOGLE_VERIFY" ]; then
-            BODY=$(node -e "console.log(JSON.stringify({google_verification: process.argv[1], updated_at: new Date().toISOString()}))" "$GOOGLE_VERIFY")
+            BODY=$(GOOGLE_VERIFY="$GOOGLE_VERIFY" node -e "console.log(JSON.stringify({google_verification: process.env.GOOGLE_VERIFY, updated_at: new Date().toISOString()}))")
           elif [ -n "$NAVER_VERIFY" ]; then
-            BODY=$(node -e "console.log(JSON.stringify({naver_verification: process.argv[1], updated_at: new Date().toISOString()}))" "$NAVER_VERIFY")
+            BODY=$(NAVER_VERIFY="$NAVER_VERIFY" node -e "console.log(JSON.stringify({naver_verification: process.env.NAVER_VERIFY, updated_at: new Date().toISOString()}))")
           else
             echo "::error::No verification value provided"
             exit 1
