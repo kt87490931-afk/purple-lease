@@ -1,0 +1,34 @@
+name: Patch Static SEO HTML
+
+on:
+  workflow_dispatch:
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Upload scripts to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "scripts/patch-static-seo.py,deploy/patch-static-seo.sh,deploy/install-seo-static-cron.sh"
+          target: /var/www/purple-lease
+          strip_components: 0
+          overwrite: true
+
+      - name: Run patch on server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            chmod +x /var/www/purple-lease/deploy/patch-static-seo.sh
+            chmod +x /var/www/purple-lease/deploy/install-seo-static-cron.sh
+            bash /var/www/purple-lease/deploy/install-seo-static-cron.sh
+            export SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}"
+            bash /var/www/purple-lease/deploy/patch-static-seo.sh --force

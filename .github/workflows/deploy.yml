@@ -39,6 +39,10 @@ jobs:
             bash /var/www/purple-lease/deploy/install-ks-nginx-proxy.sh 2>&1 || echo "[deploy] ks nginx proxy install skipped"
             bash /var/www/purple-lease/deploy/install-nginx-domain.sh 2>&1 || echo "[deploy] nginx domain install skipped"
             bash /var/www/purple-lease/deploy/install-sitemap-cron.sh 2>&1 || echo "[deploy] sitemap cron skipped"
+            chmod +x /var/www/purple-lease/deploy/patch-static-seo.sh 2>/dev/null || true
+            chmod +x /var/www/purple-lease/deploy/install-seo-static-cron.sh 2>/dev/null || true
+            bash /var/www/purple-lease/deploy/install-seo-static-cron.sh 2>&1 || echo "[deploy] seo static cron skipped"
+            bash /var/www/purple-lease/deploy/patch-static-seo.sh --force 2>&1 || echo "[deploy] seo static patch skipped"
             if [ -n "$SUPABASE_ANON_KEY" ]; then
               cd /var/www/purple-lease && SUPABASE_URL="$SUPABASE_URL" SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" node scripts/generate-sitemap.js 2>&1 || echo "[deploy] sitemap generate skipped"
             fi

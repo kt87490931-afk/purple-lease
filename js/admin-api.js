@@ -951,6 +951,7 @@
     var row = {
       id: 1,
       site_name: payload.site_name || '퍼플오토',
+      site_url: payload.site_url || 'https://purpleauto.co.kr',
       default_description: payload.default_description || '',
       og_image_url: payload.og_image_url || '',
       google_verification: payload.google_verification || '',
@@ -960,6 +961,24 @@
     };
     var res = await db().from('seo_settings').upsert(row, { onConflict: 'id' });
     if (res.error) throw res.error;
+  }
+
+  var SEO_PATCH_REQUEST_PATH = 'seo/patch-request.json';
+
+  async function queueStaticSeoPatch() {
+    var blob = new Blob([JSON.stringify({ requested_at: new Date().toISOString() })], { type: 'application/json' });
+    var res = await db().storage.from('purple-uploads').upload(SEO_PATCH_REQUEST_PATH, blob, {
+      cacheControl: '60',
+      upsert: true,
+      contentType: 'application/json'
+    });
+    if (res.error) {
+      if (res.error.message && /mime|type/i.test(res.error.message)) {
+        throw new Error('Storage MIME 제한 — migration-sitemap-storage.sql 실행 후 다시 시도하세요.');
+      }
+      throw res.error;
+    }
+    return { queued: true };
   }
 
   async function listSeoPageMeta() {
@@ -1087,6 +1106,7 @@
     saveSeoSettings: saveSeoSettings,
     listSeoPageMeta: listSeoPageMeta,
     saveSeoPageMetaRows: saveSeoPageMetaRows,
-    generateSitemap: generateSitemap
+    generateSitemap: generateSitemap,
+    queueStaticSeoPatch: queueStaticSeoPatch
   };
 })();

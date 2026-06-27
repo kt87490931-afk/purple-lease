@@ -1042,6 +1042,29 @@
   }
 
   var seoPageData = [];
+  var seoSettingsCache = null;
+
+  function escInputVal(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  }
+
+  function htmlFileForPath(pagePath) {
+    var map = (window.PurpleSeoStaticMeta && window.PurpleSeoStaticMeta.PAGE_TO_HTML) || {};
+    return map[pagePath] || '';
+  }
+
+  function updateSeoOgPreview() {
+    var el = document.getElementById('seoOgPreview');
+    var url = (document.getElementById('seoOgImage') || {}).value.trim();
+    if (!el) return;
+    if (url) {
+      el.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now();
+      el.hidden = false;
+    } else {
+      el.hidden = true;
+      el.removeAttribute('src');
+    }
+  }
 
   function setActiveSeoTab(tab) {
     document.querySelectorAll('#panel-seo .inquiry-tab[data-seo-tab]').forEach(function (btn) {
@@ -1053,37 +1076,90 @@
     if (el) el.classList.add('active');
   }
 
-  function renderSeoPageTable() {
-    var body = document.getElementById('seoPageTableBody');
-    if (!body) return;
+  function renderSeoPageCards() {
+    var wrap = document.getElementById('seoPageCards');
+    if (!wrap) return;
     if (!seoPageData.length) {
-      body.innerHTML = '<tr><td colspan="5"><div class="empty-row">seo_page_meta 데이터가 없습니다. migration-seo.sql을 실행하세요.</div></td></tr>';
+      wrap.innerHTML = '<div class="empty-row">seo_page_meta 데이터가 없습니다. migration-seo.sql을 실행하세요.</div>';
       return;
     }
-    body.innerHTML = seoPageData.map(function (row, idx) {
-      return '<tr data-seo-idx="' + idx + '">' +
-        '<td class="num-cell">' + row.page_path + '</td>' +
-        '<td><input type="text" class="seo-in-title" value="' + (row.title || '').replace(/"/g, '&quot;') + '" style="width:100%;min-width:140px"></td>' +
-        '<td><input type="text" class="seo-in-desc" value="' + (row.description || '').replace(/"/g, '&quot;') + '" style="width:100%;min-width:180px"></td>' +
-        '<td><input type="number" class="seo-in-priority" value="' + row.sitemap_priority + '" step="0.05" min="0" max="1" style="width:64px"></td>' +
-        '<td style="text-align:center;"><input type="checkbox" class="seo-in-noindex"' + (row.noindex ? ' checked' : '') + '></td>' +
-        '</tr>';
+    wrap.innerHTML = seoPageData.map(function (row, idx) {
+      var htmlFile = htmlFileForPath(row.page_path);
+      return '<div class="seo-page-card" data-seo-idx="' + idx + '">' +
+        '<div class="seo-page-card-head"><b>' + escInputVal(row.page_path) + '</b>' +
+        (htmlFile ? '<span class="hint">' + htmlFile + '</span>' : '') +
+        '<span class="hint" style="margin-left:auto;">priority <input type="number" class="seo-in-priority" value="' + row.sitemap_priority + '" step="0.05" min="0" max="1" style="width:64px;margin-left:4px;"> noindex <input type="checkbox" class="seo-in-noindex"' + (row.noindex ? ' checked' : '') + '></span></div>' +
+        '<div class="form-row"><label>&lt;title&gt;</label><input type="text" class="seo-in-title" value="' + escInputVal(row.title) + '"></div>' +
+        '<div class="form-row"><label>meta description</label><textarea class="seo-in-desc" rows="2">' + escInputVal(row.description) + '</textarea></div>' +
+        '<div class="form-row"><label>meta keywords (쉼표 구분)</label><textarea class="seo-in-keywords" rows="2">' + escInputVal(row.meta_keywords) + '</textarea></div>' +
+        '<div class="form-grid-2">' +
+          '<div class="form-row"><label>og:title</label><input type="text" class="seo-in-og-title" value="' + escInputVal(row.og_title || row.title) + '"></div>' +
+          '<div class="form-row"><label>og:description</label><textarea class="seo-in-og-desc" rows="2">' + escInputVal(row.og_description) + '</textarea></div>' +
+        '</div>' +
+        '<div class="form-row"><label>twitter:description</label><textarea class="seo-in-twitter-desc" rows="2">' + escInputVal(row.twitter_description) + '</textarea><span class="hint">비우면 og:description 사용</span></div>' +
+        '</div>';
     }).join('');
+  }
+
+  function collectSeoPageRows() {
+    var rows = [];
+    document.querySelectorAll('.seo-page-card[data-seo-idx]').forEach(function (card) {
+      var idx = parseInt(card.dataset.seoIdx, 10);
+      var base = seoPageData[idx];
+      if (!base) return;
+      var title = card.querySelector('.seo-in-title').value.trim();
+      var ogTitle = card.querySelector('.seo-in-og-title').value.trim() || title;
+      var ogDesc = card.querySelector('.seo-in-og-desc').value.trim();
+      var twitterDesc = card.querySelector('.seo-in-twitter-desc').value.trim();
+      rows.push({
+        page_path: base.page_path,
+        title: title,
+        description: card.querySelector('.seo-in-desc').value.trim(),
+        meta_keywords: card.querySelector('.seo-in-keywords').value.trim(),
+        og_title: ogTitle,
+        og_description: ogDesc || card.querySelector('.seo-in-desc').value.trim(),
+        twitter_description: twitterDesc || ogDesc || card.querySelector('.seo-in-desc').value.trim(),
+        noindex: card.querySelector('.seo-in-noindex').checked,
+        sitemap_priority: parseFloat(card.querySelector('.seo-in-priority').value) || 0.5,
+        sitemap_changefreq: base.sitemap_changefreq || 'weekly',
+        updated_at: new Date().toISOString()
+      });
+    });
+    return rows;
+  }
+
+  async function runPublishStaticSeo(statusEl) {
+    if (statusEl) {
+      statusEl.textContent = 'SNS·정적 HTML 반영 요청 중…';
+      statusEl.style.color = 'var(--ink-600)';
+    }
+    await API.queueStaticSeoPatch();
+    if (statusEl) {
+      statusEl.textContent = '요청 완료 — 서버에서 3분 이내 HTML meta가 갱신됩니다. 카카오 디버거는 「캐시 초기화」 후 재스크랩하세요.';
+      statusEl.style.color = 'var(--green-700, #15803d)';
+    }
+  }
+
+  function renderSeoPageTable() {
+    renderSeoPageCards();
   }
 
   async function loadSeoPanel() {
     try {
       var settings = await API.getSeoSettings();
+      seoSettingsCache = settings;
       if (settings) {
         document.getElementById('seoSiteName').value = settings.site_name || '퍼플오토';
+        document.getElementById('seoSiteUrl').value = settings.site_url || 'https://purpleauto.co.kr';
         document.getElementById('seoDefaultDesc').value = settings.default_description || '';
         document.getElementById('seoOgImage').value = settings.og_image_url || '';
         document.getElementById('seoGoogleVerify').value = settings.google_verification || '';
         document.getElementById('seoNaverVerify').value = settings.naver_verification || '';
         document.getElementById('seoRobotsExtra').value = settings.robots_extra || '';
+        updateSeoOgPreview();
       }
       seoPageData = await API.listSeoPageMeta();
-      renderSeoPageTable();
+      renderSeoPageCards();
       setActiveSeoTab('basic');
     } catch (err) {
       showError(err);
@@ -1119,6 +1195,8 @@
   function bindSeoPanelEvents() {
     var panel = document.getElementById('panel-seo');
     if (!panel) return;
+    var ogInput = document.getElementById('seoOgImage');
+    if (ogInput) ogInput.addEventListener('input', updateSeoOgPreview);
     panel.addEventListener('click', function (e) {
       if (e.target.closest('#btnGenerateSitemap')) {
         e.preventDefault();
@@ -1128,6 +1206,14 @@
       if (e.target.closest('#btnPreviewSitemap')) {
         e.preventDefault();
         window.open('https://purpleauto.co.kr/sitemap.xml?t=' + Date.now(), '_blank');
+      }
+      if (e.target.closest('#btnPublishStaticSeo')) {
+        e.preventDefault();
+        runPublishStaticSeo(document.getElementById('seoBasicStatus')).catch(showError);
+      }
+      if (e.target.closest('#btnPublishStaticSeoPages')) {
+        e.preventDefault();
+        runPublishStaticSeo(document.getElementById('seoPagesStatus')).catch(showError);
       }
     });
   }
@@ -1172,40 +1258,35 @@
       try {
         await API.saveSeoSettings({
           site_name: document.getElementById('seoSiteName').value.trim(),
+          site_url: document.getElementById('seoSiteUrl').value.trim(),
           default_description: document.getElementById('seoDefaultDesc').value.trim(),
           og_image_url: document.getElementById('seoOgImage').value.trim(),
           google_verification: document.getElementById('seoGoogleVerify').value.trim(),
           naver_verification: document.getElementById('seoNaverVerify').value.trim(),
           robots_extra: document.getElementById('seoRobotsExtra').value.trim()
         });
+        await API.queueStaticSeoPatch();
+        var st = document.getElementById('seoBasicStatus');
+        if (st) {
+          st.textContent = '기본 설정 저장 완료 — SNS·정적 HTML 3분 이내 반영됩니다.';
+          st.style.color = 'var(--green-700, #15803d)';
+        }
         alert('SEO 기본 설정이 저장되었습니다.');
       } catch (err) { showError(err); }
     });
 
     bindOptionalClick('btnSaveSeoPages', async function () {
       try {
-        var rows = [];
-        document.querySelectorAll('#seoPageTableBody tr[data-seo-idx]').forEach(function (tr) {
-          var idx = parseInt(tr.dataset.seoIdx, 10);
-          var base = seoPageData[idx];
-          if (!base) return;
-          rows.push({
-            page_path: base.page_path,
-            title: tr.querySelector('.seo-in-title').value.trim(),
-            description: tr.querySelector('.seo-in-desc').value.trim(),
-            og_title: tr.querySelector('.seo-in-title').value.trim(),
-            meta_keywords: base.meta_keywords || '',
-            og_description: base.og_description || '',
-            twitter_description: base.twitter_description || '',
-            noindex: tr.querySelector('.seo-in-noindex').checked,
-            sitemap_priority: parseFloat(tr.querySelector('.seo-in-priority').value) || 0.5,
-            sitemap_changefreq: base.sitemap_changefreq || 'weekly',
-            updated_at: new Date().toISOString()
-          });
-        });
+        var rows = collectSeoPageRows();
         await API.saveSeoPageMetaRows(rows);
         seoPageData = await API.listSeoPageMeta();
-        renderSeoPageTable();
+        renderSeoPageCards();
+        await API.queueStaticSeoPatch();
+        var st = document.getElementById('seoPagesStatus');
+        if (st) {
+          st.textContent = '페이지 메타 저장 완료 — SNS·정적 HTML 3분 이내 반영됩니다.';
+          st.style.color = 'var(--green-700, #15803d)';
+        }
         alert('페이지 메타가 저장되었습니다.');
       } catch (err) { showError(err); }
     });
