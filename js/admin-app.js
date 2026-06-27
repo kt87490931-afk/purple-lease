@@ -1133,11 +1133,22 @@
       statusEl.textContent = 'SNS·정적 HTML 반영 요청 중…';
       statusEl.style.color = 'var(--ink-600)';
     }
-    await API.queueStaticSeoPatch();
+    var result = await API.queueStaticSeoPatch();
     if (statusEl) {
-      statusEl.textContent = '요청 완료 — 서버에서 3분 이내 HTML meta가 갱신됩니다. 카카오 디버거는 「캐시 초기화」 후 재스크랩하세요.';
+      if (result.queued) {
+        statusEl.textContent = '요청 완료 — 서버에서 3분 이내 HTML meta가 갱신됩니다. 카카오 디버거는 「캐시 초기화」 후 재스크랩하세요.';
+      } else {
+        statusEl.textContent = '반영 요청은 건너뛰었지만 DB 변경은 3분 이내 cron으로 HTML에 자동 반영됩니다.';
+      }
       statusEl.style.color = 'var(--green-700, #15803d)';
     }
+  }
+
+  function seoPatchStatusSuffix(result) {
+    if (result && result.queued) {
+      return ' SNS·정적 HTML 3분 이내 반영됩니다.';
+    }
+    return ' DB 저장 완료 — HTML meta는 3분 이내 서버 cron으로 자동 반영됩니다.';
   }
 
   function renderSeoPageTable() {
@@ -1265,10 +1276,10 @@
           naver_verification: document.getElementById('seoNaverVerify').value.trim(),
           robots_extra: document.getElementById('seoRobotsExtra').value.trim()
         });
-        await API.queueStaticSeoPatch();
+        var patchResult = await API.queueStaticSeoPatch();
         var st = document.getElementById('seoBasicStatus');
         if (st) {
-          st.textContent = '기본 설정 저장 완료 — SNS·정적 HTML 3분 이내 반영됩니다.';
+          st.textContent = '기본 설정 저장 완료 —' + seoPatchStatusSuffix(patchResult);
           st.style.color = 'var(--green-700, #15803d)';
         }
         alert('SEO 기본 설정이 저장되었습니다.');
@@ -1281,10 +1292,10 @@
         await API.saveSeoPageMetaRows(rows);
         seoPageData = await API.listSeoPageMeta();
         renderSeoPageCards();
-        await API.queueStaticSeoPatch();
+        var patchResult = await API.queueStaticSeoPatch();
         var st = document.getElementById('seoPagesStatus');
         if (st) {
-          st.textContent = '페이지 메타 저장 완료 — SNS·정적 HTML 3분 이내 반영됩니다.';
+          st.textContent = '페이지 메타 저장 완료 —' + seoPatchStatusSuffix(patchResult);
           st.style.color = 'var(--green-700, #15803d)';
         }
         alert('페이지 메타가 저장되었습니다.');

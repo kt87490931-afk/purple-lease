@@ -966,17 +966,16 @@
   var SEO_PATCH_REQUEST_PATH = 'seo/patch-request.json';
 
   async function queueStaticSeoPatch() {
-    var blob = new Blob([JSON.stringify({ requested_at: new Date().toISOString() })], { type: 'application/json' });
+    var body = JSON.stringify({ requested_at: new Date().toISOString() });
+    var blob = new Blob([body], { type: 'text/plain' });
     var res = await db().storage.from('purple-uploads').upload(SEO_PATCH_REQUEST_PATH, blob, {
       cacheControl: '60',
       upsert: true,
-      contentType: 'application/json'
+      contentType: 'text/plain'
     });
     if (res.error) {
-      if (res.error.message && /mime|type/i.test(res.error.message)) {
-        throw new Error('Storage MIME 제한 — migration-sitemap-storage.sql 실행 후 다시 시도하세요.');
-      }
-      throw res.error;
+      console.warn('[SEO] patch-request upload skipped:', res.error.message || res.error);
+      return { queued: false, reason: res.error.message || String(res.error) };
     }
     return { queued: true };
   }
