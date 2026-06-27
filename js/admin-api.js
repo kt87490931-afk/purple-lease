@@ -1081,6 +1081,96 @@
     };
   }
 
+  var HERO_MAX_SLIDES = 4;
+
+  function sanitizeHeroHtmlContent(html) {
+    return String(html || '')
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+  }
+
+  function normalizeHeroButtons(buttons) {
+    if (!Array.isArray(buttons)) return [];
+    return buttons.map(function (b) {
+      return {
+        label: String((b && b.label) || '').trim().slice(0, 80),
+        href: String((b && b.href) || '#').trim().slice(0, 500) || '#',
+        style: (b && b.style) === 'outline' ? 'outline' : 'primary'
+      };
+    }).filter(function (b) { return b.label; });
+  }
+
+  async function listHeroSlides() {
+    var res = await db().from('hero_slides').select('*')
+      .order('sort_order', { ascending: true })
+      .order('id', { ascending: true });
+    if (res.error) throw res.error;
+    return (res.data || []).map(function (row) {
+      row.buttons = normalizeHeroButtons(row.buttons);
+      return row;
+    });
+  }
+
+  async function saveHeroSlide(payload, editingId) {
+    var countRes = await db().from('hero_slides').select('id', { count: 'exact', head: true });
+    if (countRes.error) throw countRes.error;
+    var total = countRes.count || 0;
+    if (!editingId && total >= HERO_MAX_SLIDES) {
+      throw new Error('슬라이드는 최대 ' + HERO_MAX_SLIDES + '개까지 등록할 수 있습니다.');
+    }
+
+    var row = {
+      is_enabled: payload.is_enabled !== false,
+      slide_type: payload.slide_type === 'html' ? 'html' : 'builder',
+      bg_image_url: String(payload.bg_image_url || '').trim(),
+      kicker_text: String(payload.kicker_text || '').trim(),
+      kicker_font_size: String(payload.kicker_font_size || 'sm').trim(),
+      kicker_color: String(payload.kicker_color || '').trim(),
+      kicker_align: String(payload.kicker_align || 'left').trim(),
+      title_text: String(payload.title_text || '').trim(),
+      title_font_size: String(payload.title_font_size || 'lg').trim(),
+      title_color: String(payload.title_color || '').trim(),
+      title_align: String(payload.title_align || 'left').trim(),
+      desc_text: String(payload.desc_text || '').trim(),
+      desc_font_size: String(payload.desc_font_size || 'md').trim(),
+      desc_color: String(payload.desc_color || '').trim(),
+      desc_align: String(payload.desc_align || 'left').trim(),
+      buttons: normalizeHeroButtons(payload.buttons),
+      html_content: sanitizeHeroHtmlContent(payload.html_content),
+      overlay_opacity: Math.min(0.85, Math.max(0, parseFloat(payload.overlay_opacity) || 0.35)),
+      updated_at: new Date().toISOString()
+    };
+
+    if (editingId) {
+      var up = await db().from('hero_slides').update(row).eq('id', editingId).select().single();
+      if (up.error) throw up.error;
+      up.data.buttons = normalizeHeroButtons(up.data.buttons);
+      return up.data;
+    }
+
+    var maxRes = await db().from('hero_slides').select('sort_order').order('sort_order', { ascending: false }).limit(1);
+    if (maxRes.error) throw maxRes.error;
+    row.sort_order = ((maxRes.data && maxRes.data[0]) ? maxRes.data[0].sort_order : -1) + 1;
+
+    var ins = await db().from('hero_slides').insert([row]).select().single();
+    if (ins.error) throw ins.error;
+    ins.data.buttons = normalizeHeroButtons(ins.data.buttons);
+    return ins.data;
+  }
+
+  async function deleteHeroSlide(id) {
+    var res = await db().from('hero_slides').delete().eq('id', id);
+    if (res.error) throw res.error;
+  }
+
+  async function reorderHeroSlides(orderedIds) {
+    if (!orderedIds || !orderedIds.length) return;
+    for (var i = 0; i < orderedIds.length; i++) {
+      var res = await db().from('hero_slides').update({ sort_order: i, updated_at: new Date().toISOString() }).eq('id', orderedIds[i]);
+      if (res.error) throw res.error;
+    }
+  }
+
   window.PurpleAdminAPI = {
     fmtDate: fmtDate,
     parseDotDate: parseDotDate,
@@ -1137,6 +1227,11 @@
     saveSeoPageMetaRows: saveSeoPageMetaRows,
     generateSitemap: generateSitemap,
     queueStaticSeoPatch: queueStaticSeoPatch,
-    fetchAnalytics: fetchAnalytics
+    fetchAnalytics: fetchAnalytics,
+    listHeroSlides: listHeroSlides,
+    saveHeroSlide: saveHeroSlide,
+    deleteHeroSlide: deleteHeroSlide,
+    reorderHeroSlides: reorderHeroSlides,
+    HERO_MAX_SLIDES: HERO_MAX_SLIDES
   };
 })();

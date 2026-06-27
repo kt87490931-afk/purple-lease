@@ -302,6 +302,33 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     position: relative;
     padding: 40px 0;
   }
+  .hero-slide-bg {
+    position: absolute; inset: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 0;
+  }
+  .hero-slide-overlay {
+    position: absolute; inset: 0;
+    background: #000;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .hero-slide.has-bg-image::before { z-index: 1; opacity: 0.65; }
+  .hero-slide-html-inner {
+    position: relative; z-index: 2;
+    width: 100%;
+    max-height: 100%;
+    overflow: hidden;
+  }
+  .hero-inner-align-left { text-align: left; }
+  .hero-inner-align-center { text-align: center; }
+  .hero-inner-align-center .hero-kicker { margin-left: auto; margin-right: auto; }
+  .hero-inner-align-center .hero-cta-row { justify-content: center; }
+  .hero-inner-align-right { text-align: right; }
+  .hero-inner-align-right .hero-cta-row { justify-content: flex-end; }
+  .hero-cta-row { display: flex; gap: 10px; flex-wrap: wrap; }
   .hero-slide::before {
     content: '';
     position: absolute; inset: 0;
@@ -325,7 +352,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .hero-slide p {
     color: rgba(255,255,255,0.82); font-size: 13.5px; max-width: 380px; margin-bottom: 20px;
   }
-  .hero-cta-row { display: flex; gap: 10px; }
   .hero-cta-row .btn-outline { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.4); color: #fff; }
   .hero-cta-row .btn-outline:hover { background: rgba(255,255,255,0.2); border-color: #fff; }
   .hero-cta-row .btn-primary { background: #fff; color: var(--purple-600); box-shadow: none; }
@@ -676,45 +702,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 <main>
 
-  <!-- ============ 1. 히어로 배너 (이벤트/프로모션) ============ -->
-  <section class="hero-banner">
-    <div class="hero-slide-track" id="heroTrack">
-      <div class="hero-slide">
-        <div class="wrap hero-slide-inner">
-          <span class="hero-kicker">🎉 신규 가입 이벤트</span>
-          <h1>선납금 0원, 보증금 걱정 없는<br>무보증 장기렌트 특가</h1>
-          <p>퍼플오토와 함께라면 목돈 부담 없이 원하는 차를 탈 수 있습니다. 지금 바로 무료 견적을 받아보세요.</p>
-          <div class="hero-cta-row">
-            <a href="/estimate" class="btn btn-primary">무료 견적받기</a>
-            <a href="#timesale" class="btn btn-outline">타임특가 보기</a>
-          </div>
-        </div>
-      </div>
-      <div class="hero-slide">
-        <div class="wrap hero-slide-inner">
-          <span class="hero-kicker">🚗 승계매입 전문</span>
-          <h1>타고 있는 리스·렌트차,<br>위약금 없이 승계하세요</h1>
-          <p>오토리스·장기렌트 승계매입 전문업체 퍼플오토가 잔여 계약을 안전하게 인수해드립니다.</p>
-          <div class="hero-cta-row">
-            <a href="/estimate" class="btn btn-primary">승계 상담받기</a>
-            <a href="/used-cars" class="btn btn-outline">중고매물 보기</a>
-          </div>
-        </div>
-      </div>
-      <div class="hero-slide">
-        <div class="wrap hero-slide-inner">
-          <span class="hero-kicker">⚡ 5일 이내 출고</span>
-          <h1>기다림 없이 받는<br>즉시출고 차량 모음</h1>
-          <p>인기 모델 즉시출고 재고를 지금 확인하세요. 빠르게 타고 싶은 분께 추천합니다.</p>
-          <div class="hero-cta-row">
-            <a href="/estimate" class="btn btn-primary">즉시출고 확인</a>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="hero-dots" id="heroDots">
-      <span class="active"></span><span></span><span></span>
-    </div>
+  <!-- ============ 1. 히어로 배너 (어드민 hero_slides) ============ -->
+  <section class="hero-banner" id="heroBanner">
+    <div class="hero-slide-track" id="heroTrack"></div>
+    <div class="hero-dots" id="heroDots"></div>
   </section>
 
   <!-- ============ 2. 유튜브 메인 영상 ============ -->
@@ -1211,24 +1202,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   }
 
   initPage();
-
-  // Hero banner dot indicator sync
-  const track = document.getElementById('heroTrack');
-  const dots = document.querySelectorAll('#heroDots span');
-  track.addEventListener('scroll', () => {
-    const idx = Math.round(track.scrollLeft / track.clientWidth);
-    dots.forEach((d,i) => d.classList.toggle('active', i === idx));
-  });
-  dots.forEach((d,i) => d.addEventListener('click', () => {
-    track.scrollTo({ left: track.clientWidth * i, behavior: 'smooth' });
-  }));
-  let autoIdx = 0;
-  setInterval(() => {
-    autoIdx = (autoIdx + 1) % dots.length;
-    track.scrollTo({ left: track.clientWidth * autoIdx, behavior: 'smooth' });
-  }, 5000);
 </script>
 
+<script src="/js/hero-banner.js"></script>
 <script src="/js/device-type.js"></script>
 <script src="/js/visit-tracker.js"></script>
 

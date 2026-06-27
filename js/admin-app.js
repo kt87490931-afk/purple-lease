@@ -1491,6 +1491,9 @@
         if (item.dataset.panel === 'analytics') {
           await loadAnalyticsPanel();
         }
+        if (item.dataset.panel === 'hero' && window.PurpleAdminHero) {
+          await window.PurpleAdminHero.load();
+        }
       });
     });
 
@@ -1866,6 +1869,7 @@
     var email = await window.PurpleAdminAuth.getUserEmail();
     if (email) document.getElementById('adminUserEmail').textContent = email;
     bindEvents();
+    if (window.PurpleAdminHero) window.PurpleAdminHero.init(API);
     try {
       await loadAll();
     } catch (err) {
