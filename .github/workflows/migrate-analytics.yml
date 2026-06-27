@@ -9,18 +9,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Upload migration files to server
+        uses: appleboy/scp-action@v0.1.7
         with:
-          node-version: '20'
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "supabase/migration-analytics.sql,scripts/run-migration-analytics.mjs"
+          target: /var/www/purple-lease
+          strip_components: 0
+          overwrite: true
 
-      - name: Install pg client
-        run: npm install pg --no-save
-
-      - name: Run migration via pooler (IPv4)
-        env:
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-        run: node scripts/run-migration-analytics.mjs
+      - name: Run migration on server (IPv6 direct DB)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /var/www/purple-lease
+            npm install pg --no-save 2>/dev/null || npm install pg --no-save
+            export SUPABASE_DB_PASSWORD="${{ secrets.SUPABASE_DB_PASSWORD }}"
+            export MIGRATION_ON_SERVER=1
+            node scripts/run-migration-analytics.mjs
 
       - name: Verify visit_logs REST (service role read)
         env:

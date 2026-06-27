@@ -2,6 +2,7 @@
 /**
  * supabase/migration-analytics.sql 실행
  * 환경변수: SUPABASE_DB_PASSWORD (필수)
+ * MIGRATION_ON_SERVER=1 — DigitalOcean 서버(IPv6 direct DB)에서 실행
  */
 'use strict';
 
@@ -14,6 +15,7 @@ import pg from 'pg';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_REF = 'zliclwgiaqvilnnookyi';
 const password = process.env.SUPABASE_DB_PASSWORD;
+const onServer = process.env.MIGRATION_ON_SERVER === '1';
 const sqlFile = path.join(__dirname, '..', 'supabase', 'migration-analytics.sql');
 
 if (!password) {
@@ -23,31 +25,37 @@ if (!password) {
 
 const sql = fs.readFileSync(sqlFile, 'utf8');
 
-const ATTEMPTS = [
-  { label: 'direct-ipv4', host: 'db.' + PROJECT_REF + '.supabase.co', port: 5432, user: 'postgres' },
-  { label: 'pooler-seoul-session', host: 'aws-0-ap-northeast-2.pooler.supabase.com', port: 5432, user: 'postgres.' + PROJECT_REF },
-  { label: 'pooler-seoul-tx', host: 'aws-0-ap-northeast-2.pooler.supabase.com', port: 6543, user: 'postgres.' + PROJECT_REF },
-  { label: 'pooler-sg-session', host: 'aws-0-ap-southeast-1.pooler.supabase.com', port: 5432, user: 'postgres.' + PROJECT_REF },
-  { label: 'pooler-sg-tx', host: 'aws-0-ap-southeast-1.pooler.supabase.com', port: 6543, user: 'postgres.' + PROJECT_REF }
-];
+async function resolveHost(hostname, ipv4Only) {
+  if (!ipv4Only) return hostname;
+  const res = await dns.promises.lookup(hostname, { family: 4 });
+  console.log('[migrate-analytics] resolved', hostname, '->', res.address);
+  return res.address;
+}
 
-function makeClient(cfg) {
+function buildAttempts(ipv4Only) {
+  const directHost = 'db.' + PROJECT_REF + '.supabase.co';
+  return [
+    { label: onServer ? 'direct-server-ipv6' : 'direct-ipv4', host: directHost, port: 5432, user: 'postgres', ipv4Only: !onServer && ipv4Only },
+    { label: 'pooler-seoul-session', host: 'aws-0-ap-northeast-2.pooler.supabase.com', port: 5432, user: 'postgres.' + PROJECT_REF, ipv4Only: true },
+    { label: 'pooler-seoul-tx', host: 'aws-0-ap-northeast-2.pooler.supabase.com', port: 6543, user: 'postgres.' + PROJECT_REF, ipv4Only: true }
+  ];
+}
+
+async function makeClient(cfg) {
+  const host = cfg.ipv4Only ? await resolveHost(cfg.host, true) : cfg.host;
   return new pg.Client({
-    host: cfg.host,
+    host,
     port: cfg.port,
     user: cfg.user,
     password,
     database: 'postgres',
     ssl: { rejectUnauthorized: false },
-    connectionTimeoutMillis: 15000,
-    lookup: function (hostname, options, callback) {
-      dns.lookup(hostname, { family: 4, all: false }, callback);
-    }
+    connectionTimeoutMillis: 20000
   });
 }
 
 async function tryConnect(cfg) {
-  const client = makeClient(cfg);
+  const client = await makeClient(cfg);
   try {
     await client.connect();
     console.log('[migrate-analytics] connected:', cfg.label, cfg.user + '@' + cfg.host + ':' + cfg.port);
@@ -66,8 +74,12 @@ async function tryConnect(cfg) {
 }
 
 async function main() {
-  for (var i = 0; i < ATTEMPTS.length; i++) {
-    if (await tryConnect(ATTEMPTS[i])) return;
+  const attempts = onServer
+    ? [{ label: 'direct-server-ipv6', host: 'db.' + PROJECT_REF + '.supabase.co', port: 5432, user: 'postgres', ipv4Only: false }]
+    : buildAttempts(true);
+
+  for (var i = 0; i < attempts.length; i++) {
+    if (await tryConnect(attempts[i])) return;
   }
   console.error('[migrate-analytics] FAIL: all connection attempts failed');
   process.exit(1);
