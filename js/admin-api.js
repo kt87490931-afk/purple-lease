@@ -974,6 +974,65 @@
     if (res.error) throw res.error;
   }
 
+  var SITEMAP_STORAGE_PATH = 'seo/sitemap.xml';
+
+  async function generateSitemap() {
+    var settings = await getSeoSettings();
+    var siteUrl = (settings && settings.site_url) ? settings.site_url : 'https://purpleauto.co.kr';
+    var builder = window.SitemapBuilder;
+    if (!builder) throw new Error('sitemap-builder.js를 불러오지 못했습니다.');
+
+    var pageMetaRes = await db().from('seo_page_meta')
+      .select('page_path,sitemap_priority,sitemap_changefreq,noindex')
+      .order('sitemap_priority', { ascending: false });
+    if (pageMetaRes.error) throw pageMetaRes.error;
+
+    var reviewsRes = await db().from('customer_reviews')
+      .select('listing_id,id,updated_at,published_at,created_at')
+      .eq('is_active', true)
+      .order('listing_id', { ascending: true });
+    if (reviewsRes.error) throw reviewsRes.error;
+
+    var carsRes = await db().from('used_cars')
+      .select('listing_id,id,updated_at,created_at')
+      .eq('is_active', true)
+      .order('listing_id', { ascending: true });
+    if (carsRes.error) throw carsRes.error;
+
+    var partsRes = await db().from('parts')
+      .select('listing_id,id,updated_at,created_at')
+      .eq('is_active', true)
+      .order('listing_id', { ascending: true });
+    if (partsRes.error) throw partsRes.error;
+
+    var xml = await builder.buildXml({
+      siteUrl: siteUrl,
+      pageMeta: pageMetaRes.data || [],
+      reviews: reviewsRes.data || [],
+      usedCars: carsRes.data || [],
+      parts: partsRes.data || []
+    });
+    var count = builder.urlCount(xml);
+    var blob = new Blob([xml], { type: 'application/xml;charset=utf-8' });
+    var uploadRes = await db().storage.from('purple-uploads').upload(SITEMAP_STORAGE_PATH, blob, {
+      cacheControl: '60',
+      upsert: true,
+      contentType: 'application/xml'
+    });
+    if (uploadRes.error) {
+      if (uploadRes.error.message && /mime|type/i.test(uploadRes.error.message)) {
+        throw new Error('Storage MIME 제한 — Supabase SQL Editor에서 migration-sitemap-storage.sql 실행 후 다시 시도하세요.');
+      }
+      throw uploadRes.error;
+    }
+
+    return {
+      count: count,
+      storageUrl: storagePublicUrl(SITEMAP_STORAGE_PATH),
+      liveUrl: siteUrl.replace(/\/$/, '') + '/sitemap.xml'
+    };
+  }
+
   window.PurpleAdminAPI = {
     fmtDate: fmtDate,
     parseDotDate: parseDotDate,
@@ -1027,6 +1086,7 @@
     getSeoSettings: getSeoSettings,
     saveSeoSettings: saveSeoSettings,
     listSeoPageMeta: listSeoPageMeta,
-    saveSeoPageMetaRows: saveSeoPageMetaRows
+    saveSeoPageMetaRows: saveSeoPageMetaRows,
+    generateSitemap: generateSitemap
   };
 })();

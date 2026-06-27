@@ -1160,7 +1160,27 @@
     });
 
     document.getElementById('btnPreviewSitemap').addEventListener('click', function () {
-      window.open('https://purpleauto.co.kr/sitemap.xml', '_blank');
+      window.open('https://purpleauto.co.kr/sitemap.xml?t=' + Date.now(), '_blank');
+    });
+
+    document.getElementById('btnGenerateSitemap').addEventListener('click', async function () {
+      var btn = document.getElementById('btnGenerateSitemap');
+      var statusEl = document.getElementById('seoSitemapStatus');
+      btn.disabled = true;
+      statusEl.textContent = '사이트맵 생성 중…';
+      statusEl.style.color = 'var(--ink-600)';
+      try {
+        var result = await API.generateSitemap();
+        statusEl.innerHTML = '완료 — <b>' + result.count + '개</b> URL 반영 · ' +
+          '<a href="' + result.liveUrl + '?t=' + Date.now() + '" target="_blank" rel="noopener">' + result.liveUrl + '</a>';
+        statusEl.style.color = 'var(--green-700, #15803d)';
+      } catch (err) {
+        statusEl.textContent = err.message || String(err);
+        statusEl.style.color = '#c0392b';
+        showError(err);
+      } finally {
+        btn.disabled = false;
+      }
     });
 
     document.querySelectorAll('[data-close]').forEach(function (btn) {

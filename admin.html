@@ -452,8 +452,12 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
               1. <a href="https://searchadvisor.naver.com/" target="_blank" rel="noopener">searchadvisor.naver.com</a> → 사이트 등록<br>
               2. HTML 태그 verification → 위 「기본 설정」에 코드 저장<br>
               3. 요청 → 사이트맵 제출 <code>https://purpleauto.co.kr/sitemap.xml</code></p>
-            <p style="margin-top:14px;color:var(--ink-500);font-size:12px;">사이트맵은 배포 시 자동 생성됩니다. 로컬에서 <code>node scripts/generate-sitemap.js</code> 실행 후 배포할 수도 있습니다.</p>
-            <button class="btn btn-outline" type="button" id="btnPreviewSitemap">사이트맵 URL 미리보기 (새 탭)</button>
+            <p style="margin-top:14px;color:var(--ink-500);font-size:12px;">콘텐츠(후기·중고차·부품) 추가·수정 후 「사이트맵 생성」을 눌러 검색엔진용 URL 목록을 갱신하세요.</p>
+            <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+              <button class="btn btn-primary" type="button" id="btnGenerateSitemap">사이트맵 생성</button>
+              <button class="btn btn-outline" type="button" id="btnPreviewSitemap">사이트맵 미리보기 (새 탭)</button>
+            </div>
+            <p id="seoSitemapStatus" style="margin-top:12px;font-size:12px;color:var(--ink-600);min-height:18px;"></p>
           </div>
         </div>
       </section>
@@ -629,6 +633,7 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
 <script src="/js/purple-image.js"></script>
 <script src="/js/part-utils.js"></script>
 <script src="/js/used-car-filters.js"></script>
+<script src="/js/sitemap-builder.js"></script>
 <script src="/js/admin-auth.js"></script>
 <script src="/js/admin-api.js"></script>
 <script src="/js/lease-catalog-map.js"></script>
