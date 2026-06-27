@@ -32,6 +32,7 @@
   var analyticsMonth = '';
   var analyticsLoaded = false;
   var todayVisitorCount = 0;
+  var monthVisitorCount = 0;
 
   function parsePartPhotoLines(text) {
     return String(text || '').split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
@@ -71,6 +72,12 @@
       kpiTodayVisitors.textContent = todayVisitorCount == null
         ? '—'
         : fmtAnalyticsNum(todayVisitorCount);
+    }
+    var kpiMonthVisitors = document.getElementById('kpiMonthVisitors');
+    if (kpiMonthVisitors) {
+      kpiMonthVisitors.textContent = monthVisitorCount == null
+        ? '—'
+        : fmtAnalyticsNum(monthVisitorCount);
     }
     document.getElementById('kpiYoutube').textContent = youtubeData.length;
     document.getElementById('kpiBlog').textContent = blogData.length;
@@ -1036,25 +1043,29 @@
     }
   }
 
-  async function loadTodayVisitors() {
+  function parseVisitorCount(row) {
+    if (!row) return 0;
+    var n = parseInt(row.uv_human, 10);
+    if (!isNaN(n)) return n;
+    return parseInt(row.uv, 10) || 0;
+  }
+
+  async function loadDashboardVisitors() {
     try {
       var today = kstTodayStr();
-      var data = await API.fetchAnalytics({ from: today, to: today });
-      var row = data.today;
-      if (!row) {
-        todayVisitorCount = 0;
-        return;
-      }
-      todayVisitorCount = parseInt(row.uv_human, 10);
-      if (isNaN(todayVisitorCount)) todayVisitorCount = parseInt(row.uv, 10) || 0;
+      var monthStart = today.slice(0, 7) + '-01';
+      var data = await API.fetchAnalytics({ from: monthStart, to: today });
+      todayVisitorCount = parseVisitorCount(data.today);
+      monthVisitorCount = parseVisitorCount(data.summary);
     } catch (err) {
-      console.warn('[Admin] today visitors:', err);
+      console.warn('[Admin] dashboard visitors:', err);
       todayVisitorCount = null;
+      monthVisitorCount = null;
     }
   }
 
   async function loadAll() {
-    var todayVisitorsPromise = loadTodayVisitors();
+    var visitorsPromise = loadDashboardVisitors();
     youtubeData = await API.listYoutube();
     blogData = await API.listBlog();
     reviewData = await API.listReviews();
@@ -1068,7 +1079,7 @@
     renderUsedcarsTable();
     await renderLeaseBrandList();
     await renderLeaseSyncLogArea();
-    await todayVisitorsPromise;
+    await visitorsPromise;
     await refreshUnifiedInquiryBadge();
     updateKpis();
   }
