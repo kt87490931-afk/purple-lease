@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>차량 상세 — PURPLE LEASE</title>
+<title>차량 상세 | 퍼플오토</title>
+<script src="/js/supabase-config.js"></script>
+<script src="/js/seo-head.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap');
@@ -299,7 +301,7 @@ p { margin:0; }
 
 <header class="site-header">
   <div class="wrap header-inner">
-    <a href="index.html" class="logo" aria-label="THE PURPLE AUTO 홈"><img src="/assets/brand-logos/purple-logo.png" alt="THE PURPLE AUTO" class="logo-img"></a>
+    <a href="/" class="logo" aria-label="퍼플오토 홈"><img src="/assets/brand-logos/purple-logo.png" alt="퍼플오토" class="logo-img"></a>
     <a href="tel:1555-6362" class="header-call">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6C3CE0" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
       <span>1555-6362</span>
@@ -307,10 +309,10 @@ p { margin:0; }
   </div>
   <nav class="category-nav">
     <div class="wrap category-nav-inner">
-      <a href="estimate.html">신차·리스·장기렌트카</a>
-      <a href="used-cars.html" class="active">중고차</a>
-      <a href="parts-register.html">수입차부품</a>
-      <a href="reviews-customer.html">퍼플리뷰</a>
+      <a href="/estimate">신차·리스·장기렌트카</a>
+      <a href="/used-cars" class="active">중고차</a>
+      <a href="/parts-register">수입차부품</a>
+      <a href="/reviews-customer">퍼플리뷰</a>
     </div>
   </nav>
 </header>
@@ -318,7 +320,7 @@ p { margin:0; }
 <main>
   <div class="wrap">
     <div class="crumb">
-      <a href="index.html">홈</a><span class="sep">›</span><a href="used-cars.html">중고차 매물</a><span class="sep">›</span>
+      <a href="/">홈</a><span class="sep">›</span><a href="/used-cars">중고차 매물</a><span class="sep">›</span>
       <span class="cur" id="crumbName">상세</span>
     </div>
 
@@ -410,7 +412,7 @@ p { margin:0; }
         <div class="seller-box" id="sellerBox" style="display:none;">
           <div class="seller-avatar" id="sellerAvatar">P</div>
           <div class="seller-info">
-            <div class="s-name" id="sellerName">THE PURPLE AUTO</div>
+            <div class="s-name" id="sellerName">퍼플오토</div>
             <div class="s-phone" id="sellerPhone">1555-6362</div>
           </div>
         </div>
@@ -433,19 +435,19 @@ p { margin:0; }
 
 <footer class="site-footer">
   <div class="wrap">
-    <div class="footer-logo"><img src="/assets/brand-logos/purple-logo.png" alt="THE PURPLE AUTO" class="footer-logo-img"></div>
+    <div class="footer-logo"><img src="/assets/brand-logos/purple-logo.png" alt="퍼플오토" class="footer-logo-img"></div>
     <div class="footer-links">
-      <a href="index.html">신차·리스·렌트</a>
-      <a href="used-cars.html">중고차 매물</a>
-      <a href="parts-register.html">수입차부품</a>
-      <a href="reviews-customer.html">후기관리</a>
+      <a href="/">신차·리스·렌트</a>
+      <a href="/used-cars">중고차 매물</a>
+      <a href="/parts-register">수입차부품</a>
+      <a href="/reviews-customer">후기관리</a>
     </div>
     <div class="footer-meta">
-      퍼플리스 | 오토리스&amp;장기렌트 승계매입전문업체<br>
+      퍼플오토 | 오토리스&amp;장기렌트 승계매입전문업체<br>
       대표 : 이호준 | 주소 : 경기도 용인시 기흥구 강남서로9, 7층 703호<br>
       사업자등록번호 : 885-68-00449<br>
       대표번호 : 1555-6362 | 평일 09:00~18:00<br>
-      © 2026 PURPLE LEASE. All rights reserved. (프로토타입 샘플 — 실제 서비스 아님)
+      © 2026 퍼플오토. All rights reserved. (프로토타입 샘플 — 실제 서비스 아님)
     </div>
   </div>
 </footer>
@@ -747,7 +749,7 @@ p { margin:0; }
     document.querySelector('.detail-layout').innerHTML = `
       <div style="grid-column:1/-1; text-align:center; padding:80px 0;">
         <p style="font-size:14px; color:var(--ink-500); margin-bottom:16px;">해당 매물 정보를 찾을 수 없습니다.</p>
-        <a href="used-cars.html" class="btn btn-outline">매물 목록으로</a>
+        <a href="/used-cars" class="btn btn-outline">매물 목록으로</a>
       </div>`;
     document.querySelector('.mobile-cta').style.display = 'none';
   }
@@ -858,7 +860,7 @@ p { margin:0; }
     if (!v) { renderNotFound(); return; }
 
     document.getElementById('crumbName').textContent = v.name;
-    document.title = v.name + ' — PURPLE LEASE';
+    document.title = v.name + ' | 퍼플오토';
 
     // 갤러리
     if (!v.photos || !v.photos.length) {
@@ -974,7 +976,7 @@ p { margin:0; }
 
     // 판매자 정보(오토피아)는 표시하지 않음 — 퍼플리스 고정 연락만
     document.getElementById('sellerBox').style.display = 'flex';
-    document.getElementById('sellerName').textContent = 'THE PURPLE AUTO';
+    document.getElementById('sellerName').textContent = '퍼플오토';
     document.getElementById('sellerPhone').textContent = '1555-6362';
     document.getElementById('sellerAvatar').textContent = 'P';
   }

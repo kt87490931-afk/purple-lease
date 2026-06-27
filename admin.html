@@ -245,8 +245,12 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         중고차 매물
       </a>
+      <a class="admin-nav-item" data-panel="seo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6"/><path d="M8 11h6"/></svg>
+        <span class="nav-label">SEO 관리</span>
+      </a>
     </nav>
-    <div class="admin-sidebar-foot">PURPLE LEASE Admin v1.0<br>Supabase 연동</div>
+    <div class="admin-sidebar-foot">퍼플오토 Admin v1.0<br>Supabase 연동</div>
   </aside>
 
   <main class="admin-main">
@@ -404,6 +408,54 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
           <thead><tr><th>썸네일</th><th>차량명</th><th>연식</th><th>주행거리</th><th>가격</th><th>상태</th><th></th></tr></thead>
           <tbody id="usedcarsTableBody"></tbody>
         </table>
+      </section>
+
+      <section class="panel" id="panel-seo">
+        <div class="inquiry-tabs">
+          <button type="button" class="inquiry-tab active" data-seo-tab="basic">기본 설정</button>
+          <button type="button" class="inquiry-tab" data-seo-tab="pages">페이지 메타</button>
+          <button type="button" class="inquiry-tab" data-seo-tab="sitemap">사이트맵·검색등록</button>
+        </div>
+
+        <div class="inquiry-tab-panel active" id="seoTabBasic">
+          <div style="background:#fff;border-radius:var(--radius-md);padding:18px 20px;box-shadow:var(--shadow-sm);max-width:640px;">
+            <div class="form-row"><label>사이트명</label><input type="text" id="seoSiteName" value="퍼플오토"></div>
+            <div class="form-row"><label>기본 description</label><textarea id="seoDefaultDesc" rows="3"></textarea></div>
+            <div class="form-row"><label>OG 이미지 URL</label><input type="text" id="seoOgImage" placeholder="https://purpleauto.co.kr/assets/..."></div>
+            <div class="form-row"><label>Google Search Console verification</label><input type="text" id="seoGoogleVerify" placeholder="meta content 값"></div>
+            <div class="form-row"><label>Naver 서치어드바이저 verification</label><input type="text" id="seoNaverVerify" placeholder="meta content 값"></div>
+            <div class="form-row"><label>robots.txt 추가 규칙</label><textarea id="seoRobotsExtra" rows="2" placeholder="선택"></textarea></div>
+            <button class="btn btn-primary" type="button" id="btnSaveSeoSettings">기본 설정 저장</button>
+          </div>
+        </div>
+
+        <div class="inquiry-tab-panel" id="seoTabPages">
+          <div class="toolbar">
+            <div class="toolbar-left">페이지별 title · description · sitemap priority</div>
+            <button class="btn btn-primary" type="button" id="btnSaveSeoPages">전체 저장</button>
+          </div>
+          <table class="data-table">
+            <thead><tr><th>경로</th><th>title</th><th>description</th><th>priority</th><th>noindex</th></tr></thead>
+            <tbody id="seoPageTableBody"></tbody>
+          </table>
+        </div>
+
+        <div class="inquiry-tab-panel" id="seoTabSitemap">
+          <div style="background:#fff;border-radius:var(--radius-md);padding:18px 20px;box-shadow:var(--shadow-sm);font-size:13px;line-height:1.8;max-width:720px;">
+            <p><b>사이트맵:</b> <a href="https://purpleauto.co.kr/sitemap.xml" target="_blank" rel="noopener">https://purpleauto.co.kr/sitemap.xml</a></p>
+            <p><b>robots.txt:</b> <a href="https://purpleauto.co.kr/robots.txt" target="_blank" rel="noopener">https://purpleauto.co.kr/robots.txt</a> — <code>/mok/</code> 차단 포함</p>
+            <p style="margin-top:14px;"><b>Google Search Console</b><br>
+              1. <a href="https://search.google.com/search-console" target="_blank" rel="noopener">search.google.com/search-console</a> → 속성 추가 <code>purpleauto.co.kr</code><br>
+              2. HTML 태그 verification → 위 「기본 설정」에 코드 저장<br>
+              3. Sitemaps → <code>sitemap.xml</code> 제출</p>
+            <p style="margin-top:14px;"><b>Naver 서치어드바이저</b><br>
+              1. <a href="https://searchadvisor.naver.com/" target="_blank" rel="noopener">searchadvisor.naver.com</a> → 사이트 등록<br>
+              2. HTML 태그 verification → 위 「기본 설정」에 코드 저장<br>
+              3. 요청 → 사이트맵 제출 <code>https://purpleauto.co.kr/sitemap.xml</code></p>
+            <p style="margin-top:14px;color:var(--ink-500);font-size:12px;">사이트맵은 배포 시 자동 생성됩니다. 로컬에서 <code>node scripts/generate-sitemap.js</code> 실행 후 배포할 수도 있습니다.</p>
+            <button class="btn btn-outline" type="button" id="btnPreviewSitemap">사이트맵 URL 미리보기 (새 탭)</button>
+          </div>
+        </div>
       </section>
 
     </div>

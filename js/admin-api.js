@@ -941,6 +941,39 @@
     if (res.error) throw res.error;
   }
 
+  async function getSeoSettings() {
+    var res = await db().from('seo_settings').select('*').eq('id', 1).maybeSingle();
+    if (res.error) throw res.error;
+    return res.data;
+  }
+
+  async function saveSeoSettings(payload) {
+    var row = {
+      id: 1,
+      site_name: payload.site_name || '퍼플오토',
+      default_description: payload.default_description || '',
+      og_image_url: payload.og_image_url || '',
+      google_verification: payload.google_verification || '',
+      naver_verification: payload.naver_verification || '',
+      robots_extra: payload.robots_extra || '',
+      updated_at: new Date().toISOString()
+    };
+    var res = await db().from('seo_settings').upsert(row, { onConflict: 'id' });
+    if (res.error) throw res.error;
+  }
+
+  async function listSeoPageMeta() {
+    var res = await db().from('seo_page_meta').select('*').order('sitemap_priority', { ascending: false });
+    if (res.error) throw res.error;
+    return res.data || [];
+  }
+
+  async function saveSeoPageMetaRows(rows) {
+    if (!rows || !rows.length) return;
+    var res = await db().from('seo_page_meta').upsert(rows, { onConflict: 'page_path' });
+    if (res.error) throw res.error;
+  }
+
   window.PurpleAdminAPI = {
     fmtDate: fmtDate,
     parseDotDate: parseDotDate,
@@ -990,6 +1023,10 @@
     listUsedCarInquiries: listUsedCarInquiries,
     countUnreadUsedCarInquiries: countUnreadUsedCarInquiries,
     markAllUsedCarInquiriesRead: markAllUsedCarInquiriesRead,
-    deleteUsedCarInquiries: deleteUsedCarInquiries
+    deleteUsedCarInquiries: deleteUsedCarInquiries,
+    getSeoSettings: getSeoSettings,
+    saveSeoSettings: saveSeoSettings,
+    listSeoPageMeta: listSeoPageMeta,
+    saveSeoPageMetaRows: saveSeoPageMetaRows
   };
 })();

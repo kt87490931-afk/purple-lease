@@ -1041,6 +1041,55 @@
     await refreshUnifiedInquiryBadge();
   }
 
+  var seoPageData = [];
+
+  function setActiveSeoTab(tab) {
+    document.querySelectorAll('#panel-seo .inquiry-tab[data-seo-tab]').forEach(function (btn) {
+      btn.classList.toggle('active', btn.dataset.seoTab === tab);
+    });
+    document.querySelectorAll('#panel-seo .inquiry-tab-panel').forEach(function (p) { p.classList.remove('active'); });
+    var map = { basic: 'seoTabBasic', pages: 'seoTabPages', sitemap: 'seoTabSitemap' };
+    var el = document.getElementById(map[tab] || 'seoTabBasic');
+    if (el) el.classList.add('active');
+  }
+
+  function renderSeoPageTable() {
+    var body = document.getElementById('seoPageTableBody');
+    if (!body) return;
+    if (!seoPageData.length) {
+      body.innerHTML = '<tr><td colspan="5"><div class="empty-row">seo_page_meta 데이터가 없습니다. migration-seo.sql을 실행하세요.</div></td></tr>';
+      return;
+    }
+    body.innerHTML = seoPageData.map(function (row, idx) {
+      return '<tr data-seo-idx="' + idx + '">' +
+        '<td class="num-cell">' + row.page_path + '</td>' +
+        '<td><input type="text" class="seo-in-title" value="' + (row.title || '').replace(/"/g, '&quot;') + '" style="width:100%;min-width:140px"></td>' +
+        '<td><input type="text" class="seo-in-desc" value="' + (row.description || '').replace(/"/g, '&quot;') + '" style="width:100%;min-width:180px"></td>' +
+        '<td><input type="number" class="seo-in-priority" value="' + row.sitemap_priority + '" step="0.05" min="0" max="1" style="width:64px"></td>' +
+        '<td style="text-align:center;"><input type="checkbox" class="seo-in-noindex"' + (row.noindex ? ' checked' : '') + '></td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  async function loadSeoPanel() {
+    try {
+      var settings = await API.getSeoSettings();
+      if (settings) {
+        document.getElementById('seoSiteName').value = settings.site_name || '퍼플오토';
+        document.getElementById('seoDefaultDesc').value = settings.default_description || '';
+        document.getElementById('seoOgImage').value = settings.og_image_url || '';
+        document.getElementById('seoGoogleVerify').value = settings.google_verification || '';
+        document.getElementById('seoNaverVerify').value = settings.naver_verification || '';
+        document.getElementById('seoRobotsExtra').value = settings.robots_extra || '';
+      }
+      seoPageData = await API.listSeoPageMeta();
+      renderSeoPageTable();
+      setActiveSeoTab('basic');
+    } catch (err) {
+      showError(err);
+    }
+  }
+
   function bindEvents() {
     document.querySelectorAll('.admin-nav-item').forEach(function (item) {
       item.addEventListener('click', async function () {
@@ -1053,13 +1102,65 @@
         if (item.dataset.panel === 'inquiries') {
           await openInquiriesPanel();
         }
+        if (item.dataset.panel === 'seo') {
+          await loadSeoPanel();
+        }
       });
     });
 
-    document.querySelectorAll('.inquiry-tab').forEach(function (btn) {
+    document.querySelectorAll('.inquiry-tab[data-inquiry-tab]').forEach(function (btn) {
       btn.addEventListener('click', async function () {
         await switchInquiryTab(btn.dataset.inquiryTab);
       });
+    });
+
+    document.querySelectorAll('.inquiry-tab[data-seo-tab]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        setActiveSeoTab(btn.dataset.seoTab);
+      });
+    });
+
+    document.getElementById('btnSaveSeoSettings').addEventListener('click', async function () {
+      try {
+        await API.saveSeoSettings({
+          site_name: document.getElementById('seoSiteName').value.trim(),
+          default_description: document.getElementById('seoDefaultDesc').value.trim(),
+          og_image_url: document.getElementById('seoOgImage').value.trim(),
+          google_verification: document.getElementById('seoGoogleVerify').value.trim(),
+          naver_verification: document.getElementById('seoNaverVerify').value.trim(),
+          robots_extra: document.getElementById('seoRobotsExtra').value.trim()
+        });
+        alert('SEO 기본 설정이 저장되었습니다.');
+      } catch (err) { showError(err); }
+    });
+
+    document.getElementById('btnSaveSeoPages').addEventListener('click', async function () {
+      try {
+        var rows = [];
+        document.querySelectorAll('#seoPageTableBody tr[data-seo-idx]').forEach(function (tr) {
+          var idx = parseInt(tr.dataset.seoIdx, 10);
+          var base = seoPageData[idx];
+          if (!base) return;
+          rows.push({
+            page_path: base.page_path,
+            title: tr.querySelector('.seo-in-title').value.trim(),
+            description: tr.querySelector('.seo-in-desc').value.trim(),
+            og_title: tr.querySelector('.seo-in-title').value.trim(),
+            noindex: tr.querySelector('.seo-in-noindex').checked,
+            sitemap_priority: parseFloat(tr.querySelector('.seo-in-priority').value) || 0.5,
+            sitemap_changefreq: base.sitemap_changefreq || 'weekly',
+            updated_at: new Date().toISOString()
+          });
+        });
+        await API.saveSeoPageMetaRows(rows);
+        seoPageData = await API.listSeoPageMeta();
+        renderSeoPageTable();
+        alert('페이지 메타가 저장되었습니다.');
+      } catch (err) { showError(err); }
+    });
+
+    document.getElementById('btnPreviewSitemap').addEventListener('click', function () {
+      window.open('https://purpleauto.co.kr/sitemap.xml', '_blank');
     });
 
     document.querySelectorAll('[data-close]').forEach(function (btn) {
