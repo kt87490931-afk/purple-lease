@@ -31,6 +31,7 @@
   var analyticsDays = 30;
   var analyticsMonth = '';
   var analyticsLoaded = false;
+  var todayVisitorCount = 0;
 
   function parsePartPhotoLines(text) {
     return String(text || '').split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
@@ -65,6 +66,12 @@
   function updateKpis() {
     var kpiInquiry = document.getElementById('kpiInquiry');
     if (kpiInquiry) kpiInquiry.textContent = inquiryTotal;
+    var kpiTodayVisitors = document.getElementById('kpiTodayVisitors');
+    if (kpiTodayVisitors) {
+      kpiTodayVisitors.textContent = todayVisitorCount == null
+        ? '—'
+        : fmtAnalyticsNum(todayVisitorCount);
+    }
     document.getElementById('kpiYoutube').textContent = youtubeData.length;
     document.getElementById('kpiBlog').textContent = blogData.length;
     document.getElementById('kpiReview').textContent = reviewData.length;
@@ -1029,7 +1036,25 @@
     }
   }
 
+  async function loadTodayVisitors() {
+    try {
+      var today = kstTodayStr();
+      var data = await API.fetchAnalytics({ from: today, to: today });
+      var row = data.today;
+      if (!row) {
+        todayVisitorCount = 0;
+        return;
+      }
+      todayVisitorCount = parseInt(row.uv_human, 10);
+      if (isNaN(todayVisitorCount)) todayVisitorCount = parseInt(row.uv, 10) || 0;
+    } catch (err) {
+      console.warn('[Admin] today visitors:', err);
+      todayVisitorCount = null;
+    }
+  }
+
   async function loadAll() {
+    var todayVisitorsPromise = loadTodayVisitors();
     youtubeData = await API.listYoutube();
     blogData = await API.listBlog();
     reviewData = await API.listReviews();
@@ -1043,7 +1068,9 @@
     renderUsedcarsTable();
     await renderLeaseBrandList();
     await renderLeaseSyncLogArea();
+    await todayVisitorsPromise;
     await refreshUnifiedInquiryBadge();
+    updateKpis();
   }
 
   var seoPageData = [];
