@@ -1279,9 +1279,9 @@
     var todayEl = document.getElementById('anToday');
     if (todayEl) {
       if (t) {
-        todayEl.textContent = 'PV ' + fmtAnalyticsNum(t.pv) + ' · UV ' + fmtAnalyticsNum(t.uv) + ' · 일반 PV ' + fmtAnalyticsNum(t.pv_human);
+        todayEl.textContent = '페이지뷰 ' + fmtAnalyticsNum(t.pv) + ' · 방문자수 ' + fmtAnalyticsNum(t.uv) + ' · 일반 페이지뷰 ' + fmtAnalyticsNum(t.pv_human);
       } else {
-        todayEl.textContent = 'PV 0 · UV 0 · 일반 PV 0';
+        todayEl.textContent = '페이지뷰 0 · 방문자수 0 · 일반 페이지뷰 0';
       }
     }
     var rangeEl = document.getElementById('analyticsRangeLabel');
@@ -1299,13 +1299,13 @@
     rows.forEach(function (r) { if ((r.pv || 0) > maxPv) maxPv = r.pv; });
 
     if (analyticsTab === 'monthly') {
-      thead.innerHTML = '<tr><th>월</th><th>PV</th><th>UV</th><th>일반 PV</th><th>봇 PV</th><th>PC</th><th>모바일</th><th>태블릿</th></tr>';
+      thead.innerHTML = '<tr><th>월</th><th>페이지뷰</th><th>방문자수</th><th>일반 페이지뷰</th><th>봇 페이지뷰</th><th>PC</th><th>모바일</th><th>태블릿</th></tr>';
     } else {
-      thead.innerHTML = '<tr><th>날짜</th><th>PV</th><th>UV</th><th>일반 PV</th><th>봇 PV</th><th>PC</th><th>모바일</th><th>태블릿</th></tr>';
+      thead.innerHTML = '<tr><th>날짜</th><th>페이지뷰</th><th>방문자수</th><th>일반 페이지뷰</th><th>봇 페이지뷰</th><th>PC</th><th>모바일</th><th>태블릿</th></tr>';
     }
 
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--ink-400);padding:24px;">데이터가 없습니다. SQL 마이그레이션 후 공개 페이지 방문이 쌓이면 표시됩니다.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--ink-400);padding:24px;">표시할 데이터가 없습니다.</td></tr>';
       return;
     }
 
@@ -1346,11 +1346,6 @@
       if (statusEl) {
         statusEl.textContent = (err && err.message) ? err.message : String(err);
         statusEl.style.color = '#c0392b';
-      }
-      if ((err && err.message) && /visit_logs|function|does not exist/i.test(err.message)) {
-        if (statusEl) {
-          statusEl.textContent += ' — Supabase에서 supabase/migration-analytics.sql 을 실행하세요.';
-        }
       }
     }
   }
