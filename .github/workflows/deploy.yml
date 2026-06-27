@@ -18,7 +18,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "*.html,js,assets,robots.txt,sitemap.xml,scripts,deploy"
+          source: "*.html,js,assets,robots.txt,sitemap.xml,scripts,deploy,supabase"
           target: /var/www/purple-lease
           strip_components: 0
           overwrite: true

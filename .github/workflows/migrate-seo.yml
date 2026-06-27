@@ -1,7 +1,8 @@
 name: Run SEO Migration
 
-# Supabase Dashboard > Settings > Database > Database password
-# GitHub secret: SUPABASE_DB_PASSWORD
+# 1) Supabase Dashboard > Database Settings > Reset password → Ckalska7979@P
+# 2) GitHub secret: SUPABASE_DB_PASSWORD (이미 등록됨)
+# 3) 이 워크플로 실행 — 서버(IPv6)에서 direct DB 연결
 
 on:
   workflow_dispatch:
@@ -12,32 +13,36 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Upload migration SQL to server
+        uses: appleboy/scp-action@v0.1.7
         with:
-          node-version: "20"
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "supabase/migration-seo.sql,deploy/run-migration-seo.sh"
+          target: /var/www/purple-lease
+          strip_components: 0
+          overwrite: true
 
-      - name: Install pg
-        run: npm install pg --no-save
+      - name: Run migration on server (IPv6 direct DB)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: SUPABASE_DB_PASSWORD
+          script: |
+            chmod +x /var/www/purple-lease/deploy/run-migration-seo.sh
+            export SUPABASE_DB_PASSWORD="${{ secrets.SUPABASE_DB_PASSWORD }}"
+            bash /var/www/purple-lease/deploy/run-migration-seo.sh
 
-      - name: Run migration-seo.sql
-        env:
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-        run: |
-          if [ -z "$SUPABASE_DB_PASSWORD" ]; then
-            echo "::error::SUPABASE_DB_PASSWORD secret missing"
-            echo "Supabase Dashboard > Project Settings > Database > Database password"
-            echo "GitHub > Settings > Secrets > Actions > New repository secret"
-            exit 1
-          fi
-          node scripts/run-migration-seo.mjs
-
-      - name: Verify REST read (anon)
+      - name: Verify REST read
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
-            echo "::warning::SUPABASE_URL / SUPABASE_ANON_KEY 없음 — REST 검증 생략"
+            echo "::warning::SUPABASE_ANON_KEY 없음 — REST 검증 생략"
             exit 0
           fi
           curl -sf "$SUPABASE_URL/rest/v1/seo_settings?id=eq.1&select=site_name" \
