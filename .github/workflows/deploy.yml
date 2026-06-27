@@ -33,6 +33,8 @@ jobs:
             rm -f /var/www/purple-lease/used-cars_1.html /var/www/purple-lease/Easyquote.html
             chmod 644 /var/www/purple-lease/robots.txt 2>/dev/null || true
             chmod +x /var/www/purple-lease/deploy/install-ks-nginx-proxy.sh 2>/dev/null || true
+            chmod +x /var/www/purple-lease/deploy/install-nginx-domain.sh 2>/dev/null || true
             bash /var/www/purple-lease/deploy/install-ks-nginx-proxy.sh 2>&1 || echo "[deploy] ks nginx proxy install skipped"
+            bash /var/www/purple-lease/deploy/install-nginx-domain.sh 2>&1 || echo "[deploy] nginx domain install skipped"
             chown -R www-data:www-data /var/www/purple-lease
             chmod -R 755 /var/www/purple-lease
