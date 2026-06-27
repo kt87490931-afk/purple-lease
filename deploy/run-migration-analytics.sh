@@ -1,10 +1,11 @@
 #!/bin/bash
-# 서버에서 analytics migration 실행 (IPv6 direct DB)
+# 서버에서 analytics migration 실행 (IPv6 direct DB + psql)
 set -euo pipefail
 
 ROOT="/var/www/purple-lease"
 SQL="$ROOT/supabase/migration-analytics.sql"
 PASS="${SUPABASE_DB_PASSWORD:-}"
+DB="postgresql://postgres@db.zliclwgiaqvilnnookyi.supabase.co:5432/postgres?sslmode=require"
 
 if [ -z "$PASS" ]; then
   echo "[migrate-analytics] SUPABASE_DB_PASSWORD 필요"
@@ -16,8 +17,6 @@ if [ ! -f "$SQL" ]; then
 fi
 
 export PGPASSWORD="$PASS"
-PSQL_URL="postgresql://${user:-postgres.zliclwgiaqvilnnookyi}@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?sslmode=require"
-psql "$PSQL_URL" -v ON_ERROR_STOP=1 -f "$SQL"
-psql "$PSQL_URL" -c "SELECT COUNT(*) AS visit_logs_cnt FROM visit_logs; SELECT proname FROM pg_proc WHERE proname LIKE 'get_analytics_%';"
-
+psql "$DB" -v ON_ERROR_STOP=1 -f "$SQL"
+psql "$DB" -c "SELECT COUNT(*) AS visit_logs_cnt FROM visit_logs; SELECT proname FROM pg_proc WHERE proname LIKE 'get_analytics_%';"
 echo "[migrate-analytics] OK"

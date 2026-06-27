@@ -15,23 +15,21 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "supabase/migration-analytics.sql,scripts/run-migration-analytics.mjs"
+          source: "supabase/migration-analytics.sql,deploy/run-migration-analytics.sh"
           target: /var/www/purple-lease
           strip_components: 0
           overwrite: true
 
-      - name: Run migration on server (IPv6 direct DB)
+      - name: Run migration on server (psql IPv6)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /var/www/purple-lease
-            npm install pg --no-save 2>/dev/null || npm install pg --no-save
+            chmod +x /var/www/purple-lease/deploy/run-migration-analytics.sh
             export SUPABASE_DB_PASSWORD="${{ secrets.SUPABASE_DB_PASSWORD }}"
-            export MIGRATION_ON_SERVER=1
-            node scripts/run-migration-analytics.mjs
+            bash /var/www/purple-lease/deploy/run-migration-analytics.sh
 
       - name: Verify visit_logs REST (service role read)
         env:
@@ -42,7 +40,13 @@ jobs:
             echo "::warning::service role missing — skip REST verify"
             exit 0
           fi
-          curl -sf "$SUPABASE_URL/rest/v1/visit_logs?select=id&limit=1" \
+          HTTP=$(curl -sS -o /tmp/vl.json -w "%{http_code}" \
+            "$SUPABASE_URL/rest/v1/visit_logs?select=id&limit=1" \
             -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
-            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY"
-          echo "visit_logs table readable"
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY")
+          cat /tmp/vl.json
+          if [ "$HTTP" != "200" ]; then
+            echo "::error::visit_logs REST HTTP $HTTP"
+            exit 1
+          fi
+          echo "visit_logs table OK"
