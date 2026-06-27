@@ -16,11 +16,8 @@ if [ ! -f "$SQL" ]; then
 fi
 
 export PGPASSWORD="$PASS"
-psql "postgresql://postgres@db.zliclwgiaqvilnnookyi.supabase.co:5432/postgres?sslmode=require" \
-  -v ON_ERROR_STOP=1 \
-  -f "$SQL"
-
-psql "postgresql://postgres@db.zliclwgiaqvilnnookyi.supabase.co:5432/postgres?sslmode=require" \
-  -c "SELECT COUNT(*) AS visit_logs_cnt FROM visit_logs; SELECT proname FROM pg_proc WHERE proname LIKE 'get_analytics_%';"
+PSQL_URL="postgresql://${user:-postgres.zliclwgiaqvilnnookyi}@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?sslmode=require"
+psql "$PSQL_URL" -v ON_ERROR_STOP=1 -f "$SQL"
+psql "$PSQL_URL" -c "SELECT COUNT(*) AS visit_logs_cnt FROM visit_logs; SELECT proname FROM pg_proc WHERE proname LIKE 'get_analytics_%';"
 
 echo "[migrate-analytics] OK"
