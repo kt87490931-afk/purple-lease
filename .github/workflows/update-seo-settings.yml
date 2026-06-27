@@ -1,0 +1,46 @@
+name: Update SEO Settings
+
+on:
+  workflow_dispatch:
+    inputs:
+      google_verification:
+        description: Google site verification content value
+        required: false
+        type: string
+      naver_verification:
+        description: Naver site verification content value
+        required: false
+        type: string
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Patch seo_settings
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GOOGLE_VERIFY: ${{ github.event.inputs.google_verification }}
+          NAVER_VERIFY: ${{ github.event.inputs.naver_verification }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::error::SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY required"
+            exit 1
+          fi
+          BODY='{}'
+          if [ -n "$GOOGLE_VERIFY" ]; then
+            BODY=$(node -e "console.log(JSON.stringify({google_verification: process.argv[1], updated_at: new Date().toISOString()}))" "$GOOGLE_VERIFY")
+          elif [ -n "$NAVER_VERIFY" ]; then
+            BODY=$(node -e "console.log(JSON.stringify({naver_verification: process.argv[1], updated_at: new Date().toISOString()}))" "$NAVER_VERIFY")
+          else
+            echo "::error::No verification value provided"
+            exit 1
+          fi
+          curl -sf -X PATCH "${SUPABASE_URL%/}/rest/v1/seo_settings?id=eq.1" \
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: return=representation" \
+            -d "$BODY"
+          echo ""
+          echo "[update-seo] OK"
