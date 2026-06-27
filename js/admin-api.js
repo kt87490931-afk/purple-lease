@@ -994,6 +994,36 @@
 
   var SITEMAP_STORAGE_PATH = 'seo/sitemap.xml';
 
+  function kstDateStr(d) {
+    var dt = d || new Date();
+    return dt.toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
+  }
+
+  async function fetchAnalytics(opts) {
+    var from = opts.from;
+    var to = opts.to;
+    if (!from || !to) throw new Error('조회 기간이 필요합니다.');
+    var client = db();
+    var periodRes = await client.rpc('get_analytics_period_stats', { p_from: from, p_to: to });
+    if (periodRes.error) throw periodRes.error;
+    var dailyRes = await client.rpc('get_analytics_daily_stats', { p_from: from, p_to: to });
+    if (dailyRes.error) throw dailyRes.error;
+    var monthlyRes = await client.rpc('get_analytics_monthly_stats', { p_from: from, p_to: to });
+    if (monthlyRes.error) throw monthlyRes.error;
+    var today = kstDateStr();
+    var todayRow = null;
+    (dailyRes.data || []).forEach(function (r) {
+      if (String(r.stat_date).slice(0, 10) === today) todayRow = r;
+    });
+    return {
+      range: { from: from, to: to },
+      summary: (periodRes.data && periodRes.data[0]) || null,
+      today: todayRow,
+      daily: dailyRes.data || [],
+      monthly: monthlyRes.data || []
+    };
+  }
+
   async function generateSitemap() {
     var settings = await getSeoSettings();
     var siteUrl = (settings && settings.site_url) ? settings.site_url : 'https://purpleauto.co.kr';
@@ -1106,6 +1136,7 @@
     listSeoPageMeta: listSeoPageMeta,
     saveSeoPageMetaRows: saveSeoPageMetaRows,
     generateSitemap: generateSitemap,
-    queueStaticSeoPatch: queueStaticSeoPatch
+    queueStaticSeoPatch: queueStaticSeoPatch,
+    fetchAnalytics: fetchAnalytics
   };
 })();

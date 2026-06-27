@@ -197,6 +197,13 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
 .kpi-card { background:#fff; border-radius: var(--radius-md); padding:16px; box-shadow: var(--shadow-sm); }
 .kpi-card .kpi-label { font-size:11.5px; color: var(--ink-500); font-weight:700; }
 .kpi-card .kpi-value { font-family: var(--font-mono); font-size:22px; font-weight:800; color: var(--ink-900); margin-top:6px; }
+.analytics-toolbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:16px; }
+.analytics-toolbar .hint-range { font-size:12px; color:var(--ink-500); margin-left:4px; }
+.analytics-bar { background:var(--surface-alt); border-radius:4px; height:8px; overflow:hidden; margin-top:6px; }
+.analytics-bar > span { display:block; height:100%; background:var(--purple-600); opacity:.85; border-radius:4px; }
+.analytics-subgrid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-bottom:18px; }
+@media (min-width:900px){ .analytics-subgrid{ grid-template-columns:repeat(3,1fr); } }
+.analytics-note { background:#fff; border-radius:var(--radius-md); padding:14px 16px; box-shadow:var(--shadow-sm); font-size:12.5px; color:var(--ink-600); line-height:1.7; margin-bottom:16px; }
 
 .tree-cols { display:grid; grid-template-columns: 220px 1fr; gap:16px; align-items:start; }
 .tree-list { background:#fff; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow:hidden; }
@@ -257,6 +264,10 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
       <a class="admin-nav-item" data-panel="usedcars">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         중고차 매물
+      </a>
+      <a class="admin-nav-item" data-panel="analytics">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+        <span class="nav-label">통계</span>
       </a>
       <a class="admin-nav-item" data-panel="seo">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6"/><path d="M8 11h6"/></svg>
@@ -421,6 +432,52 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
           <thead><tr><th>썸네일</th><th>차량명</th><th>연식</th><th>주행거리</th><th>가격</th><th>상태</th><th></th></tr></thead>
           <tbody id="usedcarsTableBody"></tbody>
         </table>
+      </section>
+
+      <section class="panel" id="panel-analytics">
+        <div class="analytics-note">
+          <b>PV · UV · 봇/일반 · PC/모바일/태블릿</b> — Supabase <code>visit_logs</code> 자체 집계 (KST).
+          최초 사용 전 <code>supabase/migration-analytics.sql</code> 실행이 필요합니다. 공개 페이지 방문부터 데이터가 쌓입니다.
+        </div>
+        <div class="analytics-toolbar">
+          <button type="button" class="btn btn-primary btn-sm analytics-tab-btn active" data-analytics-tab="daily">일별</button>
+          <button type="button" class="btn btn-outline btn-sm analytics-tab-btn" data-analytics-tab="monthly">월별</button>
+          <span style="width:8px;"></span>
+          <button type="button" class="btn btn-outline btn-sm analytics-days-btn active" data-analytics-days="7">7일</button>
+          <button type="button" class="btn btn-outline btn-sm analytics-days-btn" data-analytics-days="30">30일</button>
+          <button type="button" class="btn btn-outline btn-sm analytics-days-btn" data-analytics-days="90">90일</button>
+          <select id="analyticsMonthPick" class="inline-edit-input" style="max-width:140px;">
+            <option value="">월 선택 (선택)</option>
+          </select>
+          <button type="button" class="btn btn-outline btn-sm" id="btnRefreshAnalytics">새로고침</button>
+          <span class="hint-range" id="analyticsRangeLabel"></span>
+        </div>
+        <div class="kpi-grid" style="grid-template-columns:repeat(2,1fr);">
+          <div class="kpi-card"><div class="kpi-label">기간 PV (전체)</div><div class="kpi-value" id="anPv">0</div></div>
+          <div class="kpi-card"><div class="kpi-label">기간 UV (전체)</div><div class="kpi-value" id="anUv">0</div></div>
+          <div class="kpi-card"><div class="kpi-label">일반 방문 PV</div><div class="kpi-value" id="anPvHuman">0</div></div>
+          <div class="kpi-card"><div class="kpi-label">일반 방문 UV</div><div class="kpi-value" id="anUvHuman">0</div></div>
+          <div class="kpi-card"><div class="kpi-label">봇 PV</div><div class="kpi-value" id="anPvBot">0</div></div>
+          <div class="kpi-card"><div class="kpi-label">봇 UV</div><div class="kpi-value" id="anUvBot">0</div></div>
+        </div>
+        <div class="analytics-subgrid">
+          <div class="kpi-card"><div class="kpi-label">PC PV / UV</div><div class="kpi-value" style="font-size:18px;" id="anDesktop">0 / 0</div></div>
+          <div class="kpi-card"><div class="kpi-label">모바일 PV / UV</div><div class="kpi-value" style="font-size:18px;" id="anMobile">0 / 0</div></div>
+          <div class="kpi-card"><div class="kpi-label">태블릿 PV / UV</div><div class="kpi-value" style="font-size:18px;" id="anTablet">0 / 0</div></div>
+        </div>
+        <div class="kpi-card" style="margin-bottom:18px;">
+          <div class="kpi-label">오늘 (KST)</div>
+          <div class="kpi-value" style="font-size:18px;" id="anToday">PV 0 · UV 0 · 일반 PV 0</div>
+        </div>
+        <div id="analyticsTableWrap">
+          <table class="data-table" id="analyticsTable">
+            <thead id="analyticsTableHead">
+              <tr><th>날짜</th><th>PV</th><th>UV</th><th>일반 PV</th><th>봇 PV</th><th>PC</th><th>모바일</th><th>태블릿</th></tr>
+            </thead>
+            <tbody id="analyticsTableBody"></tbody>
+          </table>
+        </div>
+        <p id="analyticsStatus" style="margin-top:12px;font-size:12px;color:var(--ink-600);min-height:18px;"></p>
       </section>
 
       <section class="panel" id="panel-seo">
@@ -662,10 +719,10 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
 <script src="/js/used-car-filters.js"></script>
 <script src="/js/sitemap-builder.js?v=20260627e"></script>
 <script src="/js/seo-static-meta.js?v=20260627e"></script>
-<script src="/js/admin-auth.js?v=20260627e"></script>
-<script src="/js/admin-api.js?v=20260627e"></script>
+<script src="/js/admin-auth.js?v=20260627f"></script>
+<script src="/js/admin-api.js?v=20260627f"></script>
 <script src="/js/lease-catalog-map.js"></script>
-<script src="/js/admin-app.js?v=20260627e"></script>
+<script src="/js/admin-app.js?v=20260627f"></script>
 <script>PurpleAdminApp.init();</script>
 
 </body>

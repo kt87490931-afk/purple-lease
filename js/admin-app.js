@@ -27,6 +27,11 @@
 
   var pendingPartListingId = null;
 
+  var analyticsTab = 'daily';
+  var analyticsDays = 30;
+  var analyticsMonth = '';
+  var analyticsLoaded = false;
+
   function parsePartPhotoLines(text) {
     return String(text || '').split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
   }
@@ -1203,6 +1208,205 @@
     }
   }
 
+  function fmtAnalyticsNum(n) {
+    return (parseInt(n, 10) || 0).toLocaleString('ko-KR');
+  }
+
+  function kstTodayStr() {
+    return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
+  }
+
+  function addDaysKst(dateStr, delta) {
+    var parts = String(dateStr).split('-');
+    var d = new Date(Date.UTC(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)));
+    d.setUTCDate(d.getUTCDate() + delta);
+    return d.toISOString().slice(0, 10);
+  }
+
+  function monthOptionsKst(count) {
+    var out = [];
+    var today = kstTodayStr();
+    var y = parseInt(today.slice(0, 4), 10);
+    var m = parseInt(today.slice(5, 7), 10);
+    for (var i = 0; i < count; i++) {
+      var mm = String(m).padStart(2, '0');
+      out.push(y + '-' + mm);
+      m -= 1;
+      if (m < 1) { m = 12; y -= 1; }
+    }
+    return out;
+  }
+
+  function buildAnalyticsRange() {
+    if (analyticsMonth) {
+      var p = analyticsMonth.split('-');
+      var y = parseInt(p[0], 10);
+      var m = parseInt(p[1], 10);
+      var lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate();
+      return {
+        from: analyticsMonth + '-01',
+        to: analyticsMonth + '-' + String(lastDay).padStart(2, '0')
+      };
+    }
+    var to = kstTodayStr();
+    return { from: addDaysKst(to, -(analyticsDays - 1)), to: to };
+  }
+
+  function populateAnalyticsMonthSelect() {
+    var sel = document.getElementById('analyticsMonthPick');
+    if (!sel || sel.dataset.filled === '1') return;
+    monthOptionsKst(14).forEach(function (mo) {
+      var opt = document.createElement('option');
+      opt.value = mo;
+      opt.textContent = mo;
+      sel.appendChild(opt);
+    });
+    sel.dataset.filled = '1';
+  }
+
+  function renderAnalyticsSummary(data) {
+    var s = data.summary || {};
+    document.getElementById('anPv').textContent = fmtAnalyticsNum(s.pv);
+    document.getElementById('anUv').textContent = fmtAnalyticsNum(s.uv);
+    document.getElementById('anPvHuman').textContent = fmtAnalyticsNum(s.pv_human);
+    document.getElementById('anUvHuman').textContent = fmtAnalyticsNum(s.uv_human);
+    document.getElementById('anPvBot').textContent = fmtAnalyticsNum(s.pv_bot);
+    document.getElementById('anUvBot').textContent = fmtAnalyticsNum(s.uv_bot);
+    document.getElementById('anDesktop').textContent = fmtAnalyticsNum(s.pv_desktop) + ' / ' + fmtAnalyticsNum(s.uv_desktop);
+    document.getElementById('anMobile').textContent = fmtAnalyticsNum(s.pv_mobile) + ' / ' + fmtAnalyticsNum(s.uv_mobile);
+    document.getElementById('anTablet').textContent = fmtAnalyticsNum(s.pv_tablet) + ' / ' + fmtAnalyticsNum(s.uv_tablet);
+    var t = data.today;
+    var todayEl = document.getElementById('anToday');
+    if (todayEl) {
+      if (t) {
+        todayEl.textContent = 'PV ' + fmtAnalyticsNum(t.pv) + ' · UV ' + fmtAnalyticsNum(t.uv) + ' · 일반 PV ' + fmtAnalyticsNum(t.pv_human);
+      } else {
+        todayEl.textContent = 'PV 0 · UV 0 · 일반 PV 0';
+      }
+    }
+    var rangeEl = document.getElementById('analyticsRangeLabel');
+    if (rangeEl && data.range) {
+      rangeEl.textContent = data.range.from + ' ~ ' + data.range.to;
+    }
+  }
+
+  function renderAnalyticsTable(data) {
+    var tbody = document.getElementById('analyticsTableBody');
+    var thead = document.getElementById('analyticsTableHead');
+    if (!tbody || !thead) return;
+    var rows = analyticsTab === 'monthly' ? (data.monthly || []) : (data.daily || []);
+    var maxPv = 1;
+    rows.forEach(function (r) { if ((r.pv || 0) > maxPv) maxPv = r.pv; });
+
+    if (analyticsTab === 'monthly') {
+      thead.innerHTML = '<tr><th>월</th><th>PV</th><th>UV</th><th>일반 PV</th><th>봇 PV</th><th>PC</th><th>모바일</th><th>태블릿</th></tr>';
+    } else {
+      thead.innerHTML = '<tr><th>날짜</th><th>PV</th><th>UV</th><th>일반 PV</th><th>봇 PV</th><th>PC</th><th>모바일</th><th>태블릿</th></tr>';
+    }
+
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--ink-400);padding:24px;">데이터가 없습니다. SQL 마이그레이션 후 공개 페이지 방문이 쌓이면 표시됩니다.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = rows.map(function (r) {
+      var label = analyticsTab === 'monthly'
+        ? String(r.stat_month || '').slice(0, 7)
+        : String(r.stat_date || '').slice(0, 10);
+      var barPct = Math.min(100, Math.round(((r.pv || 0) / maxPv) * 100));
+      return '<tr>' +
+        '<td><div>' + label + '</div><div class="analytics-bar"><span style="width:' + barPct + '%"></span></div></td>' +
+        '<td class="num-cell">' + fmtAnalyticsNum(r.pv) + '</td>' +
+        '<td class="num-cell">' + fmtAnalyticsNum(r.uv) + '</td>' +
+        '<td class="num-cell">' + fmtAnalyticsNum(r.pv_human) + '</td>' +
+        '<td class="num-cell">' + fmtAnalyticsNum(r.pv_bot) + '</td>' +
+        '<td class="num-cell">' + fmtAnalyticsNum(r.pv_desktop) + '</td>' +
+        '<td class="num-cell">' + fmtAnalyticsNum(r.pv_mobile) + '</td>' +
+        '<td class="num-cell">' + fmtAnalyticsNum(r.pv_tablet) + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  async function loadAnalyticsPanel(force) {
+    populateAnalyticsMonthSelect();
+    var statusEl = document.getElementById('analyticsStatus');
+    if (!force && analyticsLoaded) return;
+    if (statusEl) statusEl.textContent = '불러오는 중…';
+    try {
+      var range = buildAnalyticsRange();
+      var data = await API.fetchAnalytics(range);
+      renderAnalyticsSummary(data);
+      renderAnalyticsTable(data);
+      analyticsLoaded = true;
+      if (statusEl) {
+        statusEl.textContent = '마지막 갱신: ' + new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
+        statusEl.style.color = 'var(--ink-600)';
+      }
+    } catch (err) {
+      if (statusEl) {
+        statusEl.textContent = (err && err.message) ? err.message : String(err);
+        statusEl.style.color = '#c0392b';
+      }
+      if ((err && err.message) && /visit_logs|function|does not exist/i.test(err.message)) {
+        if (statusEl) {
+          statusEl.textContent += ' — Supabase에서 supabase/migration-analytics.sql 을 실행하세요.';
+        }
+      }
+    }
+  }
+
+  function bindAnalyticsEvents() {
+    var panel = document.getElementById('panel-analytics');
+    if (!panel) return;
+
+    panel.querySelectorAll('.analytics-tab-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        analyticsTab = btn.dataset.analyticsTab || 'daily';
+        panel.querySelectorAll('.analytics-tab-btn').forEach(function (b) {
+          b.classList.toggle('active', b === btn);
+          b.classList.toggle('btn-primary', b === btn);
+          b.classList.toggle('btn-outline', b !== btn);
+        });
+        analyticsLoaded = false;
+        loadAnalyticsPanel(true);
+      });
+    });
+
+    panel.querySelectorAll('.analytics-days-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        analyticsDays = parseInt(btn.dataset.analyticsDays, 10) || 30;
+        analyticsMonth = '';
+        var monthSel = document.getElementById('analyticsMonthPick');
+        if (monthSel) monthSel.value = '';
+        panel.querySelectorAll('.analytics-days-btn').forEach(function (b) {
+          b.classList.toggle('active', b === btn);
+        });
+        analyticsLoaded = false;
+        loadAnalyticsPanel(true);
+      });
+    });
+
+    var monthSel = document.getElementById('analyticsMonthPick');
+    if (monthSel) {
+      monthSel.addEventListener('change', function () {
+        analyticsMonth = monthSel.value || '';
+        if (analyticsMonth) {
+          panel.querySelectorAll('.analytics-days-btn').forEach(function (b) { b.classList.remove('active'); });
+        }
+        analyticsLoaded = false;
+        loadAnalyticsPanel(true);
+      });
+    }
+
+    var refreshBtn = document.getElementById('btnRefreshAnalytics');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', function () {
+        analyticsLoaded = false;
+        loadAnalyticsPanel(true);
+      });
+    }
+  }
+
   function bindSeoPanelEvents() {
     var panel = document.getElementById('panel-seo');
     if (!panel) return;
@@ -1236,6 +1440,7 @@
 
   function bindEvents() {
     bindSeoPanelEvents();
+    bindAnalyticsEvents();
     document.querySelectorAll('.admin-nav-item').forEach(function (item) {
       item.addEventListener('click', async function () {
         document.querySelectorAll('.admin-nav-item').forEach(function (i) { i.classList.remove('active'); });
@@ -1249,6 +1454,9 @@
         }
         if (item.dataset.panel === 'seo') {
           await loadSeoPanel();
+        }
+        if (item.dataset.panel === 'analytics') {
+          await loadAnalyticsPanel();
         }
       });
     });

@@ -1,0 +1,49 @@
+name: Run Analytics Migration
+
+on:
+  workflow_dispatch:
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Upload migration SQL to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "supabase/migration-analytics.sql,deploy/run-migration-analytics.sh"
+          target: /var/www/purple-lease
+          strip_components: 0
+          overwrite: true
+
+      - name: Run migration on server (IPv6 direct DB)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            chmod +x /var/www/purple-lease/deploy/run-migration-analytics.sh
+            export SUPABASE_DB_PASSWORD="${{ secrets.SUPABASE_DB_PASSWORD }}"
+            bash /var/www/purple-lease/deploy/run-migration-analytics.sh
+
+      - name: Verify visit_logs REST (anon insert policy)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::warning::SUPABASE_ANON_KEY missing — skip REST verify"
+            exit 0
+          fi
+          curl -sf -X POST "$SUPABASE_URL/rest/v1/visit_logs" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: return=minimal" \
+            -d '{"path":"/__migration_test","visitor_type":"visitor","device_type":"desktop","user_agent":"migrate-analytics-verify"}'
+          echo "visit_logs insert OK"
