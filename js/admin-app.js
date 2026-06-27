@@ -1103,8 +1103,9 @@
     statusEl.style.color = 'var(--ink-600)';
     try {
       var result = await API.generateSitemap();
-      statusEl.innerHTML = '완료 — <b>' + result.count + '개</b> URL 반영 · ' +
-        '<a href="' + result.liveUrl + '?t=' + Date.now() + '" target="_blank" rel="noopener">' + result.liveUrl + '</a>';
+      statusEl.innerHTML = '완료 — <b>' + result.count + '개</b> URL 생성 · Storage 업로드됨<br>' +
+        '라이브 반영: <a href="' + result.liveUrl + '?t=' + Date.now() + '" target="_blank" rel="noopener">' + result.liveUrl + '</a> ' +
+        '(서버 동기화는 최대 5분, 또는 GitHub Actions 「Sync Sitemap to Server」 실행)';
       statusEl.style.color = 'var(--green-700, #15803d)';
     } catch (err) {
       statusEl.textContent = err.message || String(err);
