@@ -157,6 +157,70 @@
     return isPurpleStoredCarPhoto(row.thumb_url);
   }
 
+  function tallyCarPhotoSync(row, tally) {
+    var photos = (row.detail_json && row.detail_json.photos) || [];
+    if (!photos.length) {
+      tally.carsPhotoOk = (tally.carsPhotoOk || 0) + 1;
+      return;
+    }
+    if (rowHasStorageThumb(row)) {
+      tally.carsPhotoOk = (tally.carsPhotoOk || 0) + 1;
+    } else {
+      tally.carsPhotoFail = (tally.carsPhotoFail || 0) + 1;
+      if (!tally.failedListingIds) tally.failedListingIds = [];
+      tally.failedListingIds.push(row.listing_id);
+    }
+  }
+
+  function kstDayBoundsIso() {
+    var today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
+    return {
+      start: new Date(today + 'T00:00:00+09:00').toISOString(),
+      end: new Date(today + 'T23:59:59.999+09:00').toISOString(),
+      date: today
+    };
+  }
+
+  async function getTodayAutoUsedCarSyncSummary() {
+    var bounds = kstDayBoundsIso();
+    var res = await db().from('used_car_sync_logs')
+      .select('*')
+      .eq('sync_mode', 'auto')
+      .gte('started_at', bounds.start)
+      .lte('started_at', bounds.end)
+      .order('started_at', { ascending: false })
+      .limit(10);
+    if (res.error) throw res.error;
+    var rows = res.data || [];
+    if (!rows.length) {
+      return { date: bounds.date, hasLog: false, inProgress: false, ok: null, carsPhotoOk: null, carsPhotoFail: null, failedListingIds: [], startedAt: null, endedAt: null, msg: '' };
+    }
+    var log = rows.find(function (r) { return r.ended_at; }) || rows[0];
+    var diag = log.diag || {};
+    var carsPhotoOk = diag.cars_photo_ok != null ? parseInt(diag.cars_photo_ok, 10) : null;
+    var carsPhotoFail = diag.cars_photo_fail != null ? parseInt(diag.cars_photo_fail, 10) : null;
+    var failedListingIds = Array.isArray(diag.failed_listing_ids) ? diag.failed_listing_ids.slice() : [];
+    if (carsPhotoOk == null && carsPhotoFail == null && log.cars_upserted) {
+      if (log.ok) {
+        carsPhotoOk = log.cars_upserted;
+        carsPhotoFail = 0;
+      }
+    }
+    return {
+      date: bounds.date,
+      hasLog: true,
+      inProgress: !log.ended_at,
+      ok: log.ok,
+      carsPhotoOk: carsPhotoOk,
+      carsPhotoFail: carsPhotoFail,
+      failedListingIds: failedListingIds,
+      startedAt: log.started_at,
+      endedAt: log.ended_at,
+      msg: log.msg || '',
+      logId: log.id
+    };
+  }
+
   /* ---------- YouTube ---------- */
   var CHANNEL_HANDLE = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.youtubeChannelHandle) || 'purplelease';
 
@@ -670,6 +734,7 @@
       var photosUploaded = 0;
       var photosFailed = 0;
       var photosSkipped = 0;
+      var carPhotoTally = { carsPhotoOk: 0, carsPhotoFail: 0, failedListingIds: [] };
       var existingMap = {};
       var hiddenIds = {};
 
@@ -712,27 +777,32 @@
           rows[c].thumb_url = isPurpleStoredCarPhoto(prev.thumb_url) ? prev.thumb_url : prevPhotos[0];
           rows[c].photo_count = prevPhotos.length;
           photosSkipped += prevPhotos.length;
-          continue;
+        } else {
+          var processed = await processSwautopiaRowPhotos(rows[c], function (p) {
+            if (onProgress) {
+              onProgress({
+                phase: 'image',
+                carIndex: c + 1,
+                carTotal: rows.length,
+                name: rows[c].name,
+                photoIndex: p.photoIndex,
+                photoTotal: p.photoTotal
+              });
+            }
+          }, shouldCancel, forcePhotos);
+          rows[c] = processed.row;
+          photosUploaded += processed.stats.uploaded;
+          photosFailed += processed.stats.failed;
+          photosSkipped += processed.stats.skipped;
+          if (processed.stats.lastError) diag.last_photo_error = processed.stats.lastError;
         }
 
-        var processed = await processSwautopiaRowPhotos(rows[c], function (p) {
-          if (onProgress) {
-            onProgress({
-              phase: 'image',
-              carIndex: c + 1,
-              carTotal: rows.length,
-              name: rows[c].name,
-              photoIndex: p.photoIndex,
-              photoTotal: p.photoTotal
-            });
-          }
-        }, shouldCancel, forcePhotos);
-        rows[c] = processed.row;
-        photosUploaded += processed.stats.uploaded;
-        photosFailed += processed.stats.failed;
-        photosSkipped += processed.stats.skipped;
-        if (processed.stats.lastError) diag.last_photo_error = processed.stats.lastError;
+        tallyCarPhotoSync(rows[c], carPhotoTally);
       }
+
+      diag.cars_photo_ok = carPhotoTally.carsPhotoOk;
+      diag.cars_photo_fail = carPhotoTally.carsPhotoFail;
+      diag.failed_listing_ids = carPhotoTally.failedListingIds || [];
 
       if (shouldCancel()) throw new Error('사용자 중지');
 
@@ -782,6 +852,8 @@
       } else if (photosFailed > 0 && photosUploaded === 0) {
         ok = false;
         msg = '사진 업로드 전부 실패 (' + photosFailed + '장)';
+      } else if (carPhotoTally.carsPhotoFail > 0) {
+        msg = '완료 — 사진 OK ' + carPhotoTally.carsPhotoOk + ' / 실패 ' + carPhotoTally.carsPhotoFail;
       }
 
       var result = {
@@ -1383,6 +1455,7 @@
     listUsedCarSyncLogs: listUsedCarSyncLogs,
     getUsedCarSyncLog: getUsedCarSyncLog,
     getLatestUsedCarSyncLog: getLatestUsedCarSyncLog,
+    getTodayAutoUsedCarSyncSummary: getTodayAutoUsedCarSyncSummary,
     listLeaseBrands: listLeaseBrands,
     listLeaseModels: listLeaseModels,
     saveLeaseBrand: saveLeaseBrand,

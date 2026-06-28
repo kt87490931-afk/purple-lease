@@ -187,6 +187,25 @@ function rowNeedsPhotoUpload(row) {
   return photos.length > 0 && !photos.every(isPurpleStoredCarPhoto);
 }
 
+function rowHasStorageThumb(row) {
+  return isPurpleStoredCarPhoto(row.thumb_url);
+}
+
+function tallyCarPhotoSync(row, tally) {
+  var photos = (row.detail_json && row.detail_json.photos) || [];
+  if (!photos.length) {
+    tally.carsPhotoOk = (tally.carsPhotoOk || 0) + 1;
+    return;
+  }
+  if (rowHasStorageThumb(row)) {
+    tally.carsPhotoOk = (tally.carsPhotoOk || 0) + 1;
+  } else {
+    tally.carsPhotoFail = (tally.carsPhotoFail || 0) + 1;
+    if (!tally.failedListingIds) tally.failedListingIds = [];
+    tally.failedListingIds.push(row.listing_id);
+  }
+}
+
 async function main() {
   var started = Date.now();
   var startedAt = new Date(started).toISOString();
@@ -232,6 +251,7 @@ async function main() {
     diag.cars_to_sync = rows.length;
 
     var stats = { photosUploaded: 0, photosFailed: 0, photosSkipped: 0 };
+    var carPhotoTally = { carsPhotoOk: 0, carsPhotoFail: 0, failedListingIds: [] };
     diag.phase = 'photos';
 
     for (var c = 0; c < rows.length; c++) {
@@ -245,14 +265,18 @@ async function main() {
         rows[c].thumb_url = isPurpleStoredCarPhoto(prev.thumb_url) ? prev.thumb_url : prevPhotos[0];
         rows[c].photo_count = prevPhotos.length;
         stats.photosSkipped += prevPhotos.length;
-        continue;
+      } else {
+        rows[c] = await processRowPhotos(rows[c], stats);
       }
-      rows[c] = await processRowPhotos(rows[c], stats);
+      tallyCarPhotoSync(rows[c], carPhotoTally);
     }
 
     diag.photos_uploaded = stats.photosUploaded;
     diag.photos_failed = stats.photosFailed;
     diag.photos_skipped = stats.photosSkipped;
+    diag.cars_photo_ok = carPhotoTally.carsPhotoOk;
+    diag.cars_photo_fail = carPhotoTally.carsPhotoFail;
+    diag.failed_listing_ids = carPhotoTally.failedListingIds || [];
 
     diag.phase = 'save';
     for (var i = 0; i < rows.length; i += 40) {
@@ -288,6 +312,8 @@ async function main() {
     } else if (stats.photosFailed > 0 && stats.photosUploaded === 0) {
       ok = false;
       msg = '사진 업로드 전부 실패';
+    } else if (carPhotoTally.carsPhotoFail > 0) {
+      msg = '완료 — 사진 OK ' + carPhotoTally.carsPhotoOk + ' / 실패 ' + carPhotoTally.carsPhotoFail;
     }
 
     var durationMs = Date.now() - started;

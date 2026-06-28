@@ -23,6 +23,7 @@
   var selectedLeaseBrand = null;
   var lastKsSyncCountry = null;
   var lastKsSyncCanResume = false;
+  var usedCarAutoSyncSummary = null;
   var pendingKsSyncCountry = null;
 
   var pendingPartListingId = null;
@@ -84,6 +85,65 @@
     document.getElementById('kpiReview').textContent = reviewData.length;
     document.getElementById('kpiParts').textContent = partsData.length;
     document.getElementById('kpiUsedcars').textContent = usedcarsData.length;
+    renderUsedCarAutoSyncKpi();
+  }
+
+  function renderUsedCarAutoSyncKpi() {
+    var valEl = document.getElementById('kpiUsedCarAutoSync');
+    var subEl = document.getElementById('kpiUsedCarAutoSyncSub');
+    if (!valEl || !subEl) return;
+
+    var s = usedCarAutoSyncSummary;
+    if (!s || !s.hasLog) {
+      valEl.textContent = '—';
+      valEl.style.color = '';
+      subEl.textContent = '오늘 자동동기화 이력 없음';
+      return;
+    }
+
+    if (s.inProgress) {
+      valEl.textContent = '…';
+      valEl.style.color = '';
+      subEl.textContent = '자동동기화 진행 중';
+      return;
+    }
+
+    if (s.carsPhotoOk == null && s.carsPhotoFail == null) {
+      valEl.textContent = s.ok ? '완료' : '실패';
+      valEl.style.color = s.ok ? '#059669' : '#b91c1c';
+      subEl.textContent = (s.msg || '') + (s.endedAt ? ' · ' + fmtUsedCarSyncTime(s.endedAt) : '');
+      return;
+    }
+
+    var okN = s.carsPhotoOk || 0;
+    var failN = s.carsPhotoFail || 0;
+    valEl.textContent = okN + ' / ' + failN;
+    valEl.style.color = failN > 0 ? '#b45309' : '#059669';
+    var subParts = ['성공 ' + okN, '실패 ' + failN];
+    if (s.endedAt) subParts.push(fmtUsedCarSyncTime(s.endedAt) + ' 완료');
+    if (failN > 0 && s.failedListingIds && s.failedListingIds.length) {
+      var ids = s.failedListingIds.slice(0, 8);
+      var idText = ids.join(', ');
+      if (s.failedListingIds.length > 8) idText += '…';
+      subParts.push('ID: ' + idText);
+    }
+    subEl.textContent = subParts.join(' · ');
+  }
+
+  function fmtUsedCarSyncTime(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hour12: false });
+  }
+
+  async function loadDashboardUsedCarAutoSync() {
+    try {
+      usedCarAutoSyncSummary = await API.getTodayAutoUsedCarSyncSummary();
+    } catch (err) {
+      console.warn('[Admin] used car auto sync kpi:', err);
+      usedCarAutoSyncSummary = null;
+    }
   }
 
   function updateInquiryNavBadge(totalUnread) {
@@ -919,7 +979,13 @@
     var dur = lg.duration_ms ? Math.round(lg.duration_ms / 1000) + '초' : '';
     return usedCarSyncModeLabel(lg) + ' · ' + (lg.source || 'swautopia') + ' · ' + md + ' ' + tm +
       ' · ' + (lg.cars_upserted || 0) + '대 반영 · 비활성 ' + (lg.cars_deactivated || 0) +
-      ' · Storage ' + (lg.photos_processed || 0) + '장' + (dur ? ' · ' + dur : '');
+      ' · Storage ' + (lg.photos_processed || 0) + '장' + usedCarSyncCarStatSuffix(lg) + (dur ? ' · ' + dur : '');
+  }
+
+  function usedCarSyncCarStatSuffix(lg) {
+    var diag = (lg && lg.diag) || {};
+    if (diag.cars_photo_ok == null && diag.cars_photo_fail == null) return '';
+    return ' · 성공 ' + (diag.cars_photo_ok || 0) + '/실패 ' + (diag.cars_photo_fail || 0);
   }
 
   async function renderUsedCarSyncLogArea() {
@@ -1134,6 +1200,7 @@
 
   async function loadAll() {
     var visitorsPromise = loadDashboardVisitors();
+    var usedCarAutoSyncPromise = loadDashboardUsedCarAutoSync();
     youtubeData = await API.listYoutube();
     blogData = await API.listBlog();
     reviewData = await API.listReviews();
@@ -1149,6 +1216,7 @@
     await renderLeaseSyncLogArea();
     await renderUsedCarSyncLogArea();
     await visitorsPromise;
+    await usedCarAutoSyncPromise;
     await refreshUnifiedInquiryBadge();
     updateKpis();
   }
@@ -1566,6 +1634,8 @@
       usedcarsData = await API.listUsedcars();
       renderUsedcarsTable();
       await renderUsedCarSyncLogArea();
+      await loadDashboardUsedCarAutoSync();
+      updateKpis();
       var lines = [
         result.msg || '완료',
         (result.count || 0) + '대 반영 · Storage 업로드 ' + (result.photosUploaded || 0) + '장',
@@ -1597,6 +1667,8 @@
       btn.textContent = prev;
       swautopiaSyncCancelled = false;
       await renderUsedCarSyncLogArea();
+      await loadDashboardUsedCarAutoSync();
+      updateKpis();
     }
   }
 
