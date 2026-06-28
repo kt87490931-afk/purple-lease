@@ -33,5 +33,5 @@ if [ ! -d "$ROOT/node_modules/sharp" ]; then
   npm install --omit=dev --no-audit --no-fund 2>&1
 fi
 
-echo "$LOG_TAG start $(date -Iseconds) node=$($NODE_BIN -v)"
-exec "$NODE_BIN" "$ROOT/scripts/sync-swautopia-cars.js" --mode=auto
+echo "$LOG_TAG start $(date -Iseconds) node=$($NODE_BIN -v) args=$*"
+exec "$NODE_BIN" "$ROOT/scripts/sync-swautopia-cars.js" "$@"
