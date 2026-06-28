@@ -146,6 +146,70 @@
     }
   }
 
+  function fmtAdminDateTime(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', hour12: false });
+  }
+
+  async function loadFloatConsultSettingsForm() {
+    var form = document.getElementById('floatConsultForm');
+    if (!form) return;
+    try {
+      var s = await API.getFloatConsultSettings();
+      document.getElementById('floatConsultEnabled').checked = s.is_enabled !== false;
+      document.getElementById('floatConsultPhone').value = s.phone_number || '';
+      document.getElementById('floatConsultKakao').value = s.kakao_url || '';
+      document.getElementById('floatConsultMainLabel').value = s.main_label || '상담';
+      document.getElementById('floatConsultTelLabel').value = s.tel_label || '유선상담';
+      document.getElementById('floatConsultKakaoLabel').value = s.kakao_label || '카카오상담';
+      document.getElementById('floatConsultBottomMobile').value = s.bottom_offset_mobile != null ? s.bottom_offset_mobile : 78;
+      document.getElementById('floatConsultBottomDesktop').value = s.bottom_offset_desktop != null ? s.bottom_offset_desktop : 28;
+      var upd = document.getElementById('floatConsultUpdatedAt');
+      if (upd) upd.textContent = s.updated_at ? '마지막 저장: ' + fmtAdminDateTime(s.updated_at) : '';
+    } catch (err) {
+      console.warn('[Admin] float consult settings:', err);
+      var statusEl = document.getElementById('floatConsultSaveStatus');
+      if (statusEl) statusEl.textContent = '설정 로드 실패 — migration-float-consult.sql 실행 필요';
+    }
+  }
+
+  async function saveFloatConsultSettingsForm(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    var btn = document.getElementById('btnSaveFloatConsult');
+    var statusEl = document.getElementById('floatConsultSaveStatus');
+    var prev = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = '저장 중…'; }
+    if (statusEl) statusEl.textContent = '';
+    try {
+      var row = await API.saveFloatConsultSettings({
+        is_enabled: document.getElementById('floatConsultEnabled').checked,
+        phone_number: document.getElementById('floatConsultPhone').value.trim(),
+        kakao_url: document.getElementById('floatConsultKakao').value.trim(),
+        main_label: document.getElementById('floatConsultMainLabel').value.trim(),
+        tel_label: document.getElementById('floatConsultTelLabel').value.trim(),
+        kakao_label: document.getElementById('floatConsultKakaoLabel').value.trim(),
+        bottom_offset_mobile: document.getElementById('floatConsultBottomMobile').value,
+        bottom_offset_desktop: document.getElementById('floatConsultBottomDesktop').value
+      });
+      var upd = document.getElementById('floatConsultUpdatedAt');
+      if (upd) upd.textContent = row.updated_at ? '마지막 저장: ' + fmtAdminDateTime(row.updated_at) : '';
+      if (statusEl) {
+        statusEl.style.color = '#059669';
+        statusEl.textContent = '저장되었습니다. 공개 페이지 새로고침 후 반영됩니다.';
+      }
+    } catch (err) {
+      showError(err);
+      if (statusEl) {
+        statusEl.style.color = '#b91c1c';
+        statusEl.textContent = err.message || String(err);
+      }
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = prev || '저장'; }
+    }
+  }
+
   function updateInquiryNavBadge(totalUnread) {
     var badge = document.getElementById('inquiryNavBadge');
     if (!badge) return;
@@ -2063,6 +2127,11 @@
       closeModal('modalKsSync');
       if (lastKsSyncCountry) runKsLeaseSync(lastKsSyncCountry, { resume: true });
     });
+
+    var floatConsultForm = document.getElementById('floatConsultForm');
+    if (floatConsultForm) {
+      floatConsultForm.addEventListener('submit', saveFloatConsultSettingsForm);
+    }
   }
 
   async function init() {
@@ -2078,6 +2147,7 @@
     if (window.PurpleAdminHero) window.PurpleAdminHero.init(API);
     try {
       await loadAll();
+      await loadFloatConsultSettingsForm();
     } catch (err) {
       showError(err);
     }

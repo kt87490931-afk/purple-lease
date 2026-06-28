@@ -1216,6 +1216,53 @@
     if (res.error) throw res.error;
   }
 
+  var FLOAT_CONSULT_DEFAULTS = {
+    is_enabled: true,
+    phone_number: '1555-6362',
+    kakao_url: 'https://pf.kakao.com/_vyvHG/chat',
+    tel_label: '유선상담',
+    kakao_label: '카카오상담',
+    main_label: '상담',
+    bottom_offset_mobile: 78,
+    bottom_offset_desktop: 28
+  };
+
+  function normalizeFloatConsultKakaoUrl(url) {
+    var s = String(url || '').trim();
+    if (!s) return FLOAT_CONSULT_DEFAULTS.kakao_url;
+    var m = s.match(/pf\.kakao\.com\/[^/?#]+(?:\/chat)?/i);
+    if (m) {
+      var path = m[0];
+      if (path.indexOf('/chat') < 0) path += '/chat';
+      return 'https://' + path.replace(/^https?:\/\//i, '');
+    }
+    return s;
+  }
+
+  async function getFloatConsultSettings() {
+    var res = await db().from('float_consult_settings').select('*').eq('id', 1).maybeSingle();
+    if (res.error) throw res.error;
+    return Object.assign({}, FLOAT_CONSULT_DEFAULTS, res.data || {});
+  }
+
+  async function saveFloatConsultSettings(payload) {
+    var row = {
+      id: 1,
+      is_enabled: payload.is_enabled !== false,
+      phone_number: String(payload.phone_number || FLOAT_CONSULT_DEFAULTS.phone_number).trim(),
+      kakao_url: normalizeFloatConsultKakaoUrl(payload.kakao_url),
+      tel_label: String(payload.tel_label || FLOAT_CONSULT_DEFAULTS.tel_label).trim(),
+      kakao_label: String(payload.kakao_label || FLOAT_CONSULT_DEFAULTS.kakao_label).trim(),
+      main_label: String(payload.main_label || FLOAT_CONSULT_DEFAULTS.main_label).trim(),
+      bottom_offset_mobile: parseInt(payload.bottom_offset_mobile, 10) || 78,
+      bottom_offset_desktop: parseInt(payload.bottom_offset_desktop, 10) || 28,
+      updated_at: new Date().toISOString()
+    };
+    var res = await db().from('float_consult_settings').upsert(row, { onConflict: 'id' });
+    if (res.error) throw res.error;
+    return row;
+  }
+
   var SEO_PATCH_REQUEST_PATH = 'seo/patch-request.json';
 
   async function queueStaticSeoPatch() {
@@ -1480,6 +1527,8 @@
     deleteUsedCarInquiries: deleteUsedCarInquiries,
     getSeoSettings: getSeoSettings,
     saveSeoSettings: saveSeoSettings,
+    getFloatConsultSettings: getFloatConsultSettings,
+    saveFloatConsultSettings: saveFloatConsultSettings,
     listSeoPageMeta: listSeoPageMeta,
     saveSeoPageMetaRows: saveSeoPageMetaRows,
     generateSitemap: generateSitemap,

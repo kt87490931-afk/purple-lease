@@ -16,6 +16,11 @@ window.SUPABASE_CONFIG = {
   ksRentcarProxyPath: '/api/ks',
   /** swautopia 중고차 — nginx 동일 출처 프록시 */
   swautopiaProxyPath: '/api/swautopia',
+  /** 플로팅 상담 FAB fallback (DB 미적용 시) */
+  floatConsultDefaults: {
+    phone_number: '1555-6362',
+    kakao_url: 'https://pf.kakao.com/_vyvHG/chat'
+  },
   /** Node CLI·서버 직접 호출용 */
   ksRentcarBaseUrl: 'https://ks-rentcar.com'
 };

@@ -648,31 +648,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   /* 빈 상태일 때는 섹션 자체를 숨기고 싶다면 .section-hidden 사용 */
   .section-hidden { display: none !important; }
 
-  /* ============ FLOATING CONSULT BUTTON ============ */
-  .float-consult {
-    position: fixed;
-    right: 16px;
-    bottom: 78px; /* 모바일 하단 탭바 위 */
-    z-index: 95;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 13px 18px;
-    border-radius: 100px;
-    background: var(--grad-main);
-    color: #fff;
-    font-size: 13.5px;
-    font-weight: 700;
-    box-shadow: 0 10px 28px rgba(76,40,180,0.35);
-    transition: transform .15s ease, box-shadow .15s ease;
-  }
-  .float-consult:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(76,40,180,0.42); }
-  .float-consult:active { transform: translateY(0); }
-  .float-consult svg { width: 18px; height: 18px; flex-shrink: 0; }
-
-  @media (min-width: 860px) {
-    .float-consult { bottom: 28px; right: 28px; }
-  }
+  /* ============ FLOATING CONSULT — float-consult.js ============ */
 </style>
 </head>
 <body>
@@ -844,11 +820,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>퍼플리뷰
   </a>
 </nav>
-
-<a href="tel:1555-6362" class="float-consult" aria-label="전화 상담하기">
-  <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-  상담
-</a>
 
 <script src="/js/logo-gate.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -1207,6 +1178,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 <script src="/js/hero-banner.js"></script>
 <script src="/js/device-type.js"></script>
 <script src="/js/visit-tracker.js"></script>
+<link rel="stylesheet" href="/css/float-consult.css?v=20260630b">
+<script src="/js/float-consult.js?v=20260630b"></script>
 
 </body>
 </html>
