@@ -109,14 +109,18 @@
       }
 
       try {
+        var fetchUrl = src;
+        if (window.SwautopiaSync && window.SwautopiaSync.toProxyUrl) {
+          fetchUrl = window.SwautopiaSync.toProxyUrl(src);
+        }
         if (i === 0 && PI.resizeUrlToBlobs) {
-          var blobs = await PI.resizeUrlToBlobs(src, { gallery: PI.SIZES.GALLERY, thumb: PI.SIZES.THUMB });
+          var blobs = await PI.resizeUrlToBlobs(fetchUrl, { gallery: PI.SIZES.GALLERY, thumb: PI.SIZES.THUMB });
           var galleryUrl = await uploadBlob(blobs.gallery, 'usedcars/' + listingId + '/0.jpg');
           var thumbUrl = await uploadBlob(blobs.thumb, 'usedcars/' + listingId + '/thumb.jpg');
           out.push(galleryUrl);
           row.thumb_url = thumbUrl;
         } else {
-          var blob = await PI.resizeUrlToBlob(src, PI.SIZES.GALLERY.w, PI.SIZES.GALLERY.h);
+          var blob = await PI.resizeUrlToBlob(fetchUrl, PI.SIZES.GALLERY.w, PI.SIZES.GALLERY.h);
           var url = await uploadBlob(blob, 'usedcars/' + listingId + '/' + i + '.jpg');
           out.push(url);
           if (i === 0 && !row.thumb_url) row.thumb_url = url;
@@ -607,76 +611,136 @@
   async function syncSwautopiaUsedCars(onProgress) {
     var Sync = window.SwautopiaSync;
     if (!Sync) throw new Error('SwautopiaSync 모듈이 로드되지 않았습니다.');
-    var cars = await Sync.fetchAllCars();
-    var rows = cars.map(function (c) { return Sync.mapCarToRow(c); });
-    var activeIds = rows.map(function (r) { return r.listing_id; });
-    var upserted = 0;
-    var photosResized = 0;
-    var existingMap = {};
-    var hiddenIds = {};
+    var started = Date.now();
+    var startedAt = new Date(started).toISOString();
+    var logId = null;
+    var diag = { phase: 'init', api_url: Sync.getCarsApiUrl ? Sync.getCarsApiUrl() : '' };
 
-    if (onProgress) onProgress({ phase: 'fetch', count: rows.length });
+    try {
+      var logIns = await db().from('used_car_sync_logs').insert([{
+        source: 'swautopia',
+        ok: false,
+        msg: '진행 중',
+        diag: diag,
+        started_at: startedAt
+      }]).select('id').single();
+      if (!logIns.error && logIns.data) logId = logIns.data.id;
+    } catch (_) { /* 로그 테이블 미생성 시 동기화는 계속 */ }
 
-    var existingRes = await db().from('used_cars')
-      .select('listing_id,thumb_url,detail_json,photo_count,is_active')
-      .eq('sync_source', 'swautopia');
-    if (existingRes.error) throw existingRes.error;
-    (existingRes.data || []).forEach(function (r) {
-      existingMap[r.listing_id] = r;
-      if (isAdminHiddenCar(r)) hiddenIds[r.listing_id] = true;
-    });
+    try {
+      var cars = await Sync.fetchAllCars();
+      diag.phase = 'fetch';
+      diag.cars_fetched = cars.length;
+      var rows = cars.map(function (c) { return Sync.mapCarToRow(c); });
+      var activeIds = rows.map(function (r) { return r.listing_id; });
+      var upserted = 0;
+      var photosResized = 0;
+      var existingMap = {};
+      var hiddenIds = {};
 
-    rows = rows.filter(function (r) { return !hiddenIds[r.listing_id]; });
-    activeIds = rows.map(function (r) { return r.listing_id; });
+      if (onProgress) onProgress({ phase: 'fetch', count: rows.length });
 
-    for (var c = 0; c < rows.length; c++) {
-      if (onProgress) {
-        onProgress({ phase: 'image', carIndex: c + 1, carTotal: rows.length, name: rows[c].name });
-      }
-
-      var prev = existingMap[rows[c].listing_id];
-      var prevPhotos = (prev && prev.detail_json && prev.detail_json.photos) || [];
-      if (prevPhotos.length && prevPhotos.every(isPurpleStoredCarPhoto)) {
-        rows[c].detail_json.photos = prevPhotos;
-        rows[c].thumb_url = isPurpleStoredCarPhoto(prev.thumb_url) ? prev.thumb_url : prevPhotos[0];
-        rows[c].photo_count = prevPhotos.length;
-        continue;
-      }
-
-      rows[c] = await processSwautopiaRowPhotos(rows[c], function (p) {
-        photosResized++;
-        if (onProgress) {
-          onProgress({
-            phase: 'image',
-            carIndex: c + 1,
-            carTotal: rows.length,
-            name: rows[c].name,
-            photoIndex: p.photoIndex,
-            photoTotal: p.photoTotal
-          });
-        }
+      var existingRes = await db().from('used_cars')
+        .select('listing_id,thumb_url,detail_json,photo_count,is_active')
+        .eq('sync_source', 'swautopia');
+      if (existingRes.error) throw existingRes.error;
+      (existingRes.data || []).forEach(function (r) {
+        existingMap[r.listing_id] = r;
+        if (isAdminHiddenCar(r)) hiddenIds[r.listing_id] = true;
       });
-    }
 
-    if (onProgress) onProgress({ phase: 'save', count: rows.length });
+      rows = rows.filter(function (r) { return !hiddenIds[r.listing_id]; });
+      activeIds = rows.map(function (r) { return r.listing_id; });
+      diag.cars_to_sync = rows.length;
 
-    for (var i = 0; i < rows.length; i += 40) {
-      var batch = rows.slice(i, i + 40);
-      var up = await db().from('used_cars').upsert(batch, { onConflict: 'listing_id' });
-      if (up.error) throw up.error;
-      upserted += batch.length;
-    }
+      for (var c = 0; c < rows.length; c++) {
+        if (onProgress) {
+          onProgress({ phase: 'image', carIndex: c + 1, carTotal: rows.length, name: rows[c].name });
+        }
 
-    var ex = await db().from('used_cars').select('listing_id').eq('sync_source', 'swautopia');
-    if (ex.error) throw ex.error;
-    var deactivate = (ex.data || []).map(function (r) { return r.listing_id; }).filter(function (id) {
-      return activeIds.indexOf(id) < 0;
-    });
-    if (deactivate.length) {
-      var de = await db().from('used_cars').update({ is_active: false }).in('listing_id', deactivate);
-      if (de.error) throw de.error;
+        var prev = existingMap[rows[c].listing_id];
+        var prevPhotos = (prev && prev.detail_json && prev.detail_json.photos) || [];
+        if (prevPhotos.length && prevPhotos.every(isPurpleStoredCarPhoto)) {
+          rows[c].detail_json.photos = prevPhotos;
+          rows[c].thumb_url = isPurpleStoredCarPhoto(prev.thumb_url) ? prev.thumb_url : prevPhotos[0];
+          rows[c].photo_count = prevPhotos.length;
+          continue;
+        }
+
+        rows[c] = await processSwautopiaRowPhotos(rows[c], function (p) {
+          photosResized++;
+          if (onProgress) {
+            onProgress({
+              phase: 'image',
+              carIndex: c + 1,
+              carTotal: rows.length,
+              name: rows[c].name,
+              photoIndex: p.photoIndex,
+              photoTotal: p.photoTotal
+            });
+          }
+        });
+      }
+
+      if (onProgress) onProgress({ phase: 'save', count: rows.length });
+      diag.phase = 'save';
+
+      for (var i = 0; i < rows.length; i += 40) {
+        var batch = rows.slice(i, i + 40);
+        var up = await db().from('used_cars').upsert(batch, { onConflict: 'listing_id' });
+        if (up.error) throw up.error;
+        upserted += batch.length;
+      }
+
+      var ex = await db().from('used_cars').select('listing_id').eq('sync_source', 'swautopia');
+      if (ex.error) throw ex.error;
+      var deactivate = (ex.data || []).map(function (r) { return r.listing_id; }).filter(function (id) {
+        return activeIds.indexOf(id) < 0;
+      });
+      if (deactivate.length) {
+        var de = await db().from('used_cars').update({ is_active: false }).in('listing_id', deactivate);
+        if (de.error) throw de.error;
+      }
+
+      var result = { count: upserted, deactivated: deactivate.length, photosProcessed: photosResized };
+      if (logId) {
+        await db().from('used_car_sync_logs').update({
+          ok: true,
+          msg: '완료',
+          diag: diag,
+          cars_upserted: upserted,
+          cars_deactivated: deactivate.length,
+          photos_processed: photosResized,
+          duration_ms: Date.now() - started,
+          ended_at: new Date().toISOString()
+        }).eq('id', logId);
+      }
+      return result;
+    } catch (err) {
+      var errMsg = err.message || String(err);
+      if (logId) {
+        await db().from('used_car_sync_logs').update({
+          ok: false,
+          msg: errMsg,
+          diag: Object.assign({}, diag, { error: errMsg }),
+          duration_ms: Date.now() - started,
+          ended_at: new Date().toISOString()
+        }).eq('id', logId);
+      } else {
+        try {
+          await db().from('used_car_sync_logs').insert([{
+            source: 'swautopia',
+            ok: false,
+            msg: errMsg,
+            diag: Object.assign({}, diag, { error: errMsg }),
+            duration_ms: Date.now() - started,
+            started_at: startedAt,
+            ended_at: new Date().toISOString()
+          }]);
+        } catch (_) { /* ignore */ }
+      }
+      throw err;
     }
-    return { count: upserted, deactivated: deactivate.length, photosProcessed: photosResized };
   }
 
   /* ---------- Lease ---------- */
@@ -806,6 +870,26 @@
 
   async function getLatestLeaseSyncLog(country) {
     var rows = await listLeaseSyncLogs(country, 1);
+    return rows[0] || null;
+  }
+
+  async function listUsedCarSyncLogs(limit) {
+    var res = await db().from('used_car_sync_logs')
+      .select('*')
+      .order('started_at', { ascending: false })
+      .limit(limit || 10);
+    if (res.error) throw res.error;
+    return res.data || [];
+  }
+
+  async function getUsedCarSyncLog(logId) {
+    var res = await db().from('used_car_sync_logs').select('*').eq('id', logId).maybeSingle();
+    if (res.error) throw res.error;
+    return res.data;
+  }
+
+  async function getLatestUsedCarSyncLog() {
+    var rows = await listUsedCarSyncLogs(1);
     return rows[0] || null;
   }
 
@@ -1199,6 +1283,9 @@
     saveUsedcar: saveUsedcar,
     deleteUsedcar: deleteUsedcar,
     syncSwautopiaUsedCars: syncSwautopiaUsedCars,
+    listUsedCarSyncLogs: listUsedCarSyncLogs,
+    getUsedCarSyncLog: getUsedCarSyncLog,
+    getLatestUsedCarSyncLog: getLatestUsedCarSyncLog,
     listLeaseBrands: listLeaseBrands,
     listLeaseModels: listLeaseModels,
     saveLeaseBrand: saveLeaseBrand,

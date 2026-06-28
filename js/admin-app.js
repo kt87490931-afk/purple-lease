@@ -896,6 +896,59 @@
     }
   }
 
+  function fmtUsedCarSyncLogLine(lg) {
+    if (!lg) return '';
+    var d = new Date(lg.started_at || lg.ended_at);
+    var md = String(d.getMonth() + 1).padStart(2, '0') + '/' + String(d.getDate()).padStart(2, '0');
+    var tm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ':' + String(d.getSeconds()).padStart(2, '0');
+    var dur = lg.duration_ms ? Math.round(lg.duration_ms / 1000) + '초' : '';
+    return (lg.source || 'swautopia') + ' · ' + md + ' ' + tm +
+      ' · ' + (lg.cars_upserted || 0) + '대 반영 · 비활성 ' + (lg.cars_deactivated || 0) +
+      ' · 사진 ' + (lg.photos_processed || 0) + (dur ? ' · ' + dur : '');
+  }
+
+  async function renderUsedCarSyncLogArea() {
+    var el = document.getElementById('usedCarSyncLogArea');
+    if (!el) return;
+    try {
+      var logs = await API.listUsedCarSyncLogs(3);
+      if (!logs.length) {
+        el.innerHTML = '최근 swautopia 동기화 이력이 없습니다.';
+        return;
+      }
+      el.innerHTML = '<b>최근 동기화</b> — ' + logs.map(function (lg) {
+        var status = lg.ok ? '성공' : '실패';
+        return fmtUsedCarSyncLogLine(lg) + ' · ' + status + (lg.msg && !lg.ok ? ' (' + lg.msg + ')' : '');
+      }).join(' · ');
+    } catch (err) {
+      el.textContent = '';
+    }
+  }
+
+  async function openUsedCarSyncLogsModal() {
+    var body = document.getElementById('modalUsedCarSyncLogsBody');
+    body.innerHTML = '<p style="color:var(--ink-400);">불러오는 중…</p>';
+    openModal('modalUsedCarSyncLogs');
+    try {
+      var logs = await API.listUsedCarSyncLogs(30);
+      if (!logs.length) {
+        body.innerHTML = '<p class="empty-row">동기화 로그가 없습니다.</p>';
+        return;
+      }
+      body.innerHTML = logs.map(function (lg) {
+        var status = lg.ok
+          ? '<span style="color:#059669;">성공</span>'
+          : '<span style="color:#b91c1c;">실패</span>';
+        var errDetail = (!lg.ok && lg.msg) ? ' — ' + lg.msg : '';
+        return '<div style="padding:10px 0;border-bottom:1px solid var(--line-200);">' +
+          fmtUsedCarSyncLogLine(lg) + ' · ' + status + errDetail +
+          '</div>';
+      }).join('');
+    } catch (err) {
+      body.innerHTML = '<p style="color:#b91c1c;">' + (err.message || err) + '</p>';
+    }
+  }
+
   async function openKsSyncLogsModal() {
     var body = document.getElementById('modalKsSyncLogsBody');
     body.innerHTML = '<p style="color:var(--ink-400);">불러오는 중…</p>';
@@ -1079,6 +1132,7 @@
     renderUsedcarsTable();
     await renderLeaseBrandList();
     await renderLeaseSyncLogArea();
+    await renderUsedCarSyncLogArea();
     await visitorsPromise;
     await refreshUnifiedInquiryBadge();
     updateKpis();
@@ -1780,12 +1834,14 @@
         });
         usedcarsData = await API.listUsedcars();
         renderUsedcarsTable();
+        await renderUsedCarSyncLogArea();
         alert('동기화 완료: ' + (result.count || 0) + '대 반영, 비활성 ' + (result.deactivated || 0) + '대\n사진 ' + (result.photosProcessed || 0) + '장 처리');
       } catch (err) {
         showError(err);
       } finally {
         btn.disabled = false;
         btn.textContent = prev;
+        await renderUsedCarSyncLogArea();
       }
     });
 
@@ -1842,6 +1898,9 @@
     });
     document.getElementById('btnLeaseSyncLogs').addEventListener('click', function () {
       openKsSyncLogsModal();
+    });
+    document.getElementById('btnUsedCarSyncLogs').addEventListener('click', function () {
+      openUsedCarSyncLogsModal();
     });
     document.getElementById('btnKsSyncBrandPickStart').addEventListener('click', function () {
       var body = document.getElementById('modalKsSyncBrandPickBody');

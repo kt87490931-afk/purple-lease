@@ -432,7 +432,7 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
             <button class="btn btn-outline" type="button" id="btnSyncKsDomestic">국산차 동기화</button>
             <button class="btn btn-outline" type="button" id="btnSyncKsImport">수입차 동기화</button>
             <button class="btn btn-primary" id="btnAddLeaseBrand" type="button">+ 브랜드 추가</button>
-            <button class="btn btn-outline" type="button" id="btnLeaseSyncLogs">동기화 로그기록</button>
+            <button class="btn btn-outline" type="button" id="btnLeaseSyncLogs">로그기록 확인</button>
           </div>
         </div>
         <div id="leaseSyncLogArea" style="margin-bottom:8px;font-size:12px;color:var(--ink-400);"></div>
@@ -450,9 +450,11 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
           <div class="toolbar-left">등록된 매물 <b id="usedcarsCount">0</b>대 — swautopia 동기화 매물은 <code>listing_id</code> = 오토피아 ID</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn btn-outline" type="button" id="btnSyncSwautopia">수동파싱 (swautopia)</button>
+            <button class="btn btn-outline" type="button" id="btnUsedCarSyncLogs">로그기록 확인</button>
             <button class="btn btn-primary" id="btnAddUsedcar">+ 매물 등록</button>
           </div>
         </div>
+        <div id="usedCarSyncLogArea" style="margin-bottom:8px;font-size:12px;color:var(--ink-400);"></div>
         <table class="data-table">
           <thead><tr><th>썸네일</th><th>차량명</th><th>연식</th><th>주행거리</th><th>가격</th><th>상태</th><th></th></tr></thead>
           <tbody id="usedcarsTableBody"></tbody>
@@ -783,9 +785,17 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
 
 <div class="modal-overlay" id="modalKsSyncLogs">
   <div class="modal-box" style="max-width:640px;">
-    <div class="modal-head"><h3>동기화 로그기록</h3><button class="modal-close" data-close="modalKsSyncLogs">✕</button></div>
+    <div class="modal-head"><h3>신차리스 동기화 로그</h3><button class="modal-close" data-close="modalKsSyncLogs">✕</button></div>
     <div class="modal-body" id="modalKsSyncLogsBody" style="max-height:60vh;overflow:auto;font-size:13px;line-height:1.6;"></div>
     <div class="modal-foot"><button class="btn btn-outline" data-close="modalKsSyncLogs">닫기</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalUsedCarSyncLogs">
+  <div class="modal-box" style="max-width:640px;">
+    <div class="modal-head"><h3>중고차 동기화 로그</h3><button class="modal-close" data-close="modalUsedCarSyncLogs">✕</button></div>
+    <div class="modal-body" id="modalUsedCarSyncLogsBody" style="max-height:60vh;overflow:auto;font-size:13px;line-height:1.6;"></div>
+    <div class="modal-foot"><button class="btn btn-outline" data-close="modalUsedCarSyncLogs">닫기</button></div>
   </div>
 </div>
 
@@ -800,10 +810,10 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
 <script src="/js/sitemap-builder.js?v=20260627e"></script>
 <script src="/js/seo-static-meta.js?v=20260627e"></script>
 <script src="/js/admin-auth.js?v=20260627j"></script>
-<script src="/js/admin-api.js?v=20260627j"></script>
-<script src="/js/admin-hero.js?v=20260627j"></script>
+<script src="/js/admin-api.js?v=20260627k"></script>
+<script src="/js/admin-hero.js?v=20260627k"></script>
 <script src="/js/lease-catalog-map.js"></script>
-<script src="/js/admin-app.js?v=20260627j"></script>
+<script src="/js/admin-app.js?v=20260627k"></script>
 <script>PurpleAdminApp.init();</script>
 
 </body>

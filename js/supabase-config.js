@@ -14,6 +14,8 @@ window.SUPABASE_CONFIG = {
   ksRentcarEdgeProxyUrl: 'https://zliclwgiaqvilnnookyi.supabase.co/functions/v1/ks-rentcar-proxy',
   /** 동일 출처 프록시 fallback (CORS 우회) */
   ksRentcarProxyPath: '/api/ks',
+  /** swautopia 중고차 — nginx 동일 출처 프록시 */
+  swautopiaProxyPath: '/api/swautopia',
   /** Node CLI·서버 직접 호출용 */
   ksRentcarBaseUrl: 'https://ks-rentcar.com'
 };

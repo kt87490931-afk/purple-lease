@@ -17,6 +17,38 @@
     return cfg.swautopiaBaseUrl || BASE;
   }
 
+  function getProxyPrefix() {
+    var cfg = (typeof window !== 'undefined' && window.SUPABASE_CONFIG) || {};
+    if (cfg.swautopiaProxyPath) return cfg.swautopiaProxyPath.replace(/\/$/, '');
+    if (typeof window !== 'undefined' && window.location && /^https?:/.test(window.location.protocol)) {
+      return '/api/swautopia';
+    }
+    return '';
+  }
+
+  /** 브라우저에서 swautopia URL → 동일 출처 프록시 경로 */
+  function toProxyUrl(url) {
+    if (!url) return '';
+    var s = String(url).trim();
+    if (!s) return '';
+    var prefix = getProxyPrefix();
+    if (!prefix) return s;
+    var base = getBaseUrl().replace(/\/$/, '');
+    if (s.indexOf(base) === 0) {
+      return prefix + s.slice(base.length);
+    }
+    if (/^https?:\/\/swautopia\.co\.kr/i.test(s)) {
+      return prefix + s.replace(/^https?:\/\/swautopia\.co\.kr/i, '');
+    }
+    return s;
+  }
+
+  function getCarsApiUrl() {
+    var prefix = getProxyPrefix();
+    if (prefix) return prefix + '/api/cars';
+    return getBaseUrl().replace(/\/$/, '') + '/api/cars';
+  }
+
   function parseMediaList(value) {
     if (Array.isArray(value)) return value.filter(Boolean);
     if (!value) return [];
@@ -181,7 +213,7 @@
   }
 
   async function fetchAllCars() {
-    var res = await fetch(getBaseUrl() + '/api/cars');
+    var res = await fetch(getCarsApiUrl());
     if (!res.ok) throw new Error('오토피아 매물 API 오류: HTTP ' + res.status);
     var data = await res.json();
     if (!Array.isArray(data)) throw new Error('오토피아 API 응답 형식 오류');
@@ -193,6 +225,9 @@
   return {
     BASE: BASE,
     getBaseUrl: getBaseUrl,
+    getProxyPrefix: getProxyPrefix,
+    toProxyUrl: toProxyUrl,
+    getCarsApiUrl: getCarsApiUrl,
     parseMediaList: parseMediaList,
     absUrl: absUrl,
     mapCarToRow: mapCarToRow,
