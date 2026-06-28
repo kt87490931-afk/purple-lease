@@ -1254,8 +1254,8 @@
       tel_label: String(payload.tel_label || FLOAT_CONSULT_DEFAULTS.tel_label).trim(),
       kakao_label: String(payload.kakao_label || FLOAT_CONSULT_DEFAULTS.kakao_label).trim(),
       main_label: String(payload.main_label || FLOAT_CONSULT_DEFAULTS.main_label).trim(),
-      bottom_offset_mobile: parseInt(payload.bottom_offset_mobile, 10) || 78,
-      bottom_offset_desktop: parseInt(payload.bottom_offset_desktop, 10) || 28,
+      bottom_offset_mobile: FLOAT_CONSULT_DEFAULTS.bottom_offset_mobile,
+      bottom_offset_desktop: FLOAT_CONSULT_DEFAULTS.bottom_offset_desktop,
       updated_at: new Date().toISOString()
     };
     var res = await db().from('float_consult_settings').upsert(row, { onConflict: 'id' });

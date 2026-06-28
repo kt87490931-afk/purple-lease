@@ -353,14 +353,9 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
               카카오 버튼 문구
               <input type="text" id="floatConsultKakaoLabel" class="form-input" maxlength="16" style="width:100%;">
             </label>
-            <label style="display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600;color:var(--ink-700);">
-              모바일 하단 여백(px)
-              <input type="number" id="floatConsultBottomMobile" class="form-input" min="16" max="200" style="width:100%;">
-            </label>
-            <label style="display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600;color:var(--ink-700);">
-              PC 하단 여백(px)
-              <input type="number" id="floatConsultBottomDesktop" class="form-input" min="16" max="200" style="width:100%;">
-            </label>
+            <div style="grid-column:1/-1;font-size:12px;color:var(--ink-400);padding:10px 12px;background:var(--surface-alt);border-radius:var(--radius-sm);">
+              하단 여백: 모바일 <b>78px</b> · PC <b>28px</b> (레이아웃 고정 — 변경 불가)
+            </div>
             <div style="grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
               <button type="submit" class="btn btn-primary" id="btnSaveFloatConsult">저장</button>
               <span id="floatConsultSaveStatus" style="font-size:12px;color:var(--ink-400);align-self:center;"></span>
@@ -861,10 +856,10 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
 <script src="/js/sitemap-builder.js?v=20260627e"></script>
 <script src="/js/seo-static-meta.js?v=20260627e"></script>
 <script src="/js/admin-auth.js?v=20260630b"></script>
-<script src="/js/admin-api.js?v=20260630b"></script>
+<script src="/js/admin-api.js?v=20260630c"></script>
 <script src="/js/admin-hero.js?v=20260630b"></script>
 <script src="/js/lease-catalog-map.js"></script>
-<script src="/js/admin-app.js?v=20260630b"></script>
+<script src="/js/admin-app.js?v=20260630c"></script>
 <script>PurpleAdminApp.init();</script>
 
 </body>

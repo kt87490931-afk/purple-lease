@@ -164,8 +164,6 @@
       document.getElementById('floatConsultMainLabel').value = s.main_label || '상담';
       document.getElementById('floatConsultTelLabel').value = s.tel_label || '유선상담';
       document.getElementById('floatConsultKakaoLabel').value = s.kakao_label || '카카오상담';
-      document.getElementById('floatConsultBottomMobile').value = s.bottom_offset_mobile != null ? s.bottom_offset_mobile : 78;
-      document.getElementById('floatConsultBottomDesktop').value = s.bottom_offset_desktop != null ? s.bottom_offset_desktop : 28;
       var upd = document.getElementById('floatConsultUpdatedAt');
       if (upd) upd.textContent = s.updated_at ? '마지막 저장: ' + fmtAdminDateTime(s.updated_at) : '';
     } catch (err) {
@@ -189,9 +187,7 @@
         kakao_url: document.getElementById('floatConsultKakao').value.trim(),
         main_label: document.getElementById('floatConsultMainLabel').value.trim(),
         tel_label: document.getElementById('floatConsultTelLabel').value.trim(),
-        kakao_label: document.getElementById('floatConsultKakaoLabel').value.trim(),
-        bottom_offset_mobile: document.getElementById('floatConsultBottomMobile').value,
-        bottom_offset_desktop: document.getElementById('floatConsultBottomDesktop').value
+        kakao_label: document.getElementById('floatConsultKakaoLabel').value.trim()
       });
       var upd = document.getElementById('floatConsultUpdatedAt');
       if (upd) upd.textContent = row.updated_at ? '마지막 저장: ' + fmtAdminDateTime(row.updated_at) : '';
