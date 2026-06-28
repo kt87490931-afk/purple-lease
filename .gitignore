@@ -1,5 +1,1 @@
-.deploy_key
-.deploy_key.pub
-.env
-.env.local
-*.bak
+node_modules/
