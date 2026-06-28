@@ -7,7 +7,7 @@
  *   SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node scripts/sync-swautopia-cars.js
  *   node scripts/sync-swautopia-cars.js --mode=auto
  *
- * cron (KST 00:00): deploy/install-swautopia-cron.sh 참고
+ * cron (KST 04:00): deploy/install-swautopia-cron.sh 참고
  */
 'use strict';
 
