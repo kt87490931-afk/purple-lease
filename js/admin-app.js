@@ -1533,6 +1533,8 @@
     if (el) el.addEventListener('click', handler);
   }
 
+  var swautopiaSyncCancelled = false;
+
   function bindEvents() {
     bindSeoPanelEvents();
     bindAnalyticsEvents();
@@ -1825,8 +1827,11 @@
 
     document.getElementById('btnSyncSwautopia').addEventListener('click', async function () {
       var btn = document.getElementById('btnSyncSwautopia');
+      var btnStop = document.getElementById('btnStopSwautopia');
       if (!confirm('swautopia.co.kr 매물을 동기화하시겠습니까?\n\n사진은 4:3(목록 800×600, 상세 1280×960)으로 리사이즈 후 Supabase에 저장됩니다.\n매물·사진 수에 따라 5~15분 정도 걸릴 수 있습니다.\n판매완료·삭제된 매물은 목록에서 제외됩니다.')) return;
+      swautopiaSyncCancelled = false;
       btn.disabled = true;
+      btnStop.hidden = false;
       var prev = btn.textContent;
       btn.textContent = '동기화 중…';
       try {
@@ -1839,18 +1844,35 @@
           } else if (p.phase === 'save') {
             btn.textContent = 'DB 저장 중…';
           }
+        }, {
+          shouldCancel: function () { return swautopiaSyncCancelled; }
         });
         usedcarsData = await API.listUsedcars();
         renderUsedcarsTable();
         await renderUsedCarSyncLogArea();
         alert('동기화 완료: ' + (result.count || 0) + '대 반영, 비활성 ' + (result.deactivated || 0) + '대\n사진 ' + (result.photosProcessed || 0) + '장 처리');
       } catch (err) {
-        showError(err);
+        if (String(err.message || err).indexOf('사용자 중지') >= 0) {
+          alert('동기화를 중지했습니다. (처리된 사진은 DB 저장 전까지 반영되지 않습니다)');
+        } else {
+          showError(err);
+        }
       } finally {
         btn.disabled = false;
+        btnStop.hidden = true;
+        btnStop.disabled = false;
+        btnStop.textContent = '중지';
         btn.textContent = prev;
+        swautopiaSyncCancelled = false;
         await renderUsedCarSyncLogArea();
       }
+    });
+
+    document.getElementById('btnStopSwautopia').addEventListener('click', function () {
+      if (!confirm('진행 중인 수동파싱을 중지하시겠습니까?')) return;
+      swautopiaSyncCancelled = true;
+      document.getElementById('btnStopSwautopia').disabled = true;
+      document.getElementById('btnStopSwautopia').textContent = '중지 중…';
     });
 
     document.getElementById('btnAddUsedcar').addEventListener('click', function () {

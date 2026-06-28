@@ -77,7 +77,7 @@
 
   var MAX_PHOTOS_PER_CAR = 20;
 
-  async function processSwautopiaRowPhotos(row, onPhotoProgress) {
+  async function processSwautopiaRowPhotos(row, onPhotoProgress, shouldCancel) {
     var PI = window.PurpleImage;
     if (!PI) return row;
 
@@ -97,6 +97,7 @@
     }
 
     for (var i = 0; i < limited.length; i++) {
+      if (shouldCancel && shouldCancel()) throw new Error('사용자 중지');
       var src = limited[i];
       if (onPhotoProgress) {
         onPhotoProgress({ listingId: listingId, name: row.name, photoIndex: i + 1, photoTotal: limited.length });
@@ -608,9 +609,11 @@
     return { soft: false };
   }
 
-  async function syncSwautopiaUsedCars(onProgress) {
+  async function syncSwautopiaUsedCars(onProgress, options) {
     var Sync = window.SwautopiaSync;
     if (!Sync) throw new Error('SwautopiaSync 모듈이 로드되지 않았습니다.');
+    var opts = options || {};
+    var shouldCancel = opts.shouldCancel || function () { return false; };
     var started = Date.now();
     var startedAt = new Date(started).toISOString();
     var logId = null;
@@ -654,6 +657,8 @@
       diag.cars_to_sync = rows.length;
 
       for (var c = 0; c < rows.length; c++) {
+        if (shouldCancel()) throw new Error('사용자 중지');
+
         if (onProgress) {
           onProgress({ phase: 'image', carIndex: c + 1, carTotal: rows.length, name: rows[c].name });
         }
@@ -679,8 +684,10 @@
               photoTotal: p.photoTotal
             });
           }
-        });
+        }, shouldCancel);
       }
+
+      if (shouldCancel()) throw new Error('사용자 중지');
 
       if (onProgress) onProgress({ phase: 'save', count: rows.length });
       diag.phase = 'save';
