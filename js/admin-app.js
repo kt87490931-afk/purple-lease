@@ -656,6 +656,14 @@
     } catch (err) { showError(err); }
   }
 
+  function adminThumbUrl(url) {
+    if (!url) return '';
+    if (window.SwautopiaSync && window.SwautopiaSync.toProxyUrl) {
+      return window.SwautopiaSync.toProxyUrl(url);
+    }
+    return url;
+  }
+
   function renderUsedcarsTable() {
     var body = document.getElementById('usedcarsTableBody');
     document.getElementById('usedcarsCount').textContent = usedcarsData.length;
@@ -665,7 +673,7 @@
     }
     body.innerHTML = usedcarsData.map(function (c) {
       return '<tr>' +
-        '<td class="thumb-cell"><img src="' + c.thumb + '" onerror="this.style.opacity=0.15"></td>' +
+        '<td class="thumb-cell"><img src="' + escapeAttr(adminThumbUrl(c.thumb)) + '" onerror="this.style.opacity=0.15"></td>' +
         '<td class="title-cell">' + c.name + '</td>' +
         '<td class="num-cell">' + (c.year != null ? c.year + '년식' : '-') + '</td>' +
         '<td class="num-cell">' + c.mileage.toLocaleString('ko-KR') + 'km</td>' +
