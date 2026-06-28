@@ -87,7 +87,7 @@
     var listingId = row.listing_id;
     var limited = photos.slice(0, MAX_PHOTOS_PER_CAR);
     var out = [];
-    var stats = { uploaded: 0, failed: 0, skipped: 0 };
+    var stats = { uploaded: 0, failed: 0, skipped: 0, lastError: '' };
     var allHosted = limited.every(isPurpleStoredCarPhoto);
 
     if (!forcePhotos && allHosted) {
@@ -132,7 +132,9 @@
           if (i === 0 && !row.thumb_url) row.thumb_url = url;
         }
       } catch (e) {
-        console.warn('[swautopia] photo resize skip', listingId, i, e.message || e);
+        var errDetail = (e && e.message) || String(e);
+        stats.lastError = errDetail;
+        console.warn('[swautopia] photo skip', listingId, i, errDetail);
         out.push(src);
         stats.failed++;
         if (i === 0 && !row.thumb_url) row.thumb_url = src;
@@ -729,6 +731,7 @@
         photosUploaded += processed.stats.uploaded;
         photosFailed += processed.stats.failed;
         photosSkipped += processed.stats.skipped;
+        if (processed.stats.lastError) diag.last_photo_error = processed.stats.lastError;
       }
 
       if (shouldCancel()) throw new Error('사용자 중지');
@@ -791,7 +794,8 @@
         msg: msg,
         testMode: testMode,
         sampleListingId: rows[0] ? rows[0].listing_id : null,
-        sampleThumbUrl: rows[0] ? rows[0].thumb_url : ''
+        sampleThumbUrl: rows[0] ? rows[0].thumb_url : '',
+        lastError: diag.last_photo_error || ''
       };
 
       if (logId) {

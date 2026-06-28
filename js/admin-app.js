@@ -1577,6 +1577,9 @@
       if (result.sampleThumbUrl) {
         lines.push('thumb: ' + result.sampleThumbUrl);
       }
+      if (result.lastError) {
+        lines.push('오류: ' + result.lastError);
+      }
       alert(lines.join('\n'));
     } catch (err) {
       if (String(err.message || err).indexOf('사용자 중지') >= 0) {

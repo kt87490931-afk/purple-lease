@@ -16,7 +16,42 @@
     MINI: { w: 128, h: 96 }
   };
 
-  function loadImage(url) {
+  function isFetchableSameOrigin(url) {
+    if (!url) return false;
+    var s = String(url);
+    if (s.indexOf('/api/swautopia') === 0) return true;
+    try {
+      var u = new URL(s, typeof window !== 'undefined' ? window.location.href : 'https://localhost/');
+      return typeof window !== 'undefined' && u.origin === window.location.origin;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function loadImageFromBlob(blob) {
+    return new Promise(function (resolve, reject) {
+      var objUrl = URL.createObjectURL(blob);
+      var img = new Image();
+      img.onload = function () {
+        URL.revokeObjectURL(objUrl);
+        resolve(img);
+      };
+      img.onerror = function () {
+        URL.revokeObjectURL(objUrl);
+        reject(new Error('blob 이미지 디코드 실패'));
+      };
+      img.src = objUrl;
+    });
+  }
+
+  async function loadImage(url) {
+    if (isFetchableSameOrigin(url)) {
+      var res = await fetch(url, { credentials: 'same-origin', cache: 'no-store' });
+      if (!res.ok) throw new Error('이미지 fetch 실패 HTTP ' + res.status + ': ' + url);
+      var blob = await res.blob();
+      if (!blob || !blob.size) throw new Error('이미지 fetch 빈 응답: ' + url);
+      return loadImageFromBlob(blob);
+    }
     return new Promise(function (resolve, reject) {
       var img = new Image();
       img.crossOrigin = 'anonymous';

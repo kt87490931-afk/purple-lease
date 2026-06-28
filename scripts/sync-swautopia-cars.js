@@ -20,8 +20,11 @@ var SUPABASE_URL = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
 var SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
 
 var SYNC_MODE = 'auto';
+var TEST_LISTING_ID = null;
 process.argv.slice(2).forEach(function (arg) {
   if (arg.indexOf('--mode=') === 0) SYNC_MODE = arg.slice(7) || 'auto';
+  if (arg.indexOf('--listing-id=') === 0) TEST_LISTING_ID = parseInt(arg.slice(13), 10) || null;
+  if (arg === '--test') SYNC_MODE = 'test';
 });
 
 var SIZES = { THUMB: { w: 800, h: 600 }, GALLERY: { w: 1280, h: 960 } };
@@ -221,6 +224,10 @@ async function main() {
     });
 
     rows = rows.filter(function (r) { return !hiddenIds[r.listing_id]; });
+    if (TEST_LISTING_ID) {
+      rows = rows.filter(function (r) { return r.listing_id === TEST_LISTING_ID; });
+      if (!rows.length) throw new Error('listing_id ' + TEST_LISTING_ID + ' not found in swautopia feed');
+    }
     var activeIds = rows.map(function (r) { return r.listing_id; });
     diag.cars_to_sync = rows.length;
 
@@ -257,9 +264,12 @@ async function main() {
       });
     }
 
-    var deactivate = existingRows.map(function (r) { return r.listing_id; }).filter(function (id) {
-      return activeIds.indexOf(id) < 0;
-    });
+    var deactivate = [];
+    if (!TEST_LISTING_ID && SYNC_MODE !== 'test') {
+      deactivate = existingRows.map(function (r) { return r.listing_id; }).filter(function (id) {
+        return activeIds.indexOf(id) < 0;
+      });
+    }
 
     if (deactivate.length) {
       await sbFetch('used_cars?listing_id=in.(' + deactivate.join(',') + ')', {
