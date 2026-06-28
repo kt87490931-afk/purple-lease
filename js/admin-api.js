@@ -622,6 +622,7 @@
     try {
       var logIns = await db().from('used_car_sync_logs').insert([{
         source: 'swautopia',
+        sync_mode: 'manual',
         ok: false,
         msg: '진행 중',
         diag: diag,
@@ -737,6 +738,7 @@
         try {
           await db().from('used_car_sync_logs').insert([{
             source: 'swautopia',
+            sync_mode: 'manual',
             ok: false,
             msg: errMsg,
             diag: Object.assign({}, diag, { error: errMsg }),

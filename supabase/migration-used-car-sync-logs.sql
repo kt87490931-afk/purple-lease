@@ -4,6 +4,7 @@
 CREATE TABLE IF NOT EXISTS used_car_sync_logs (
   id BIGSERIAL PRIMARY KEY,
   source TEXT NOT NULL DEFAULT 'swautopia',
+  sync_mode TEXT NOT NULL DEFAULT 'manual',
   ok BOOLEAN NOT NULL DEFAULT false,
   msg TEXT NOT NULL DEFAULT '',
   diag JSONB NOT NULL DEFAULT '{}',

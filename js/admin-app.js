@@ -904,13 +904,19 @@
     }
   }
 
+  function usedCarSyncModeLabel(lg) {
+    if (!lg) return '수동';
+    if (lg.sync_mode === 'auto') return '자동';
+    return '수동';
+  }
+
   function fmtUsedCarSyncLogLine(lg) {
     if (!lg) return '';
     var d = new Date(lg.started_at || lg.ended_at);
     var md = String(d.getMonth() + 1).padStart(2, '0') + '/' + String(d.getDate()).padStart(2, '0');
     var tm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ':' + String(d.getSeconds()).padStart(2, '0');
     var dur = lg.duration_ms ? Math.round(lg.duration_ms / 1000) + '초' : '';
-    return (lg.source || 'swautopia') + ' · ' + md + ' ' + tm +
+    return usedCarSyncModeLabel(lg) + ' · ' + (lg.source || 'swautopia') + ' · ' + md + ' ' + tm +
       ' · ' + (lg.cars_upserted || 0) + '대 반영 · 비활성 ' + (lg.cars_deactivated || 0) +
       ' · 사진 ' + (lg.photos_processed || 0) + (dur ? ' · ' + dur : '');
   }

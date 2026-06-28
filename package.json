@@ -1,0 +1,8 @@
+{
+  "name": "purple-lease",
+  "private": true,
+  "description": "퍼플리스 서버 크론·CLI (swautopia 동기화 등)",
+  "dependencies": {
+    "sharp": "^0.33.5"
+  }
+}

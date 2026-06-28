@@ -18,17 +18,22 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "*.html,js,assets,robots.txt,sitemap.xml,scripts,deploy,supabase"
+          source: "*.html,js,assets,robots.txt,sitemap.xml,scripts,deploy,supabase,package.json,package-lock.json"
           target: /var/www/purple-lease
           strip_components: 0
           overwrite: true
 
       - name: Fix permissions
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY,SUPABASE_ANON_KEY
           script: |
             rm -f /var/www/purple-lease/used-cars_1.html /var/www/purple-lease/Easyquote.html
             chmod 644 /var/www/purple-lease/robots.txt 2>/dev/null || true
@@ -39,6 +44,14 @@ jobs:
             chmod +x /var/www/purple-lease/deploy/install-swautopia-nginx-proxy.sh 2>/dev/null || true
             bash /var/www/purple-lease/deploy/install-ks-nginx-proxy.sh 2>&1 || echo "[deploy] ks nginx proxy install skipped"
             bash /var/www/purple-lease/deploy/install-swautopia-nginx-proxy.sh 2>&1 || echo "[deploy] swautopia nginx proxy install skipped"
+            chmod +x /var/www/purple-lease/deploy/install-node.sh 2>/dev/null || true
+            bash /var/www/purple-lease/deploy/install-node.sh 2>&1 || echo "[deploy] node install skipped"
+            chmod +x /var/www/purple-lease/deploy/write-env-sync.sh 2>/dev/null || true
+            bash /var/www/purple-lease/deploy/write-env-sync.sh 2>&1 || echo "[deploy] env-sync skipped"
+            cd /var/www/purple-lease && npm install --omit=dev --no-audit --no-fund 2>&1 || echo "[deploy] npm install skipped"
+            chmod +x /var/www/purple-lease/deploy/run-swautopia-sync.sh 2>/dev/null || true
+            chmod +x /var/www/purple-lease/deploy/install-swautopia-cron.sh 2>/dev/null || true
+            bash /var/www/purple-lease/deploy/install-swautopia-cron.sh 2>&1 || echo "[deploy] swautopia cron skipped"
             bash /var/www/purple-lease/deploy/install-nginx-domain.sh 2>&1 || echo "[deploy] nginx domain install skipped"
             bash /var/www/purple-lease/deploy/install-sitemap-cron.sh 2>&1 || echo "[deploy] sitemap cron skipped"
             chmod +x /var/www/purple-lease/deploy/patch-static-seo.sh 2>/dev/null || true

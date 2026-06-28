@@ -1,45 +1,40 @@
 #!/usr/bin/env node
 /**
- * swautopia → Supabase used_cars 동기화 (크론용)
+ * swautopia → Supabase used_cars 전체 동기화 (서버 cron · CLI)
+ * 수동파싱(어드민)과 동일: 매물 메타 + 사진 Storage + 판매완료 비활성
  *
  * 사용법:
  *   SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node scripts/sync-swautopia-cars.js
+ *   node scripts/sync-swautopia-cars.js --mode=auto
  *
- * crontab (6시간마다):
- *   0 */6 * * * cd /var/www/purple-lease && /usr/bin/node scripts/sync-swautopia-cars.js >> /var/log/purple-swautopia-sync.log 2>&1
- *
- * 참고: 차량 사진 4:3 리사이즈는 어드민 「수동파싱 (swautopia)」에서 Supabase Storage로 업로드됩니다.
- * 크론은 매물 메타·상태만 갱신하며, 이미 Storage에 있는 사진 URL은 DB에 그대로 유지됩니다.
+ * cron (KST 00:00): deploy/install-swautopia-cron.sh 참고
  */
 'use strict';
 
 var path = require('path');
 var SwautopiaSync = require(path.join(__dirname, '..', 'js', 'swautopia-sync.js'));
 var fetch = global.fetch || require('node-fetch');
+var sharp = require('sharp');
 
-var SUPABASE_URL = process.env.SUPABASE_URL || '';
+var SUPABASE_URL = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
 var SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+
+var SYNC_MODE = 'auto';
+process.argv.slice(2).forEach(function (arg) {
+  if (arg.indexOf('--mode=') === 0) SYNC_MODE = arg.slice(7) || 'auto';
+});
+
+var SIZES = { THUMB: { w: 800, h: 600 }, GALLERY: { w: 1280, h: 960 } };
+var MAX_PHOTOS_PER_CAR = 20;
+var SWAUTOPIA_BASE = 'https://swautopia.co.kr';
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
   console.error('[sync] SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY required');
   process.exit(1);
 }
 
-async function sbFetch(tablePath, options) {
-  var url = SUPABASE_URL.replace(/\/$/, '') + '/rest/v1/' + tablePath;
-  var headers = Object.assign({
-    apikey: SUPABASE_KEY,
-    Authorization: 'Bearer ' + SUPABASE_KEY,
-    'Content-Type': 'application/json',
-    Prefer: 'return=minimal'
-  }, (options && options.headers) || {});
-  var res = await fetch(url, Object.assign({}, options, { headers: headers }));
-  if (!res.ok) {
-    var text = await res.text();
-    throw new Error('Supabase ' + res.status + ': ' + text);
-  }
-  if (res.status === 204) return null;
-  return res.json();
+function storagePublicUrl(storagePath) {
+  return SUPABASE_URL + '/storage/v1/object/public/purple-uploads/' + String(storagePath).replace(/^\//, '');
 }
 
 function isPurpleStoredCarPhoto(url) {
@@ -50,59 +45,252 @@ function isAdminHiddenCar(row) {
   return !!(row && row.detail_json && row.detail_json.admin_hidden);
 }
 
-async function main() {
-  var started = new Date();
-  console.log('[sync] start', started.toISOString());
-
-  var cars = await SwautopiaSync.fetchAllCars();
-  var rows = cars.map(function (c) { return SwautopiaSync.mapCarToRow(c); });
-
-  var existingRows = await sbFetch('used_cars?sync_source=eq.swautopia&select=listing_id,thumb_url,detail_json,photo_count,is_active') || [];
-  var existingMap = {};
-  var hiddenIds = {};
-  existingRows.forEach(function (r) {
-    existingMap[r.listing_id] = r;
-    if (isAdminHiddenCar(r)) hiddenIds[r.listing_id] = true;
-  });
-
-  rows = rows.filter(function (r) { return !hiddenIds[r.listing_id]; });
-  var activeIds = rows.map(function (r) { return r.listing_id; });
-
-  rows.forEach(function (row) {
-    var prev = existingMap[row.listing_id];
-    var prevPhotos = (prev && prev.detail_json && prev.detail_json.photos) || [];
-    if (prevPhotos.length && prevPhotos.every(isPurpleStoredCarPhoto)) {
-      row.detail_json.photos = prevPhotos;
-      row.thumb_url = isPurpleStoredCarPhoto(prev.thumb_url) ? prev.thumb_url : prevPhotos[0];
-      row.photo_count = prevPhotos.length;
-    }
-  });
-
-  for (var i = 0; i < rows.length; i += 40) {
-    var batch = rows.slice(i, i + 40);
-    await sbFetch('used_cars?on_conflict=listing_id', {
-      method: 'POST',
-      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
-      body: JSON.stringify(batch)
-    });
-  }
-
-  var deactivate = existingRows.map(function (r) { return r.listing_id; }).filter(function (id) {
-    return activeIds.indexOf(id) < 0;
-  });
-
-  if (deactivate.length) {
-    await sbFetch('used_cars?listing_id=in.(' + deactivate.join(',') + ')', {
-      method: 'PATCH',
-      body: JSON.stringify({ is_active: false })
-    });
-  }
-
-  var ms = Date.now() - started.getTime();
-  console.log('[sync] ok count=' + rows.length + ' deactivated=' + deactivate.length + ' duration_ms=' + ms);
+function absSwautopiaUrl(url) {
+  if (!url) return '';
+  var s = String(url).trim();
+  if (/^https?:\/\//i.test(s)) return s;
+  return SWAUTOPIA_BASE + (s.indexOf('/') === 0 ? s : '/' + s);
 }
 
-main().catch(function (err) {
-  console.error('[sync] fail', err.message || err);
-  process.exit(1);
-});
+async function sbFetch(tablePath, options) {
+  var url = SUPABASE_URL + '/rest/v1/' + tablePath;
+  var headers = Object.assign({
+    apikey: SUPABASE_KEY,
+    Authorization: 'Bearer ' + SUPABASE_KEY,
+    'Content-Type': 'application/json'
+  }, (options && options.headers) || {});
+  var res = await fetch(url, Object.assign({}, options, { headers: headers }));
+  if (!res.ok) {
+    var text = await res.text();
+    throw new Error('Supabase ' + res.status + ': ' + text.slice(0, 300));
+  }
+  if (res.status === 204) return null;
+  return res.json();
+}
+
+async function sbInsertLog(row) {
+  var res = await sbFetch('used_car_sync_logs', {
+    method: 'POST',
+    headers: { Prefer: 'return=representation' },
+    body: JSON.stringify([row])
+  });
+  return res && res[0] ? res[0].id : null;
+}
+
+async function sbUpdateLog(logId, patch) {
+  await sbFetch('used_car_sync_logs?id=eq.' + logId, {
+    method: 'PATCH',
+    headers: { Prefer: 'return=minimal' },
+    body: JSON.stringify(patch)
+  });
+}
+
+async function fetchImageBuffer(url) {
+  var res = await fetch(absSwautopiaUrl(url), {
+    headers: {
+      Referer: SWAUTOPIA_BASE + '/',
+      'User-Agent': 'Mozilla/5.0 (compatible; PurpleLeaseSync/2.0)'
+    }
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return Buffer.from(await res.arrayBuffer());
+}
+
+async function resizeCover(buffer, w, h) {
+  return sharp(buffer)
+    .resize(w, h, { fit: 'cover', position: 'centre', background: { r: 244, g: 242, b: 250 } })
+    .jpeg({ quality: 88 })
+    .toBuffer();
+}
+
+async function uploadStorage(storagePath, buffer) {
+  var p = String(storagePath).replace(/^\//, '');
+  var url = SUPABASE_URL + '/storage/v1/object/purple-uploads/' + p;
+  var res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'image/jpeg',
+      'x-upsert': 'true',
+      'Cache-Control': '86400'
+    },
+    body: buffer
+  });
+  if (!res.ok) {
+    var text = await res.text();
+    throw new Error('Storage ' + res.status + ': ' + text.slice(0, 200));
+  }
+  return storagePublicUrl(p);
+}
+
+async function processRowPhotos(row, stats) {
+  var photos = (row.detail_json && row.detail_json.photos) || [];
+  if (!photos.length) return row;
+
+  var listingId = row.listing_id;
+  var limited = photos.slice(0, MAX_PHOTOS_PER_CAR);
+  var out = [];
+
+  if (limited.every(isPurpleStoredCarPhoto)) {
+    row.detail_json.photos = limited;
+    row.thumb_url = isPurpleStoredCarPhoto(row.thumb_url) ? row.thumb_url : limited[0];
+    row.photo_count = limited.length;
+    return row;
+  }
+
+  for (var i = 0; i < limited.length; i++) {
+    var src = limited[i];
+    if (isPurpleStoredCarPhoto(src)) {
+      out.push(src);
+      if (i === 0) row.thumb_url = src;
+      continue;
+    }
+    try {
+      var buf = await fetchImageBuffer(src);
+      if (i === 0) {
+        var galleryBuf = await resizeCover(buf, SIZES.GALLERY.w, SIZES.GALLERY.h);
+        var thumbBuf = await resizeCover(buf, SIZES.THUMB.w, SIZES.THUMB.h);
+        var galleryUrl = await uploadStorage('usedcars/' + listingId + '/0.jpg', galleryBuf);
+        var thumbUrl = await uploadStorage('usedcars/' + listingId + '/thumb.jpg', thumbBuf);
+        out.push(galleryUrl);
+        row.thumb_url = thumbUrl;
+      } else {
+        var resized = await resizeCover(buf, SIZES.GALLERY.w, SIZES.GALLERY.h);
+        var photoUrl = await uploadStorage('usedcars/' + listingId + '/' + i + '.jpg', resized);
+        out.push(photoUrl);
+        if (i === 0 && !row.thumb_url) row.thumb_url = photoUrl;
+      }
+      stats.photosProcessed++;
+    } catch (e) {
+      console.warn('[sync] photo skip listing=' + listingId + ' i=' + i + ' ' + (e.message || e));
+      out.push(src);
+      if (i === 0 && !row.thumb_url) row.thumb_url = src;
+    }
+  }
+
+  row.detail_json.photos = out;
+  row.thumb_url = row.thumb_url || out[0] || '';
+  row.photo_count = out.length;
+  return row;
+}
+
+async function main() {
+  var started = Date.now();
+  var startedAt = new Date(started).toISOString();
+  var logId = null;
+  var diag = { phase: 'init', sync_mode: SYNC_MODE };
+
+  console.log('[sync] start mode=' + SYNC_MODE + ' at ' + startedAt);
+
+  try {
+    logId = await sbInsertLog({
+      source: 'swautopia',
+      sync_mode: SYNC_MODE,
+      ok: false,
+      msg: '진행 중',
+      diag: diag,
+      started_at: startedAt
+    });
+  } catch (e) {
+    console.warn('[sync] log insert skipped:', e.message || e);
+  }
+
+  try {
+    var cars = await SwautopiaSync.fetchAllCars();
+    diag.phase = 'fetch';
+    diag.cars_fetched = cars.length;
+
+    var rows = cars.map(function (c) { return SwautopiaSync.mapCarToRow(c); });
+    var existingRows = await sbFetch('used_cars?sync_source=eq.swautopia&select=listing_id,thumb_url,detail_json,photo_count,is_active') || [];
+    var existingMap = {};
+    var hiddenIds = {};
+
+    existingRows.forEach(function (r) {
+      existingMap[r.listing_id] = r;
+      if (isAdminHiddenCar(r)) hiddenIds[r.listing_id] = true;
+    });
+
+    rows = rows.filter(function (r) { return !hiddenIds[r.listing_id]; });
+    var activeIds = rows.map(function (r) { return r.listing_id; });
+    diag.cars_to_sync = rows.length;
+
+    var stats = { photosProcessed: 0 };
+    diag.phase = 'photos';
+
+    for (var c = 0; c < rows.length; c++) {
+      if ((c + 1) % 10 === 0 || c === 0) {
+        console.log('[sync] photos car ' + (c + 1) + '/' + rows.length + ' id=' + rows[c].listing_id);
+      }
+      rows[c] = await processRowPhotos(rows[c], stats);
+    }
+
+    diag.phase = 'save';
+    for (var i = 0; i < rows.length; i += 40) {
+      var batch = rows.slice(i, i + 40);
+      await sbFetch('used_cars?on_conflict=listing_id', {
+        method: 'POST',
+        headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify(batch)
+      });
+    }
+
+    var deactivate = existingRows.map(function (r) { return r.listing_id; }).filter(function (id) {
+      return activeIds.indexOf(id) < 0;
+    });
+
+    if (deactivate.length) {
+      await sbFetch('used_cars?listing_id=in.(' + deactivate.join(',') + ')', {
+        method: 'PATCH',
+        headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ is_active: false })
+      });
+    }
+
+    var durationMs = Date.now() - started;
+    console.log('[sync] ok count=' + rows.length + ' deactivated=' + deactivate.length +
+      ' photos=' + stats.photosProcessed + ' duration_ms=' + durationMs);
+
+    if (logId) {
+      await sbUpdateLog(logId, {
+        ok: true,
+        msg: '완료',
+        diag: diag,
+        cars_upserted: rows.length,
+        cars_deactivated: deactivate.length,
+        photos_processed: stats.photosProcessed,
+        duration_ms: durationMs,
+        ended_at: new Date().toISOString()
+      });
+    }
+  } catch (err) {
+    var errMsg = err.message || String(err);
+    console.error('[sync] fail', errMsg);
+    var failMs = Date.now() - started;
+    if (logId) {
+      await sbUpdateLog(logId, {
+        ok: false,
+        msg: errMsg,
+        diag: Object.assign({}, diag, { error: errMsg }),
+        duration_ms: failMs,
+        ended_at: new Date().toISOString()
+      });
+    } else {
+      try {
+        await sbInsertLog({
+          source: 'swautopia',
+          sync_mode: SYNC_MODE,
+          ok: false,
+          msg: errMsg,
+          diag: Object.assign({}, diag, { error: errMsg }),
+          duration_ms: failMs,
+          started_at: startedAt,
+          ended_at: new Date().toISOString()
+        });
+      } catch (_) { /* ignore */ }
+    }
+    process.exit(1);
+  }
+}
+
+main();
