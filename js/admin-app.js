@@ -907,6 +907,7 @@
   function usedCarSyncModeLabel(lg) {
     if (!lg) return '수동';
     if (lg.sync_mode === 'auto') return '자동';
+    if (lg.sync_mode === 'test') return '테스트';
     return '수동';
   }
 
@@ -918,7 +919,7 @@
     var dur = lg.duration_ms ? Math.round(lg.duration_ms / 1000) + '초' : '';
     return usedCarSyncModeLabel(lg) + ' · ' + (lg.source || 'swautopia') + ' · ' + md + ' ' + tm +
       ' · ' + (lg.cars_upserted || 0) + '대 반영 · 비활성 ' + (lg.cars_deactivated || 0) +
-      ' · 사진 ' + (lg.photos_processed || 0) + (dur ? ' · ' + dur : '');
+      ' · Storage ' + (lg.photos_processed || 0) + '장' + (dur ? ' · ' + dur : '');
   }
 
   async function renderUsedCarSyncLogArea() {
@@ -1541,6 +1542,61 @@
 
   var swautopiaSyncCancelled = false;
 
+  async function runSwautopiaSync(syncOpts, btn, btnLabel) {
+    var btnStop = document.getElementById('btnStopSwautopia');
+    var btnTest = document.getElementById('btnTestSyncSwautopia');
+    swautopiaSyncCancelled = false;
+    btn.disabled = true;
+    if (btnTest && btnTest !== btn) btnTest.disabled = true;
+    document.getElementById('btnSyncSwautopia').disabled = true;
+    btnStop.hidden = false;
+    var prev = btn.textContent;
+    btn.textContent = btnLabel || '동기화 중…';
+    try {
+      var result = await API.syncSwautopiaUsedCars(function (p) {
+        if (p.phase === 'fetch') {
+          btn.textContent = '매물 ' + p.count + '대 불러옴…';
+        } else if (p.phase === 'image') {
+          btn.textContent = '사진 처리 ' + p.carIndex + '/' + p.carTotal;
+          if (p.photoIndex) btn.textContent += ' (' + p.photoIndex + '/' + p.photoTotal + ')';
+        } else if (p.phase === 'save') {
+          btn.textContent = 'DB 저장 중…';
+        }
+      }, Object.assign({ shouldCancel: function () { return swautopiaSyncCancelled; } }, syncOpts || {}));
+      usedcarsData = await API.listUsedcars();
+      renderUsedcarsTable();
+      await renderUsedCarSyncLogArea();
+      var lines = [
+        result.msg || '완료',
+        (result.count || 0) + '대 반영 · Storage 업로드 ' + (result.photosUploaded || 0) + '장',
+        '실패 ' + (result.photosFailed || 0) + '장 · 건너뜀 ' + (result.photosSkipped || 0) + '장'
+      ];
+      if (result.sampleListingId) {
+        lines.push('listing_id: ' + result.sampleListingId);
+      }
+      if (result.sampleThumbUrl) {
+        lines.push('thumb: ' + result.sampleThumbUrl);
+      }
+      alert(lines.join('\n'));
+    } catch (err) {
+      if (String(err.message || err).indexOf('사용자 중지') >= 0) {
+        alert('동기화를 중지했습니다. (DB 저장 전까지 반영되지 않습니다)');
+      } else {
+        showError(err);
+      }
+    } finally {
+      btn.disabled = false;
+      document.getElementById('btnSyncSwautopia').disabled = false;
+      if (btnTest) btnTest.disabled = false;
+      btnStop.hidden = true;
+      btnStop.disabled = false;
+      btnStop.textContent = '중지';
+      btn.textContent = prev;
+      swautopiaSyncCancelled = false;
+      await renderUsedCarSyncLogArea();
+    }
+  }
+
   function bindEvents() {
     bindSeoPanelEvents();
     bindAnalyticsEvents();
@@ -1831,47 +1887,27 @@
       } catch (err) { showError(err); }
     });
 
+    document.getElementById('btnTestSyncSwautopia').addEventListener('click', async function () {
+      var btn = document.getElementById('btnTestSyncSwautopia');
+      var idStr = prompt('테스트할 swautopia listing_id (비우면 API 첫 번째 매물 1대)', '');
+      var listingId = idStr && String(idStr).trim() ? parseInt(String(idStr).trim(), 10) : null;
+      if (idStr && String(idStr).trim() && !listingId) {
+        alert('listing_id는 숫자여야 합니다.');
+        return;
+      }
+      if (!confirm('swautopia 매물 1대만 테스트합니다.\n\n사진을 Supabase Storage에 업로드하고 DB URL을 확인합니다.\n(전체 비활성 처리는 하지 않습니다)')) return;
+      await runSwautopiaSync({
+        testMode: true,
+        listingId: listingId,
+        skipDeactivate: true,
+        forcePhotos: true
+      }, btn, '1대 테스트 중…');
+    });
+
     document.getElementById('btnSyncSwautopia').addEventListener('click', async function () {
       var btn = document.getElementById('btnSyncSwautopia');
-      var btnStop = document.getElementById('btnStopSwautopia');
-      if (!confirm('swautopia.co.kr 매물을 동기화하시겠습니까?\n\n사진은 4:3(목록 800×600, 상세 1280×960)으로 리사이즈 후 Supabase에 저장됩니다.\n매물·사진 수에 따라 5~15분 정도 걸릴 수 있습니다.\n판매완료·삭제된 매물은 목록에서 제외됩니다.')) return;
-      swautopiaSyncCancelled = false;
-      btn.disabled = true;
-      btnStop.hidden = false;
-      var prev = btn.textContent;
-      btn.textContent = '동기화 중…';
-      try {
-        var result = await API.syncSwautopiaUsedCars(function (p) {
-          if (p.phase === 'fetch') {
-            btn.textContent = '매물 ' + p.count + '대 불러옴…';
-          } else if (p.phase === 'image') {
-            btn.textContent = '사진 처리 ' + p.carIndex + '/' + p.carTotal;
-            if (p.photoIndex) btn.textContent += ' (' + p.photoIndex + '/' + p.photoTotal + ')';
-          } else if (p.phase === 'save') {
-            btn.textContent = 'DB 저장 중…';
-          }
-        }, {
-          shouldCancel: function () { return swautopiaSyncCancelled; }
-        });
-        usedcarsData = await API.listUsedcars();
-        renderUsedcarsTable();
-        await renderUsedCarSyncLogArea();
-        alert('동기화 완료: ' + (result.count || 0) + '대 반영, 비활성 ' + (result.deactivated || 0) + '대\n사진 ' + (result.photosProcessed || 0) + '장 처리');
-      } catch (err) {
-        if (String(err.message || err).indexOf('사용자 중지') >= 0) {
-          alert('동기화를 중지했습니다. (처리된 사진은 DB 저장 전까지 반영되지 않습니다)');
-        } else {
-          showError(err);
-        }
-      } finally {
-        btn.disabled = false;
-        btnStop.hidden = true;
-        btnStop.disabled = false;
-        btnStop.textContent = '중지';
-        btn.textContent = prev;
-        swautopiaSyncCancelled = false;
-        await renderUsedCarSyncLogArea();
-      }
+      if (!confirm('swautopia.co.kr 매물을 동기화하시겠습니까?\n\n사진은 4:3(목록 800×600, 상세 1280×960)으로 리사이즈 후 Supabase Storage에 저장됩니다.\n매물·사진 수에 따라 5~15분 정도 걸릴 수 있습니다.\n판매완료·삭제된 매물은 목록에서 제외됩니다.')) return;
+      await runSwautopiaSync({}, btn, '동기화 중…');
     });
 
     document.getElementById('btnStopSwautopia').addEventListener('click', function () {

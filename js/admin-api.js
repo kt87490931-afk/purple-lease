@@ -77,23 +77,25 @@
 
   var MAX_PHOTOS_PER_CAR = 20;
 
-  async function processSwautopiaRowPhotos(row, onPhotoProgress, shouldCancel) {
+  async function processSwautopiaRowPhotos(row, onPhotoProgress, shouldCancel, forcePhotos) {
     var PI = window.PurpleImage;
-    if (!PI) return row;
+    if (!PI) return { row: row, stats: { uploaded: 0, failed: 0, skipped: 0 } };
 
     var photos = (row.detail_json && row.detail_json.photos) || [];
-    if (!photos.length) return row;
+    if (!photos.length) return { row: row, stats: { uploaded: 0, failed: 0, skipped: 0 } };
 
     var listingId = row.listing_id;
     var limited = photos.slice(0, MAX_PHOTOS_PER_CAR);
     var out = [];
+    var stats = { uploaded: 0, failed: 0, skipped: 0 };
     var allHosted = limited.every(isPurpleStoredCarPhoto);
 
-    if (allHosted) {
+    if (!forcePhotos && allHosted) {
       row.detail_json.photos = limited;
-      row.thumb_url = limited[0];
+      row.thumb_url = isPurpleStoredCarPhoto(row.thumb_url) ? row.thumb_url : limited[0];
       row.photo_count = limited.length;
-      return row;
+      stats.skipped = limited.length;
+      return { row: row, stats: stats };
     }
 
     for (var i = 0; i < limited.length; i++) {
@@ -103,9 +105,10 @@
         onPhotoProgress({ listingId: listingId, name: row.name, photoIndex: i + 1, photoTotal: limited.length });
       }
 
-      if (isPurpleStoredCarPhoto(src)) {
+      if (!forcePhotos && isPurpleStoredCarPhoto(src)) {
         out.push(src);
         if (i === 0) row.thumb_url = src;
+        stats.skipped++;
         continue;
       }
 
@@ -120,15 +123,18 @@
           var thumbUrl = await uploadBlob(blobs.thumb, 'usedcars/' + listingId + '/thumb.jpg');
           out.push(galleryUrl);
           row.thumb_url = thumbUrl;
+          stats.uploaded += 2;
         } else {
           var blob = await PI.resizeUrlToBlob(fetchUrl, PI.SIZES.GALLERY.w, PI.SIZES.GALLERY.h);
           var url = await uploadBlob(blob, 'usedcars/' + listingId + '/' + i + '.jpg');
           out.push(url);
+          stats.uploaded++;
           if (i === 0 && !row.thumb_url) row.thumb_url = url;
         }
       } catch (e) {
         console.warn('[swautopia] photo resize skip', listingId, i, e.message || e);
         out.push(src);
+        stats.failed++;
         if (i === 0 && !row.thumb_url) row.thumb_url = src;
       }
     }
@@ -136,7 +142,17 @@
     row.detail_json.photos = out;
     row.thumb_url = row.thumb_url || out[0] || '';
     row.photo_count = out.length;
-    return row;
+    return { row: row, stats: stats };
+  }
+
+  function rowNeedsPhotoUpload(row) {
+    var photos = (row.detail_json && row.detail_json.photos) || [];
+    if (!photos.length) return false;
+    return !photos.every(isPurpleStoredCarPhoto);
+  }
+
+  function rowHasStorageThumb(row) {
+    return isPurpleStoredCarPhoto(row.thumb_url);
   }
 
   /* ---------- YouTube ---------- */
@@ -614,17 +630,28 @@
     if (!Sync) throw new Error('SwautopiaSync 모듈이 로드되지 않았습니다.');
     var opts = options || {};
     var shouldCancel = opts.shouldCancel || function () { return false; };
+    var testMode = !!opts.testMode;
+    var limit = parseInt(opts.limit, 10) || 0;
+    var listingIdFilter = opts.listingId != null ? parseInt(opts.listingId, 10) : null;
+    var skipDeactivate = testMode || !!opts.skipDeactivate;
+    var forcePhotos = testMode || !!opts.forcePhotos;
+    var syncMode = testMode ? 'test' : 'manual';
     var started = Date.now();
     var startedAt = new Date(started).toISOString();
     var logId = null;
-    var diag = { phase: 'init', api_url: Sync.getCarsApiUrl ? Sync.getCarsApiUrl() : '' };
+    var diag = {
+      phase: 'init',
+      api_url: Sync.getCarsApiUrl ? Sync.getCarsApiUrl() : '',
+      test_mode: testMode,
+      listing_id: listingIdFilter || null
+    };
 
     try {
       var logIns = await db().from('used_car_sync_logs').insert([{
         source: 'swautopia',
-        sync_mode: 'manual',
+        sync_mode: syncMode,
         ok: false,
-        msg: '진행 중',
+        msg: testMode ? '테스트 진행 중' : '진행 중',
         diag: diag,
         started_at: startedAt
       }]).select('id').single();
@@ -638,7 +665,9 @@
       var rows = cars.map(function (c) { return Sync.mapCarToRow(c); });
       var activeIds = rows.map(function (r) { return r.listing_id; });
       var upserted = 0;
-      var photosResized = 0;
+      var photosUploaded = 0;
+      var photosFailed = 0;
+      var photosSkipped = 0;
       var existingMap = {};
       var hiddenIds = {};
 
@@ -654,6 +683,16 @@
       });
 
       rows = rows.filter(function (r) { return !hiddenIds[r.listing_id]; });
+
+      if (listingIdFilter) {
+        rows = rows.filter(function (r) { return r.listing_id === listingIdFilter; });
+        if (!rows.length) throw new Error('swautopia listing_id ' + listingIdFilter + ' 매물을 찾을 수 없습니다.');
+      } else if (testMode) {
+        rows = rows.slice(0, 1);
+      } else if (limit > 0) {
+        rows = rows.slice(0, limit);
+      }
+
       activeIds = rows.map(function (r) { return r.listing_id; });
       diag.cars_to_sync = rows.length;
 
@@ -666,15 +705,15 @@
 
         var prev = existingMap[rows[c].listing_id];
         var prevPhotos = (prev && prev.detail_json && prev.detail_json.photos) || [];
-        if (prevPhotos.length && prevPhotos.every(isPurpleStoredCarPhoto)) {
+        if (!forcePhotos && prevPhotos.length && prevPhotos.every(isPurpleStoredCarPhoto)) {
           rows[c].detail_json.photos = prevPhotos;
           rows[c].thumb_url = isPurpleStoredCarPhoto(prev.thumb_url) ? prev.thumb_url : prevPhotos[0];
           rows[c].photo_count = prevPhotos.length;
+          photosSkipped += prevPhotos.length;
           continue;
         }
 
-        rows[c] = await processSwautopiaRowPhotos(rows[c], function (p) {
-          photosResized++;
+        var processed = await processSwautopiaRowPhotos(rows[c], function (p) {
           if (onProgress) {
             onProgress({
               phase: 'image',
@@ -685,13 +724,20 @@
               photoTotal: p.photoTotal
             });
           }
-        }, shouldCancel);
+        }, shouldCancel, forcePhotos);
+        rows[c] = processed.row;
+        photosUploaded += processed.stats.uploaded;
+        photosFailed += processed.stats.failed;
+        photosSkipped += processed.stats.skipped;
       }
 
       if (shouldCancel()) throw new Error('사용자 중지');
 
       if (onProgress) onProgress({ phase: 'save', count: rows.length });
       diag.phase = 'save';
+      diag.photos_uploaded = photosUploaded;
+      diag.photos_failed = photosFailed;
+      diag.photos_skipped = photosSkipped;
 
       for (var i = 0; i < rows.length; i += 40) {
         var batch = rows.slice(i, i + 40);
@@ -700,29 +746,67 @@
         upserted += batch.length;
       }
 
-      var ex = await db().from('used_cars').select('listing_id').eq('sync_source', 'swautopia');
-      if (ex.error) throw ex.error;
-      var deactivate = (ex.data || []).map(function (r) { return r.listing_id; }).filter(function (id) {
-        return activeIds.indexOf(id) < 0;
-      });
-      if (deactivate.length) {
-        var de = await db().from('used_cars').update({ is_active: false }).in('listing_id', deactivate);
-        if (de.error) throw de.error;
+      var deactivate = [];
+      if (!skipDeactivate) {
+        var ex = await db().from('used_cars').select('listing_id').eq('sync_source', 'swautopia');
+        if (ex.error) throw ex.error;
+        var allActiveIds = cars.map(function (c) { return c.id; }).filter(function (id) {
+          return !hiddenIds[id];
+        });
+        deactivate = (ex.data || []).map(function (r) { return r.listing_id; }).filter(function (id) {
+          return allActiveIds.indexOf(id) < 0;
+        });
+        if (deactivate.length) {
+          var de = await db().from('used_cars').update({ is_active: false }).in('listing_id', deactivate);
+          if (de.error) throw de.error;
+        }
       }
 
-      var result = { count: upserted, deactivated: deactivate.length, photosProcessed: photosResized };
+      var needsPhotos = rows.some(rowNeedsPhotoUpload);
+      var storageOk = rows.length > 0 && rows.every(rowHasStorageThumb);
+      var ok = true;
+      var msg = '완료';
+
+      if (testMode) {
+        ok = photosUploaded > 0 && storageOk;
+        msg = ok
+          ? '테스트 성공 — Storage ' + photosUploaded + '장, thumb: ' + (rows[0] && rows[0].thumb_url ? 'OK' : '없음')
+          : '테스트 실패 — Storage 업로드 ' + photosUploaded + '장, 실패 ' + photosFailed + '장';
+        if (rows[0]) diag.sample_thumb_url = rows[0].thumb_url;
+      } else if (needsPhotos && photosUploaded === 0 && photosSkipped === 0) {
+        ok = false;
+        msg = '사진 Storage 업로드 0장 — swautopia URL만 저장됨';
+      } else if (photosFailed > 0 && photosUploaded === 0) {
+        ok = false;
+        msg = '사진 업로드 전부 실패 (' + photosFailed + '장)';
+      }
+
+      var result = {
+        count: upserted,
+        deactivated: deactivate.length,
+        photosUploaded: photosUploaded,
+        photosFailed: photosFailed,
+        photosSkipped: photosSkipped,
+        ok: ok,
+        msg: msg,
+        testMode: testMode,
+        sampleListingId: rows[0] ? rows[0].listing_id : null,
+        sampleThumbUrl: rows[0] ? rows[0].thumb_url : ''
+      };
+
       if (logId) {
         await db().from('used_car_sync_logs').update({
-          ok: true,
-          msg: '완료',
+          ok: ok,
+          msg: msg,
           diag: diag,
           cars_upserted: upserted,
           cars_deactivated: deactivate.length,
-          photos_processed: photosResized,
+          photos_processed: photosUploaded,
           duration_ms: Date.now() - started,
           ended_at: new Date().toISOString()
         }).eq('id', logId);
       }
+      if (!ok && !testMode) throw new Error(msg);
       return result;
     } catch (err) {
       var errMsg = err.message || String(err);
@@ -738,7 +822,7 @@
         try {
           await db().from('used_car_sync_logs').insert([{
             source: 'swautopia',
-            sync_mode: 'manual',
+            sync_mode: syncMode,
             ok: false,
             msg: errMsg,
             diag: Object.assign({}, diag, { error: errMsg }),

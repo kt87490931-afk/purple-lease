@@ -136,6 +136,7 @@ async function processRowPhotos(row, stats) {
     row.detail_json.photos = limited;
     row.thumb_url = isPurpleStoredCarPhoto(row.thumb_url) ? row.thumb_url : limited[0];
     row.photo_count = limited.length;
+    stats.photosSkipped = (stats.photosSkipped || 0) + limited.length;
     return row;
   }
 
@@ -144,6 +145,7 @@ async function processRowPhotos(row, stats) {
     if (isPurpleStoredCarPhoto(src)) {
       out.push(src);
       if (i === 0) row.thumb_url = src;
+      stats.photosSkipped = (stats.photosSkipped || 0) + 1;
       continue;
     }
     try {
@@ -155,16 +157,18 @@ async function processRowPhotos(row, stats) {
         var thumbUrl = await uploadStorage('usedcars/' + listingId + '/thumb.jpg', thumbBuf);
         out.push(galleryUrl);
         row.thumb_url = thumbUrl;
+        stats.photosUploaded = (stats.photosUploaded || 0) + 2;
       } else {
         var resized = await resizeCover(buf, SIZES.GALLERY.w, SIZES.GALLERY.h);
         var photoUrl = await uploadStorage('usedcars/' + listingId + '/' + i + '.jpg', resized);
         out.push(photoUrl);
+        stats.photosUploaded = (stats.photosUploaded || 0) + 1;
         if (i === 0 && !row.thumb_url) row.thumb_url = photoUrl;
       }
-      stats.photosProcessed++;
     } catch (e) {
       console.warn('[sync] photo skip listing=' + listingId + ' i=' + i + ' ' + (e.message || e));
       out.push(src);
+      stats.photosFailed = (stats.photosFailed || 0) + 1;
       if (i === 0 && !row.thumb_url) row.thumb_url = src;
     }
   }
@@ -173,6 +177,11 @@ async function processRowPhotos(row, stats) {
   row.thumb_url = row.thumb_url || out[0] || '';
   row.photo_count = out.length;
   return row;
+}
+
+function rowNeedsPhotoUpload(row) {
+  var photos = (row.detail_json && row.detail_json.photos) || [];
+  return photos.length > 0 && !photos.every(isPurpleStoredCarPhoto);
 }
 
 async function main() {
@@ -215,15 +224,28 @@ async function main() {
     var activeIds = rows.map(function (r) { return r.listing_id; });
     diag.cars_to_sync = rows.length;
 
-    var stats = { photosProcessed: 0 };
+    var stats = { photosUploaded: 0, photosFailed: 0, photosSkipped: 0 };
     diag.phase = 'photos';
 
     for (var c = 0; c < rows.length; c++) {
       if ((c + 1) % 10 === 0 || c === 0) {
         console.log('[sync] photos car ' + (c + 1) + '/' + rows.length + ' id=' + rows[c].listing_id);
       }
+      var prev = existingMap[rows[c].listing_id];
+      var prevPhotos = (prev && prev.detail_json && prev.detail_json.photos) || [];
+      if (prevPhotos.length && prevPhotos.every(isPurpleStoredCarPhoto)) {
+        rows[c].detail_json.photos = prevPhotos;
+        rows[c].thumb_url = isPurpleStoredCarPhoto(prev.thumb_url) ? prev.thumb_url : prevPhotos[0];
+        rows[c].photo_count = prevPhotos.length;
+        stats.photosSkipped += prevPhotos.length;
+        continue;
+      }
       rows[c] = await processRowPhotos(rows[c], stats);
     }
+
+    diag.photos_uploaded = stats.photosUploaded;
+    diag.photos_failed = stats.photosFailed;
+    diag.photos_skipped = stats.photosSkipped;
 
     diag.phase = 'save';
     for (var i = 0; i < rows.length; i += 40) {
@@ -247,22 +269,34 @@ async function main() {
       });
     }
 
+    var needsPhotos = rows.some(rowNeedsPhotoUpload);
+    var ok = true;
+    var msg = '완료';
+    if (needsPhotos && stats.photosUploaded === 0 && stats.photosSkipped === 0) {
+      ok = false;
+      msg = '사진 Storage 업로드 0장';
+    } else if (stats.photosFailed > 0 && stats.photosUploaded === 0) {
+      ok = false;
+      msg = '사진 업로드 전부 실패';
+    }
+
     var durationMs = Date.now() - started;
-    console.log('[sync] ok count=' + rows.length + ' deactivated=' + deactivate.length +
-      ' photos=' + stats.photosProcessed + ' duration_ms=' + durationMs);
+    console.log('[sync] ' + (ok ? 'ok' : 'fail') + ' count=' + rows.length + ' deactivated=' + deactivate.length +
+      ' storage=' + stats.photosUploaded + ' failed=' + stats.photosFailed + ' duration_ms=' + durationMs);
 
     if (logId) {
       await sbUpdateLog(logId, {
-        ok: true,
-        msg: '완료',
+        ok: ok,
+        msg: msg,
         diag: diag,
         cars_upserted: rows.length,
         cars_deactivated: deactivate.length,
-        photos_processed: stats.photosProcessed,
+        photos_processed: stats.photosUploaded,
         duration_ms: durationMs,
         ended_at: new Date().toISOString()
       });
     }
+    if (!ok) process.exit(1);
   } catch (err) {
     var errMsg = err.message || String(err);
     console.error('[sync] fail', errMsg);
