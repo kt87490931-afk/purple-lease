@@ -1263,6 +1263,23 @@
     return row;
   }
 
+  async function getTimeSaleSettings() {
+    var res = await db().from('time_sale_settings').select('*').eq('id', 1).maybeSingle();
+    if (res.error) throw res.error;
+    return { is_visible: !!(res.data && res.data.is_visible), updated_at: res.data ? res.data.updated_at : null };
+  }
+
+  async function saveTimeSaleSettings(payload) {
+    var row = {
+      id: 1,
+      is_visible: !!payload.is_visible,
+      updated_at: new Date().toISOString()
+    };
+    var res = await db().from('time_sale_settings').upsert(row, { onConflict: 'id' });
+    if (res.error) throw res.error;
+    return row;
+  }
+
   var SEO_PATCH_REQUEST_PATH = 'seo/patch-request.json';
 
   async function queueStaticSeoPatch() {
@@ -1529,6 +1546,8 @@
     saveSeoSettings: saveSeoSettings,
     getFloatConsultSettings: getFloatConsultSettings,
     saveFloatConsultSettings: saveFloatConsultSettings,
+    getTimeSaleSettings: getTimeSaleSettings,
+    saveTimeSaleSettings: saveTimeSaleSettings,
     listSeoPageMeta: listSeoPageMeta,
     saveSeoPageMetaRows: saveSeoPageMetaRows,
     generateSitemap: generateSitemap,

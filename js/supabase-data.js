@@ -87,6 +87,14 @@
     return rows;
   }
 
+  async function fetchTimeSaleSettings() {
+    var client = getClient();
+    if (!client) return { is_visible: false };
+    var res = await client.from('time_sale_settings').select('is_visible').eq('id', 1).maybeSingle();
+    if (res.error) throw res.error;
+    return { is_visible: !!(res.data && res.data.is_visible) };
+  }
+
   async function fetchTimeDeals() {
     var client = getClient();
     if (!client) return null;
@@ -504,6 +512,7 @@
     fetchYoutubeAll: fetchYoutubeAll,
     fetchYoutubeGrid: fetchYoutubeGrid,
     fetchTimeDeals: fetchTimeDeals,
+    fetchTimeSaleSettings: fetchTimeSaleSettings,
     fetchUsedCars: fetchUsedCars,
     fetchUsedCarsList: fetchUsedCarsList,
     fetchUsedCarDetail: fetchUsedCarDetail,

@@ -173,6 +173,51 @@
     }
   }
 
+  async function loadTimeSaleSettingsForm() {
+    var form = document.getElementById('timeSaleSettingsForm');
+    if (!form) return;
+    try {
+      var s = await API.getTimeSaleSettings();
+      document.getElementById('timeSaleVisible').checked = !!s.is_visible;
+      var upd = document.getElementById('timeSaleUpdatedAt');
+      if (upd) upd.textContent = s.updated_at ? '마지막 저장: ' + fmtAdminDateTime(s.updated_at) : '';
+      var statusEl = document.getElementById('timeSaleSaveStatus');
+      if (statusEl) statusEl.textContent = '';
+    } catch (err) {
+      console.warn('[Admin] time sale settings:', err);
+      var st = document.getElementById('timeSaleSaveStatus');
+      if (st) st.textContent = '설정 로드 실패 — migration-time-sale-settings.sql 실행 필요';
+    }
+  }
+
+  async function saveTimeSaleSettingsForm(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    var btn = document.getElementById('btnSaveTimeSaleSettings');
+    var statusEl = document.getElementById('timeSaleSaveStatus');
+    var prev = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = '저장 중…'; }
+    if (statusEl) statusEl.textContent = '';
+    try {
+      var row = await API.saveTimeSaleSettings({
+        is_visible: document.getElementById('timeSaleVisible').checked
+      });
+      var upd = document.getElementById('timeSaleUpdatedAt');
+      if (upd) upd.textContent = row.updated_at ? '마지막 저장: ' + fmtAdminDateTime(row.updated_at) : '';
+      if (statusEl) {
+        statusEl.style.color = '#059669';
+        statusEl.textContent = '저장되었습니다. 메인 페이지 새로고침 후 반영됩니다.';
+      }
+    } catch (err) {
+      showError(err);
+      if (statusEl) {
+        statusEl.style.color = '#b91c1c';
+        statusEl.textContent = err.message || String(err);
+      }
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = prev || '저장'; }
+    }
+  }
+
   async function saveFloatConsultSettingsForm(e) {
     if (e && e.preventDefault) e.preventDefault();
     var btn = document.getElementById('btnSaveFloatConsult');
@@ -1752,6 +1797,9 @@
         if (item.dataset.panel === 'analytics') {
           await loadAnalyticsPanel();
         }
+        if (item.dataset.panel === 'timesale') {
+          await loadTimeSaleSettingsForm();
+        }
         if (item.dataset.panel === 'hero' && window.PurpleAdminHero) {
           await window.PurpleAdminHero.load();
         }
@@ -2127,6 +2175,10 @@
     var floatConsultForm = document.getElementById('floatConsultForm');
     if (floatConsultForm) {
       floatConsultForm.addEventListener('submit', saveFloatConsultSettingsForm);
+    }
+    var timeSaleForm = document.getElementById('timeSaleSettingsForm');
+    if (timeSaleForm) {
+      timeSaleForm.addEventListener('submit', saveTimeSaleSettingsForm);
     }
   }
 

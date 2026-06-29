@@ -743,7 +743,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   </section>
 
   <!-- ============ 4. 타임특가 ============ -->
-  <section class="timesale-section section" id="timesale">
+  <section class="timesale-section section" id="timesale" style="display:none" hidden>
     <div class="wrap">
       <div class="section-head">
         <div><span class="eyebrow">TIME SALE</span><h2 class="section-title">타임특가</h2></div>
@@ -825,13 +825,14 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="/js/supabase-config.js"></script>
 <script src="/js/youtube-utils.js"></script>
-<script src="/js/supabase-data.js"></script>
+<script src="/js/supabase-data.js?v=20260630d"></script>
 <script>
   // Supabase 연동 — 메인영상 1개 + 추천영상 캐러셀 (index 전용)
   let mainVideo = null;
   let featuredVideos = [];
   let currentPlaying = null;
   let dealData = [];
+  let timeSaleVisible = false;
   let usedCarData = [];
   let blogLatestData = [];
   let blogPopularData = [];
@@ -1078,13 +1079,41 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     renderBlogCards(blogPopularData, 'blogPopularSlot', '인기 블로그 글이 없습니다');
   }
 
+  async function loadTimeSaleVisibility() {
+    timeSaleVisible = false;
+    if (window.PurpleLeaseData && window.PurpleLeaseData.fetchTimeSaleSettings) {
+      try {
+        var s = await window.PurpleLeaseData.fetchTimeSaleSettings();
+        timeSaleVisible = !!(s && s.is_visible);
+      } catch (err) {
+        console.warn('[PurpleLease] time sale settings:', err);
+      }
+    }
+    applyTimeSaleSectionVisibility();
+  }
+
+  function applyTimeSaleSectionVisibility() {
+    var el = document.getElementById('timesale');
+    if (!el) return;
+    if (timeSaleVisible) {
+      el.style.display = '';
+      el.removeAttribute('hidden');
+    } else {
+      el.style.display = 'none';
+      el.setAttribute('hidden', '');
+    }
+  }
+
   async function loadSupabaseData() {
     if (!window.PurpleLeaseData || !window.PurpleLeaseData.isConfigured()) return;
     try {
+      const dealPromise = timeSaleVisible
+        ? window.PurpleLeaseData.fetchTimeDeals()
+        : Promise.resolve(null);
       const [mainV, featuredV, deals, cars, latestB, popularB] = await Promise.all([
         window.PurpleLeaseData.fetchYoutubeHomeMain(),
         window.PurpleLeaseData.fetchYoutubeHomeFeatured(),
-        window.PurpleLeaseData.fetchTimeDeals(),
+        dealPromise,
         window.PurpleLeaseData.fetchUsedCars(),
         window.PurpleLeaseData.fetchBlogHomeLatest(4),
         window.PurpleLeaseData.fetchBlogHomePopular(4)
@@ -1102,9 +1131,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   }
 
   async function initPage() {
+    await loadTimeSaleVisibility();
     await loadSupabaseData();
     renderVideo();
-    renderDeals();
+    if (timeSaleVisible) renderDeals();
     renderUsedCars();
     renderBlogHome();
     bindQuickEstimateForm();
