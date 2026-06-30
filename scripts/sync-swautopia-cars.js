@@ -63,12 +63,16 @@ async function sbFetch(tablePath, options) {
     'Content-Type': 'application/json'
   }, (options && options.headers) || {});
   var res = await fetch(url, Object.assign({}, options, { headers: headers }));
+  var text = await res.text();
   if (!res.ok) {
-    var text = await res.text();
     throw new Error('Supabase ' + res.status + ': ' + text.slice(0, 300));
   }
-  if (res.status === 204) return null;
-  return res.json();
+  if (res.status === 204 || !text || !String(text).trim()) return null;
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    throw new Error('Supabase JSON parse: ' + (e.message || e));
+  }
 }
 
 async function sbInsertLog(row) {
