@@ -1246,7 +1246,23 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
       '#panel-estimate .est-totals-box .row.total{background:var(--purple-50);border-bottom:none;}',
       '#panel-estimate .est-totals-box .row .v{font-family:var(--font-mono);font-weight:700;color:var(--ink-900);}',
       '#panel-estimate .est-totals-box .row.total .v{color:var(--purple-600);font-size:15px;}',
-      '#panel-estimate .est-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap;}',
+      '#panel-estimate .est-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap;max-width:900px;}',
+      '#panel-estimate .est-toolbar-actions{display:flex;align-items:center;gap:8px;}',
+      '#panel-estimate .est-builder-foot{max-width:900px;display:flex;justify-content:flex-end;gap:8px;margin-top:16px;}',
+      '#panel-estimate .est-saved{max-width:760px;margin-top:26px;}',
+      '#panel-estimate .est-saved h4{font-size:14px;font-weight:800;color:var(--ink-900);margin:0 0 12px;display:flex;align-items:center;gap:7px;}',
+      '#panel-estimate .est-saved-list{display:flex;flex-direction:column;gap:8px;}',
+      '#panel-estimate .est-saved-item{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:var(--radius-md);padding:12px 14px;}',
+      '#panel-estimate .est-saved-item .info{flex:1;min-width:0;}',
+      '#panel-estimate .est-saved-item .info .t{font-size:13px;font-weight:700;color:var(--ink-900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+      '#panel-estimate .est-saved-item .info .m{font-size:11.5px;color:var(--ink-400);margin-top:3px;}',
+      '#panel-estimate .est-saved-item .kind-badge{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:100px;white-space:nowrap;}',
+      '#panel-estimate .est-saved-item .kind-parts{background:var(--purple-50);color:var(--purple-600);}',
+      '#panel-estimate .est-saved-item .kind-rental{background:#eef0ff;color:#4f46e5;}',
+      '#panel-estimate .est-saved-empty{font-size:12.5px;color:var(--ink-400);padding:14px 2px;}',
+      '#panel-estimate .est-toast{position:fixed;left:50%;bottom:32px;transform:translateX(-50%);background:var(--ink-900);color:#fff;font-size:13px;font-weight:600;padding:11px 20px;border-radius:100px;box-shadow:var(--shadow-lg);z-index:4000;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;}',
+      '#panel-estimate .est-toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}',
+      '#panel-estimate .est-toast.err{background:var(--danger-600);}',
       '#panel-estimate .est-back{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--ink-500);background:none;border:none;cursor:pointer;}',
       '#panel-estimate .est-back:hover{color:var(--purple-600);}',
       '#panel-estimate [data-est-addrow]{padding:6px 12px;font-size:12px;}',
@@ -1282,6 +1298,151 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
     };
   }
 
+  /* ===== 저장/불러오기 (Supabase estimates) ===== */
+  var editingId = null;
+  var editingKind = null;
+  var estToastTimer = null;
+
+  function estDb() {
+    var auth = window.PurpleAdminAuth;
+    if (!auth || !auth.getClient || !auth.getClient()) throw new Error('로그인이 필요합니다. 다시 로그인해 주세요.');
+    return auth.getClient();
+  }
+  function setVal(id, v) { var el = document.getElementById(id); if (el) el.value = (v == null ? '' : v); }
+  function estToast(msg, isErr) {
+    var panel = document.getElementById('panel-estimate');
+    if (!panel) return;
+    var t = panel.querySelector('.est-toast');
+    if (!t) { t = document.createElement('div'); t.className = 'est-toast'; panel.appendChild(t); }
+    t.textContent = msg; t.classList.toggle('err', !!isErr);
+    void t.offsetWidth; t.classList.add('show');
+    if (estToastTimer) clearTimeout(estToastTimer);
+    estToastTimer = setTimeout(function () { t.classList.remove('show'); }, 2600);
+  }
+  function estWhen(s) {
+    if (!s) return '';
+    var d = new Date(s); if (isNaN(d.getTime())) return String(s);
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') +
+      ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+
+  function fillPartsForm(d) {
+    d = d || {}; var c = d.companyInfo || {};
+    setVal('partsCoName', c.name); setVal('partsCoCeo', c.ceo); setVal('partsCoAddr', c.address);
+    setVal('partsCoPhone', c.phone); setVal('partsCoFax', c.fax); setVal('partsCoLogo', c.logoUrl);
+    setVal('partsEstNo', d.estimateNumber); setVal('partsEstDate', d.estimateDate);
+    setVal('partsCustomer', d.customerName); setVal('partsCarModel', d.carModel); setVal('partsVin', d.vin);
+    var tbody = document.getElementById('partsRows');
+    if (tbody) {
+      var rows = (d.parts && d.parts.length) ? d.parts : [{ quantity: 1, unitPrice: 0 }];
+      tbody.innerHTML = rows.map(function (r) { return partsRowHtml(r); }).join('');
+    }
+    setVal('partsNotes', d.notes);
+    recalcParts();
+  }
+  function fillRentalForm(d) {
+    d = d || {}; var c = d.companyInfo || {};
+    setVal('rentalCoName', c.name); setVal('rentalCoCeo', c.ceo); setVal('rentalCoAddr', c.address);
+    setVal('rentalCoPhone', c.phone); setVal('rentalCoFax', c.fax); setVal('rentalCoLogo', c.logoUrl);
+    setVal('rtPlate', d.plateNumber); setVal('rtCarName', d.carName); setVal('rtYear', d.year);
+    setVal('rtMileage', d.mileage); setVal('rtAccident', d.accident); setVal('rtCategory', d.category);
+    setVal('rtMarketValue', d.marketValue); setVal('rtTransferFee', d.transferFee); setVal('rtActualLoss', d.actualLoss);
+    setVal('rtDeposit', d.deposit); setVal('rtTerminationFee', d.terminationFee);
+    setVal('rtPurpleDesc', d.purpleAutoDesc); setVal('rtPurpleAmount', d.purpleAutoAmount);
+    setVal('rtReturnDesc', d.returnDesc); setVal('rtReturnAmount', d.returnAmount); setVal('rtNotes', d.notes);
+  }
+
+  async function saveEstimate(kind) {
+    var data = (kind === 'parts') ? collectPartsData() : collectRentalData();
+    var title, customer, number, date;
+    if (kind === 'parts') {
+      customer = data.customerName || '';
+      number = data.estimateNumber || '';
+      date = data.estimateDate || null;
+      title = (customer || '무제') + (data.carModel ? ' / ' + data.carModel : '') + ' (부품)';
+    } else {
+      customer = data.carName || '';
+      number = '';
+      date = null;
+      title = (data.carName || data.plateNumber || '무제') + ' (장기렌트/리스)';
+    }
+    var row = { kind: kind, title: title, customer_name: customer, estimate_number: number, estimate_date: date, data: data };
+    try {
+      var client = estDb();
+      try { row.created_by = (await window.PurpleAdminAuth.getUserEmail()) || ''; } catch (e) { row.created_by = ''; }
+      var res;
+      if (editingId) res = await client.from('estimates').update(row).eq('id', editingId).select().single();
+      else res = await client.from('estimates').insert([row]).select().single();
+      if (res.error) throw res.error;
+      editingId = res.data.id; editingKind = kind;
+      estToast('저장되었습니다.');
+    } catch (e) {
+      estToast('저장 실패: ' + (e.message || e), true);
+    }
+  }
+
+  async function loadEstimate(id) {
+    var root = document.getElementById('estimateRoot');
+    if (!root) return;
+    try {
+      var client = estDb();
+      var res = await client.from('estimates').select('*').eq('id', id).single();
+      if (res.error) throw res.error;
+      var rec = res.data, data = rec.data || {};
+      editingId = rec.id; editingKind = rec.kind;
+      if (rec.kind === 'parts') { renderPartsBuilder(root); fillPartsForm(data); }
+      else { renderRentalBuilder(root); fillRentalForm(data); }
+      estToast('불러왔습니다. 수정 후 저장하면 덮어쓰기됩니다.');
+    } catch (e) {
+      estToast('불러오기 실패: ' + (e.message || e), true);
+    }
+  }
+
+  async function deleteSavedEstimate(id) {
+    if (!window.confirm('이 견적서를 삭제할까요?')) return;
+    try {
+      var client = estDb();
+      var res = await client.from('estimates').delete().eq('id', id);
+      if (res.error) throw res.error;
+      if (String(editingId) === String(id)) editingId = null;
+      estToast('삭제되었습니다.');
+      refreshSavedList();
+    } catch (e) {
+      estToast('삭제 실패: ' + (e.message || e), true);
+    }
+  }
+
+  async function refreshSavedList() {
+    var wrap = document.getElementById('estSavedWrap');
+    if (!wrap) return;
+    var head = '<h4><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--purple-600);"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>저장된 견적서</h4>';
+    try {
+      var client = estDb();
+      var res = await client.from('estimates')
+        .select('id,kind,title,customer_name,estimate_number,updated_at')
+        .order('updated_at', { ascending: false }).limit(100);
+      if (res.error) throw res.error;
+      var rows = res.data || [];
+      if (!rows.length) { wrap.innerHTML = head + '<div class="est-saved-empty">저장된 견적서가 없습니다.</div>'; return; }
+      var html = head + '<div class="est-saved-list">';
+      rows.forEach(function (r) {
+        var kindLabel = (r.kind === 'parts') ? '부품' : '장기렌트/리스';
+        var kindCls = (r.kind === 'parts') ? 'kind-parts' : 'kind-rental';
+        html += '<div class="est-saved-item">' +
+          '<span class="kind-badge ' + kindCls + '">' + kindLabel + '</span>' +
+          '<div class="info"><div class="t">' + esc(r.title || '무제') + '</div>' +
+            '<div class="m">' + estWhen(r.updated_at) + (r.estimate_number ? ' · ' + esc(r.estimate_number) : '') + '</div></div>' +
+          '<button type="button" class="btn btn-outline btn-sm" data-est-load="' + r.id + '">불러오기</button>' +
+          '<button type="button" class="btn-danger-text" data-est-del-saved="' + r.id + '">삭제</button>' +
+          '</div>';
+      });
+      html += '</div>';
+      wrap.innerHTML = html;
+    } catch (e) {
+      wrap.innerHTML = head + '<div class="est-saved-empty">목록을 불러오지 못했습니다: ' + esc(e.message || String(e)) + '</div>';
+    }
+  }
+
   function showView(name) {
     var root = document.getElementById('estimateRoot');
     if (!root) return;
@@ -1302,7 +1463,9 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
           '<div class="est-card-ico" style="background:#eef0ff;color:#4f46e5;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="6" rx="1"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/><path d="M5 11l1.5-4h11L19 11"/></svg></div>' +
           '<h3>장기렌트카 / 리스 견적서</h3><p>오토리스 &amp; 장기렌트 비교분석 견적서를 작성합니다. 퍼플오토 전용 양식.</p>' +
           '<span class="est-go" style="color:#4f46e5;">작성하기 →</span></button>' +
-      '</div>';
+      '</div>' +
+      '<div class="est-saved" id="estSavedWrap"><h4>저장된 견적서</h4><div class="est-saved-empty">목록을 불러오는 중…</div></div>';
+    refreshSavedList();
   }
 
   var partsSeq = 0;
@@ -1324,7 +1487,8 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
     partsSeq = 0;
     root.innerHTML =
       '<div class="est-toolbar"><button type="button" class="est-back" data-est-open="hub">← 견적서 유형 선택</button>' +
-        '<button type="button" class="btn btn-primary" data-est-preview="parts">미리보기</button></div>' +
+        '<div class="est-toolbar-actions"><button type="button" class="btn btn-outline" data-est-save="parts">저장</button>' +
+        '<button type="button" class="btn btn-primary" data-est-preview="parts">미리보기</button></div></div>' +
       '<div class="est-builder">' +
         '<div class="est-section"><div class="est-section-title">공급자 정보</div>' + companyFieldsHtml('parts') + '</div>' +
         '<div class="est-divider"></div>' +
@@ -1350,7 +1514,9 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
           '</div></div></div>' +
         '<div class="est-divider"></div>' +
         '<div class="est-section"><div class="est-section-title">비고</div><div class="est-field"><textarea id="partsNotes" rows="3" placeholder="특이사항을 입력하세요"></textarea></div></div>' +
-      '</div>';
+      '</div>' +
+      '<div class="est-builder-foot"><button type="button" class="btn btn-outline" data-est-preview="parts">미리보기</button>' +
+        '<button type="button" class="btn btn-primary" data-est-save="parts">저장</button></div>';
     recalcParts();
   }
   function collectPartsRows() {
@@ -1393,7 +1559,8 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
   function renderRentalBuilder(root) {
     root.innerHTML =
       '<div class="est-toolbar"><button type="button" class="est-back" data-est-open="hub">← 견적서 유형 선택</button>' +
-        '<button type="button" class="btn btn-primary" data-est-preview="rental">미리보기</button></div>' +
+        '<div class="est-toolbar-actions"><button type="button" class="btn btn-outline" data-est-save="rental">저장</button>' +
+        '<button type="button" class="btn btn-primary" data-est-preview="rental">미리보기</button></div></div>' +
       '<div class="est-builder">' +
         '<div class="est-section"><div class="est-section-title">공급자 정보</div>' + companyFieldsHtml('rental') + '</div>' +
         '<div class="est-divider"></div>' +
@@ -1422,7 +1589,9 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
         '</div></div>' +
         '<div class="est-divider"></div>' +
         '<div class="est-section"><div class="est-section-title">비고</div><div class="est-field"><textarea id="rtNotes" rows="4" placeholder="예: 고객 지역, 특이사항 등"></textarea></div></div>' +
-      '</div>';
+      '</div>' +
+      '<div class="est-builder-foot"><button type="button" class="btn btn-outline" data-est-preview="rental">미리보기</button>' +
+        '<button type="button" class="btn btn-primary" data-est-save="rental">저장</button></div>';
   }
   function collectRentalData() {
     return {
@@ -1581,7 +1750,17 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
     panel.dataset.estBound = '1';
     panel.addEventListener('click', function (e) {
       var openBtn = e.target.closest('[data-est-open]');
-      if (openBtn) { showView(openBtn.dataset.estOpen); return; }
+      if (openBtn) {
+        var v = openBtn.dataset.estOpen;
+        if (v === 'parts' || v === 'rental') { editingId = null; editingKind = null; }
+        showView(v); return;
+      }
+      var saveBtn = e.target.closest('[data-est-save]');
+      if (saveBtn) { saveEstimate(saveBtn.dataset.estSave); return; }
+      var loadBtn = e.target.closest('[data-est-load]');
+      if (loadBtn) { loadEstimate(loadBtn.dataset.estLoad); return; }
+      var delSaved = e.target.closest('[data-est-del-saved]');
+      if (delSaved) { deleteSavedEstimate(delSaved.dataset.estDelSaved); return; }
       var previewBtn = e.target.closest('[data-est-preview]');
       if (previewBtn) { openPreview(previewBtn.dataset.estPreview); return; }
       if (e.target.closest('[data-est-addrow]')) {
