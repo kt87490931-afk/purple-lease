@@ -1,1 +1,10 @@
 node_modules/
+_backup/
+_server_snapshot/
+_server_snapshot.tgz
+.deploy_key
+.deploy_key.pub
+mok/
+*.bak
+퍼플오토 후기주제.txt
+deploy/set-gemini-key-remote.sh

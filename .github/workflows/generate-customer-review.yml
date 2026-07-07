@@ -1,0 +1,53 @@
+name: Generate Customer Review (Test)
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: '실행 모드'
+        required: true
+        default: 'dry-run'
+        type: choice
+        options:
+          - dry-run
+          - publish
+          - process-queue
+      topic_id:
+        description: '주제 ID (비우면 랜덤, process-queue 시 무시)'
+        required: false
+        default: ''
+      limit:
+        description: 'process-queue 시 처리 건수'
+        required: false
+        default: '1'
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run review generator
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          ARGS=()
+          if [ "${{ github.event.inputs.mode }}" = "process-queue" ]; then
+            ARGS+=(--process-queue --limit=${{ github.event.inputs.limit }})
+          elif [ "${{ github.event.inputs.mode }}" = "publish" ]; then
+            ARGS+=(--publish)
+          else
+            ARGS+=(--dry-run)
+          fi
+          if [ -n "${{ github.event.inputs.topic_id }}" ] && [ "${{ github.event.inputs.mode }}" != "process-queue" ]; then
+            ARGS+=(--topic-id=${{ github.event.inputs.topic_id }})
+          fi
+          node scripts/generate-customer-review.js "${ARGS[@]}"

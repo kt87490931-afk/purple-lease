@@ -477,6 +477,112 @@
     if (res.error) throw res.error;
   }
 
+  /* ---------- Customer Review AI Generation ---------- */
+  function getReviewTopicsForAdmin() {
+    var T = window.PurpleReviewTopics;
+    if (!T || !T.REVIEW_TOPICS) return [];
+    return T.REVIEW_TOPICS.map(function (t) {
+      var cat = (T.CATEGORY_LABELS && T.CATEGORY_LABELS[t.category]) || t.category;
+      return {
+        id: t.id,
+        category: t.category,
+        categoryLabel: cat,
+        titleSample: t.titleSample,
+        topic: t.topic
+      };
+    });
+  }
+
+  async function enqueueCustomerReviewGen(payload) {
+    payload = payload || {};
+    var row = {
+      topic_id: payload.topicId ? parseInt(payload.topicId, 10) : null,
+      tone_id: payload.toneId || null,
+      publish: payload.publish !== false,
+      dry_run: !!payload.dryRun,
+      status: 'pending',
+      requested_by: payload.requestedBy || ''
+    };
+    var ins = await db().from('customer_review_gen_queue').insert([row]).select().single();
+    if (ins.error) throw ins.error;
+    return ins.data;
+  }
+
+  async function listCustomerReviewGenLogs(limit) {
+    var lim = limit || 10;
+    var res = await db()
+      .from('customer_review_gen_logs')
+      .select('*')
+      .order('started_at', { ascending: false })
+      .limit(lim);
+    if (res.error) throw res.error;
+    return res.data || [];
+  }
+
+  async function listCustomerReviewGenQueue(limit) {
+    var lim = limit || 5;
+    var res = await db()
+      .from('customer_review_gen_queue')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(lim);
+    if (res.error) throw res.error;
+    return res.data || [];
+  }
+
+  async function generateCustomerReviewNow(payload) {
+    payload = payload || {};
+    var auth = window.PurpleAdminAuth;
+    if (!auth) throw new Error('인증 모듈이 로드되지 않았습니다.');
+    var session = await auth.getSession();
+    if (!session || !session.access_token) throw new Error('로그인이 필요합니다.');
+
+    var res;
+    try {
+      res = await fetch('/api/admin/generate-customer-review', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + session.access_token
+        },
+        body: JSON.stringify({
+          topicId: payload.topicId || null,
+          toneId: payload.toneId || null,
+          publish: payload.publish !== false,
+          dryRun: !!payload.dryRun,
+          skipDailyLimit: payload.skipDailyLimit !== false
+        })
+      });
+    } catch (e) {
+      throw new Error('서버 연결 실패 — AI 생성 API(/api/admin/generate-customer-review)에 접속할 수 없습니다.');
+    }
+
+    var json = {};
+    try { json = await res.json(); } catch (e) { json = {}; }
+    if (!res.ok || !json.ok) {
+      var hint = res.status === 404 ? ' (nginx/API 서비스 확인)' : '';
+      throw new Error((json.message || ('생성 실패 (HTTP ' + res.status + ')')) + hint);
+    }
+    return json;
+  }
+
+  async function getCustomerReviewGenStatus() {
+    var auth = window.PurpleAdminAuth;
+    if (!auth) return null;
+    var session = await auth.getSession();
+    if (!session || !session.access_token) return null;
+    try {
+      var res = await fetch('/api/admin/generate-customer-review', {
+        method: 'GET',
+        headers: { Authorization: 'Bearer ' + session.access_token }
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) {
+      return null;
+    }
+  }
+
   /* ---------- Parts ---------- */
   async function getNextPartListingId() {
     var maxRes = await db().from('parts').select('listing_id').order('listing_id', { ascending: false }).limit(1);
@@ -1194,6 +1300,42 @@
     if (res.error) throw res.error;
   }
 
+  function mapLeaseCalculatorInquiryRow(r) {
+    return {
+      id: r.id,
+      date: fmtDate(r.created_at),
+      time: fmtTime(r.created_at),
+      name: r.name,
+      phone: r.phone,
+      calc: r.calc_json || {},
+      isRead: !!r.is_read,
+      createdAt: r.created_at
+    };
+  }
+
+  async function listLeaseCalculatorInquiries() {
+    var res = await db().from('lease_calculator_inquiries').select('*').order('created_at', { ascending: false });
+    if (res.error) throw res.error;
+    return (res.data || []).map(mapLeaseCalculatorInquiryRow);
+  }
+
+  async function countUnreadLeaseCalculatorInquiries() {
+    var res = await db().from('lease_calculator_inquiries').select('id', { count: 'exact', head: true }).eq('is_read', false);
+    if (res.error) throw res.error;
+    return res.count || 0;
+  }
+
+  async function markAllLeaseCalculatorInquiriesRead() {
+    var res = await db().from('lease_calculator_inquiries').update({ is_read: true }).eq('is_read', false);
+    if (res.error) throw res.error;
+  }
+
+  async function deleteLeaseCalculatorInquiries(ids) {
+    if (!ids || !ids.length) return;
+    var res = await db().from('lease_calculator_inquiries').delete().in('id', ids);
+    if (res.error) throw res.error;
+  }
+
   async function getSeoSettings() {
     var res = await db().from('seo_settings').select('*').eq('id', 1).maybeSingle();
     if (res.error) throw res.error;
@@ -1488,9 +1630,256 @@
     }
   }
 
+  /* ---------- Partners (제휴업체) ---------- */
+  function partnerYoutubeThumb(youtubeId) {
+    return youtubeId ? 'https://i.ytimg.com/vi/' + youtubeId + '/hqdefault.jpg' : '';
+  }
+
+  function mapPartnerAdminRow(r) {
+    return {
+      id: r.id,
+      name: r.name,
+      region: r.region || '',
+      sigungu: r.sigungu || '',
+      address: r.address || '',
+      short_desc: r.short_desc || '',
+      phone: r.phone || '',
+      tag_names: r.tag_names || [],
+      is_premium: !!r.is_premium,
+      is_active: r.is_active !== false,
+      sort_order: r.sort_order || 0,
+      video_youtube_id: r.video_youtube_id || '',
+      gallery: Array.isArray(r.gallery) ? r.gallery : [],
+      body_html: r.body_html || ''
+    };
+  }
+
+  function buildPartnerGallery(videoId, imageItems) {
+    var gallery = [];
+    var vid = parseYoutubeVideoId(videoId);
+    if (vid) {
+      gallery.push({ type: 'video', youtube_id: vid, thumb: partnerYoutubeThumb(vid) });
+    }
+    (imageItems || []).forEach(function (item) {
+      var url = '';
+      var thumb = '';
+      if (typeof item === 'string') {
+        url = String(item || '').trim();
+        thumb = url;
+      } else if (item) {
+        url = String(item.url || '').trim();
+        thumb = String(item.thumb || item.url || '').trim();
+      }
+      if (url) gallery.push({ type: 'image', url: url, thumb: thumb || url });
+    });
+    return gallery;
+  }
+
+  function galleryImageItems(gallery) {
+    return (gallery || []).filter(function (g) { return g.type === 'image'; }).map(function (g) {
+      return { url: g.url || g.thumb || '', thumb: g.thumb || g.url || '' };
+    }).filter(function (g) { return g.url; });
+  }
+
+  function galleryImageUrls(gallery) {
+    return galleryImageItems(gallery).map(function (g) { return g.url; });
+  }
+
+  async function getNextPartnerId() {
+    var maxRes = await db().from('partners').select('id').order('id', { ascending: false }).limit(1);
+    if (maxRes.error) throw maxRes.error;
+    return (maxRes.data && maxRes.data[0]) ? maxRes.data[0].id + 1 : 1;
+  }
+
+  async function uploadPartnerPhotoFiles(partnerId, files, startIndex) {
+    if (!files || !files.length) return [];
+    var PI = window.PurpleImage;
+    if (!PI || !PI.resizeImageToWidthBlob) throw new Error('PurpleImage 모듈이 로드되지 않았습니다.');
+    var galleryW = (PI.SIZES && PI.SIZES.PARTNER_GALLERY_W) || 1280;
+    var thumbW = (PI.SIZES && PI.SIZES.PARTNER_THUMB_W) || 800;
+    var out = [];
+    var start = startIndex || 0;
+    for (var i = 0; i < files.length; i++) {
+      var idx = start + i;
+      var img = await PI.loadFileAsImage(files[i]);
+      var galleryBlob = await PI.resizeImageToWidthBlob(img, galleryW);
+      var galleryUrl = await uploadBlob(galleryBlob, 'partners/' + partnerId + '/' + idx + '.jpg');
+      var thumbBlob = await PI.resizeImageToWidthBlob(img, thumbW);
+      var thumbUrl = await uploadBlob(thumbBlob, 'partners/' + partnerId + '/thumb-' + idx + '.jpg');
+      out.push({ url: galleryUrl, thumb: thumbUrl });
+    }
+    return out;
+  }
+
+  async function getPartnerPageSettings() {
+    var res = await db().from('partner_page_settings').select('*').eq('id', 1).maybeSingle();
+    if (res.error) throw res.error;
+    return res.data || { id: 1, youtube_id: '', title: '', description: '', thumb_url: '' };
+  }
+
+  async function savePartnerPageSettings(payload) {
+    var youtubeId = parseYoutubeVideoId(payload.youtube_id || payload.youtube_url || '');
+    var row = {
+      youtube_id: youtubeId,
+      title: String(payload.title || '').trim(),
+      description: String(payload.description || '').trim(),
+      thumb_url: String(payload.thumb_url || '').trim(),
+      updated_at: new Date().toISOString()
+    };
+    var res = await db().from('partner_page_settings').upsert([Object.assign({ id: 1 }, row)]).select().single();
+    if (res.error) throw res.error;
+    return res.data;
+  }
+
+  async function listPartnerTagsAdmin() {
+    var res = await db().from('partner_tags').select('*').order('sort_order', { ascending: true }).order('id', { ascending: true });
+    if (res.error) throw res.error;
+    return res.data || [];
+  }
+
+  async function savePartnerTag(payload, editingId) {
+    var name = String(payload.name || '').trim().replace(/^#/, '');
+    if (!name) throw new Error('해시태그 이름을 입력하세요.');
+    var row = {
+      name: name,
+      sort_order: parseInt(payload.sort_order, 10) || 0,
+      is_active: payload.is_active !== false
+    };
+    if (editingId) {
+      var up = await db().from('partner_tags').update(row).eq('id', editingId).select().single();
+      if (up.error) throw up.error;
+      return up.data;
+    }
+    var ins = await db().from('partner_tags').insert([row]).select().single();
+    if (ins.error) throw ins.error;
+    return ins.data;
+  }
+
+  async function deletePartnerTag(id) {
+    var res = await db().from('partner_tags').delete().eq('id', id);
+    if (res.error) throw res.error;
+  }
+
+  async function listPartnerRegionsAdmin() {
+    var res = await db().from('partner_regions').select('*').order('sort_order', { ascending: true }).order('id', { ascending: true });
+    if (res.error) throw res.error;
+    return (res.data || []).map(function (r) {
+      return {
+        id: r.id,
+        code: r.code,
+        name: r.name,
+        sigungu: Array.isArray(r.sigungu) ? r.sigungu : [],
+        sort_order: r.sort_order || 0,
+        is_active: r.is_active !== false
+      };
+    });
+  }
+
+  async function savePartnerRegion(payload, editingId) {
+    var code = String(payload.code || '').trim().toLowerCase();
+    var name = String(payload.name || '').trim();
+    if (!code || !name) throw new Error('지역 코드와 이름은 필수입니다.');
+    var sigungu = payload.sigungu;
+    if (typeof sigungu === 'string') {
+      sigungu = sigungu.split(/[\n,]/).map(function (s) { return s.trim(); }).filter(Boolean);
+    }
+    if (!Array.isArray(sigungu)) sigungu = [];
+    var row = {
+      code: code,
+      name: name,
+      sigungu: sigungu,
+      sort_order: parseInt(payload.sort_order, 10) || 0,
+      is_active: payload.is_active !== false
+    };
+    if (editingId) {
+      var up = await db().from('partner_regions').update(row).eq('id', editingId).select().single();
+      if (up.error) throw up.error;
+      return up.data;
+    }
+    var ins = await db().from('partner_regions').insert([row]).select().single();
+    if (ins.error) throw ins.error;
+    return ins.data;
+  }
+
+  async function deletePartnerRegion(id) {
+    var res = await db().from('partner_regions').delete().eq('id', id);
+    if (res.error) throw res.error;
+  }
+
+  async function listPartnersAdmin() {
+    var res = await db().from('partners').select('*').order('is_premium', { ascending: false }).order('sort_order', { ascending: true }).order('id', { ascending: true });
+    if (res.error) throw res.error;
+    return (res.data || []).map(mapPartnerAdminRow);
+  }
+
+  async function savePartner(payload, editingId) {
+    var name = String(payload.name || '').trim();
+    if (!name) throw new Error('업체명은 필수입니다.');
+    var videoId = parseYoutubeVideoId(payload.video_youtube_id || payload.video_url || '');
+    var imageItems = [];
+    if (Array.isArray(payload.gallery_images)) {
+      payload.gallery_images.forEach(function (item) {
+        if (typeof item === 'string' && item.trim()) {
+          imageItems.push({ url: item.trim(), thumb: item.trim() });
+        } else if (item && item.url) {
+          imageItems.push({ url: String(item.url).trim(), thumb: String(item.thumb || item.url).trim() });
+        }
+      });
+    } else if (typeof payload.gallery_images === 'string') {
+      payload.gallery_images.split('\n').map(function (s) { return s.trim(); }).filter(Boolean).forEach(function (url) {
+        imageItems.push({ url: url, thumb: url });
+      });
+    }
+
+    var storageId = editingId || payload.partnerId || null;
+    if (payload.photoFiles && payload.photoFiles.length) {
+      if (!storageId) storageId = await getNextPartnerId();
+      var uploaded = await uploadPartnerPhotoFiles(storageId, payload.photoFiles, imageItems.length);
+      imageItems = imageItems.concat(uploaded);
+    }
+    var tagNames = payload.tag_names;
+    if (typeof tagNames === 'string') {
+      tagNames = tagNames.split(/[,\n]/).map(function (s) { return s.trim().replace(/^#/, ''); }).filter(Boolean);
+    }
+    if (!Array.isArray(tagNames)) tagNames = [];
+
+    var row = {
+      name: name,
+      region: String(payload.region || '').trim(),
+      sigungu: String(payload.sigungu || '').trim(),
+      address: String(payload.address || '').trim(),
+      short_desc: String(payload.short_desc || '').trim(),
+      phone: String(payload.phone || '').trim(),
+      tag_names: tagNames,
+      is_premium: !!payload.is_premium,
+      is_active: payload.is_active !== false,
+      sort_order: parseInt(payload.sort_order, 10) || 0,
+      video_youtube_id: videoId,
+      gallery: buildPartnerGallery(videoId, imageItems),
+      body_html: String(payload.body_html || '').trim(),
+      updated_at: new Date().toISOString()
+    };
+
+    if (editingId) {
+      var up = await db().from('partners').update(row).eq('id', editingId).select().single();
+      if (up.error) throw up.error;
+      return mapPartnerAdminRow(up.data);
+    }
+
+    var ins = await db().from('partners').insert([row]).select().single();
+    if (ins.error) throw ins.error;
+    return mapPartnerAdminRow(ins.data);
+  }
+
+  async function deletePartner(id) {
+    var res = await db().from('partners').delete().eq('id', id);
+    if (res.error) throw res.error;
+  }
+
   window.PurpleAdminAPI = {
     fmtDate: fmtDate,
     parseDotDate: parseDotDate,
+    parseYoutubeVideoId: parseYoutubeVideoId,
     uploadImage: uploadImage,
     uploadBlob: uploadBlob,
     storagePublicUrl: storagePublicUrl,
@@ -1507,6 +1896,12 @@
     listReviews: listReviews,
     saveReview: saveReview,
     deleteReview: deleteReview,
+    getReviewTopicsForAdmin: getReviewTopicsForAdmin,
+    enqueueCustomerReviewGen: enqueueCustomerReviewGen,
+    generateCustomerReviewNow: generateCustomerReviewNow,
+    getCustomerReviewGenStatus: getCustomerReviewGenStatus,
+    listCustomerReviewGenLogs: listCustomerReviewGenLogs,
+    listCustomerReviewGenQueue: listCustomerReviewGenQueue,
     listParts: listParts,
     savePart: savePart,
     deletePart: deletePart,
@@ -1542,6 +1937,10 @@
     countUnreadUsedCarInquiries: countUnreadUsedCarInquiries,
     markAllUsedCarInquiriesRead: markAllUsedCarInquiriesRead,
     deleteUsedCarInquiries: deleteUsedCarInquiries,
+    listLeaseCalculatorInquiries: listLeaseCalculatorInquiries,
+    countUnreadLeaseCalculatorInquiries: countUnreadLeaseCalculatorInquiries,
+    markAllLeaseCalculatorInquiriesRead: markAllLeaseCalculatorInquiriesRead,
+    deleteLeaseCalculatorInquiries: deleteLeaseCalculatorInquiries,
     getSeoSettings: getSeoSettings,
     saveSeoSettings: saveSeoSettings,
     getFloatConsultSettings: getFloatConsultSettings,
@@ -1557,6 +1956,23 @@
     saveHeroSlide: saveHeroSlide,
     deleteHeroSlide: deleteHeroSlide,
     reorderHeroSlides: reorderHeroSlides,
-    HERO_MAX_SLIDES: HERO_MAX_SLIDES
+    HERO_MAX_SLIDES: HERO_MAX_SLIDES,
+    getPartnerPageSettings: getPartnerPageSettings,
+    savePartnerPageSettings: savePartnerPageSettings,
+    listPartnerTagsAdmin: listPartnerTagsAdmin,
+    savePartnerTag: savePartnerTag,
+    deletePartnerTag: deletePartnerTag,
+    listPartnerRegionsAdmin: listPartnerRegionsAdmin,
+    savePartnerRegion: savePartnerRegion,
+    deletePartnerRegion: deletePartnerRegion,
+    listPartnersAdmin: listPartnersAdmin,
+    savePartner: savePartner,
+    deletePartner: deletePartner,
+    buildPartnerGallery: buildPartnerGallery,
+    galleryImageItems: galleryImageItems,
+    galleryImageUrls: galleryImageUrls,
+    getNextPartnerId: getNextPartnerId,
+    uploadPartnerPhotoFiles: uploadPartnerPhotoFiles,
+    partnerYoutubeThumb: partnerYoutubeThumb
   };
 })();

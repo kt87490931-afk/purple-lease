@@ -29,11 +29,15 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY,SUPABASE_ANON_KEY
+          envs: SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY,SUPABASE_ANON_KEY,GEMINI_API_KEY,TELEGRAM_BOT_TOKEN,TELEGRAM_CHAT_ID,TELEGRAM_WEBHOOK_SECRET
           script: |
             rm -f /var/www/purple-lease/used-cars_1.html /var/www/purple-lease/Easyquote.html
             chmod 644 /var/www/purple-lease/robots.txt 2>/dev/null || true
@@ -52,6 +56,17 @@ jobs:
             chmod +x /var/www/purple-lease/deploy/run-swautopia-sync.sh 2>/dev/null || true
             chmod +x /var/www/purple-lease/deploy/install-swautopia-cron.sh 2>/dev/null || true
             bash /var/www/purple-lease/deploy/install-swautopia-cron.sh 2>&1 || echo "[deploy] swautopia cron skipped"
+            chmod +x /var/www/purple-lease/deploy/run-generate-review.sh 2>/dev/null || true
+            chmod +x /var/www/purple-lease/deploy/install-review-gen-cron.sh 2>/dev/null || true
+            bash /var/www/purple-lease/deploy/install-review-gen-cron.sh 2>&1 || echo "[deploy] review-gen cron skipped"
+            chmod +x /var/www/purple-lease/deploy/install-review-gen-api.sh 2>/dev/null || true
+            bash /var/www/purple-lease/deploy/install-review-gen-api.sh 2>&1 || echo "[deploy] review-gen api skipped"
+            chmod +x /var/www/purple-lease/deploy/install-inquiry-telegram-api.sh 2>/dev/null || true
+            bash /var/www/purple-lease/deploy/install-inquiry-telegram-api.sh 2>&1 || echo "[deploy] inquiry-telegram api skipped"
+            if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
+              chmod +x /var/www/purple-lease/deploy/sync-telegram-webhook-secret.sh 2>/dev/null || true
+              bash /var/www/purple-lease/deploy/sync-telegram-webhook-secret.sh 2>&1 || echo "[deploy] telegram secret sync skipped"
+            fi
             bash /var/www/purple-lease/deploy/install-nginx-domain.sh 2>&1 || echo "[deploy] nginx domain install skipped"
             bash /var/www/purple-lease/deploy/install-sitemap-cron.sh 2>&1 || echo "[deploy] sitemap cron skipped"
             chmod +x /var/www/purple-lease/deploy/patch-static-seo.sh 2>/dev/null || true

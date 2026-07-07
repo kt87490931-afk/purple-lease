@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="google-site-verification" content="-Nhhyq_0e1K4GLtbs7TA4KuIknfAK9RnyMulOcMTnCc">
+<meta name="naver-site-verification" content="2ed3a7e17962a10998d9eb0038561769eb19b957">
+<link rel="icon" type="image/png" sizes="48x48" href="/assets/brand-logos/favicon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/brand-logos/apple-touch-icon.png">
+<meta name="description" content="판금도색, 튜닝, 디테일링, 썬팅, 랩핑 등 지역별 검증된 제휴업체를 한눈에 확인하세요.">
+<meta name="keywords" content="퍼플오토 제휴업체,판금도색,차량 디테일링,썬팅,랩핑,튜닝,용인 자동차 정비">
+<link rel="canonical" href="https://purpleauto.co.kr/partners">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="퍼플오토">
+<meta property="og:title" content="제휴업체 | 퍼플오토">
+<meta property="og:description" content="판금도색, 튜닝, 디테일링, 썬팅, 랩핑 등 지역별 검증된 제휴업체를 한눈에 확인하세요.">
+<meta property="og:url" content="https://purpleauto.co.kr/partners">
+<meta property="og:image" content="https://purpleauto.co.kr/assets/brand-logos/og-image.png">
+<meta property="og:locale" content="ko_KR">
+<title>제휴업체 | 퍼플오토</title>
+<script src="/js/supabase-config.js"></script>
+<script src="/js/seo-head.js?v=20260627c"></script>
+<link rel="stylesheet" href="/css/category-nav.css?v=20260701d">
+<link rel="stylesheet" href="/css/site-page-bg.css?v=20260703d">
+<link rel="stylesheet" href="/css/partners.css?v=20260702c">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap');
+:root {
+  --grad-main: linear-gradient(135deg, #8B2FE0 0%, #5B2FD6 45%, #1A1E6E 100%);
+  --purple-600: #8B2FE0; --purple-100: #F2E8FD; --purple-50: #FAF6FE;
+  --navy-900: #11143A; --white: #FFFFFF; --surface-alt: #F4F2FA;
+  --line: #E7E5F0; --line-soft: #EFEDF6;
+  --ink-900: #15151D; --ink-700: #383846; --ink-500: #6B6B7B; --ink-400: #9494A3;
+  --font-display: 'Sora', 'Noto Sans KR', sans-serif;
+  --font-body: 'Noto Sans KR', 'Pretendard', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --container: 1180px;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page-bg); color: var(--ink-700); font-family: var(--font-body); font-size: 15px; line-height: 1.6; padding-bottom: 90px; }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; }
+.wrap { max-width: var(--container); margin: 0 auto; padding: 0 18px; }
+.eyebrow { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--purple-600); }
+.eyebrow::before { content: ''; width: 6px; height: 6px; background: var(--grad-main); border-radius: 50%; }
+.site-header { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line-soft); }
+.header-inner { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+.logo-img { height: 24px; width: auto; }
+.header-call { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 13px; color: var(--ink-900); font-weight: 700; }
+.category-nav { background: var(--white); border-bottom: 1px solid var(--line-soft); overflow: visible; }
+.category-nav-inner { display: flex; min-width: max-content; }
+.category-nav a { display: flex; align-items: center; padding: 14px 18px; font-size: 13px; font-weight: 700; color: var(--ink-500); border-bottom: 2px solid transparent; white-space: nowrap; }
+.category-nav a.active { color: var(--navy-900); border-bottom-color: var(--purple-600); }
+.site-footer { background: var(--surface-alt); border-top: 1px solid var(--line-soft); padding: 32px 0 40px; margin-top: 8px; }
+.footer-meta { font-size: 12.5px; color: var(--ink-500); line-height: 1.8; }
+.footer-links { display: flex; gap: 14px; margin: 16px 0; flex-wrap: wrap; }
+.footer-links a { font-size: 12.5px; color: var(--ink-700); font-weight: 600; }
+.footer-logo-img { height: 22px; margin-bottom: 12px; }
+.bottom-tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 90; display: flex; background: rgba(255,255,255,0.97); border-top: 1px solid var(--line-soft); padding-bottom: env(safe-area-inset-bottom); }
+.bottom-tabbar a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 4px; font-size: 10.5px; font-weight: 600; color: var(--ink-400); }
+.bottom-tabbar svg { width: 21px; height: 21px; }
+@media (min-width: 860px) { body { padding-bottom: 0; } .bottom-tabbar { display: none; } }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a href="/" class="logo" aria-label="퍼플오토 홈"><img src="/assets/brand-logos/purple-logo.png" alt="퍼플오토" class="logo-img"></a>
+    <a href="tel:1555-6362" class="header-call">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6C3CE0" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      1555-6362
+    </a>
+  </div>
+  <nav class="category-nav">
+    <div class="wrap category-nav-inner">
+      <div class="category-nav-track">
+      <a href="/estimate">신차·리스·장기렌트카</a>
+      <a href="/used-cars">중고차</a>
+      <a href="/parts-register">수입차부품</a>
+      <a href="/partners" class="active">제휴업체</a>
+      <a href="/reviews-customer">퍼플리뷰</a>
+      </div>
+      <div class="category-nav-dropdown" data-calc-nav>
+        <button type="button" class="category-nav-trigger" aria-expanded="false" aria-haspopup="true">
+          내 차 월납입금 계산기
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="category-nav-submenu">
+          <a href="/lease-calculator?tab=monthly" data-calc-link="monthly">월납입금계산</a>
+          <a href="/lease-calculator?tab=rate" data-calc-link="rate">리스렌트금리계산</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<main class="partners-page">
+  <div class="wrap">
+
+    <div class="page-head">
+      <span class="eyebrow">PARTNER NETWORK</span>
+      <h1>전국 검증된 제휴업체</h1>
+      <p class="page-sub">판금도색, 튜닝, 디테일링, 썬팅, 랩핑까지 — 지역과 분야별로 믿을 수 있는 제휴업체를 찾아보세요.</p>
+    </div>
+
+    <div class="partners-locate-row">
+      <div class="partners-video-card">
+        <span class="video-label">제휴업체 소개 영상</span>
+        <a class="partners-video-thumb" id="partnerIntroVideo" href="#" aria-label="퍼플오토 제휴업체 소개 영상 재생">
+          <img src="" alt="퍼플오토 제휴업체 소개 영상 썸네일" id="partnerIntroThumb">
+          <div class="play-badge-lg"></div>
+        </a>
+        <div class="partners-video-title">퍼플오토 제휴업체 네트워크 소개</div>
+        <div class="partners-video-desc">전국 검증된 제휴업체와 함께하는 퍼플오토의 서비스를 영상으로 확인해보세요.</div>
+      </div>
+
+      <div class="partners-region-card">
+        <span class="region-label">광역시·도 선택</span>
+        <div class="partners-sido-grid" id="sidoGrid"></div>
+        <span class="partners-detail-region-label">상세 지역 (시·군·구)</span>
+        <div class="partners-select-shell">
+          <select id="sigunguSelect" aria-label="상세 지역 선택">
+            <option value="">전체 지역에서 보기</option>
+          </select>
+        </div>
+        <div class="partners-kw-shell">
+          <span class="kw-ico" aria-hidden="true">⌕</span>
+          <input type="search" id="keywordInput" placeholder="업체명, 키워드로 검색해보세요" autocomplete="off">
+        </div>
+      </div>
+    </div>
+
+    <div class="partners-tag-section">
+      <span class="partners-tag-label">분류</span>
+      <div class="partners-tag-row" id="partnerTagRow"></div>
+    </div>
+
+    <p class="partners-result-count" id="resultCount">전체 <b>0</b>개 업체</p>
+    <div class="partner-list" id="partnerGrid" aria-live="polite"></div>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <img src="/assets/brand-logos/purple-logo.png" alt="퍼플오토" class="footer-logo-img">
+    <div class="footer-links">
+      <a href="/">신차·리스·렌트</a>
+      <a href="/used-cars">중고차 매물</a>
+      <a href="/parts-register">수입차부품</a>
+      <a href="/partners">제휴업체</a>
+      <a href="/reviews-customer">후기관리</a>
+    </div>
+    <div class="footer-meta">
+      퍼플오토 | 오토리스&amp;장기렌트 승계매입전문업체<br>
+      대표 : 이호준 | 사업자등록번호 : 885-68-00449 | 대표번호 : 1555-6362<br>
+      © 2026 퍼플오토. All rights reserved.
+    </div>
+  </div>
+</footer>
+
+<nav class="bottom-tabbar">
+  <a href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>홈</a>
+  <a href="/estimate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="6" rx="1"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/><path d="M5 11l1.5-4h11L19 11"/></svg>견적</a>
+  <a href="/used-cars"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>중고차</a>
+  <a href="/parts-register"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>부품</a>
+  <a href="/reviews-customer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>퍼플리뷰</a>
+</nav>
+
+<script src="/js/supabase-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/js/device-type.js"></script>
+<script src="/js/visit-tracker.js"></script>
+<script src="/js/category-nav.js?v=20260701c"></script>
+<script src="/js/supabase-data.js?v=20260701b"></script>
+<script src="/js/partners-data.js?v=20260703c"></script>
+<script src="/js/partners.js?v=20260703c"></script>
+<link rel="stylesheet" href="/css/float-consult.css?v=20260630b">
+<script src="/js/float-consult.js?v=20260630b"></script>
+<link rel="stylesheet" href="/css/floating-quote-banner.css?v=20260704a">
+<script src="/js/floating-quote-banner.js?v=20260704a"></script>
+</body>
+</html>

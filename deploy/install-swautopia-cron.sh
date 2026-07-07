@@ -13,18 +13,18 @@ fi
 
 chmod +x "$SCRIPT"
 
-cat > "$CRON_FILE" << EOF
-SHELL=/bin/bash
-PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-TZ=Asia/Seoul
-
-# KST 04:00 — swautopia 전체 동기화 (매물+사진)
-0 4 * * * root bash $SCRIPT >> /var/log/purple-swautopia-sync.log 2>&1
-EOF
+printf '%s\n' \
+  'SHELL=/bin/bash' \
+  'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin' \
+  'CRON_TZ=Asia/Seoul' \
+  '' \
+  '# KST 04:00 — swautopia 전체 동기화 (매물+사진)' \
+  "0 4 * * * root bash $SCRIPT >> /var/log/purple-swautopia-sync.log 2>&1" \
+  > "$CRON_FILE"
 
 chmod 644 "$CRON_FILE"
 
 # 구 root crontab 항목 제거
 crontab -l 2>/dev/null | grep -v 'sync-swautopia-cars.js' | crontab - 2>/dev/null || true
 
-echo "[swautopia-cron] OK — KST 04:00 daily → $CRON_FILE"
+echo "[swautopia-cron] OK — CRON_TZ=Asia/Seoul KST 04:00 daily → $CRON_FILE"

@@ -4,13 +4,23 @@
 (function () {
   'use strict';
 
-  function getClient() {
+  function hasSupabaseConfig() {
     var cfg = window.SUPABASE_CONFIG;
-    if (!cfg || !cfg.url || !cfg.anonKey) return null;
-    if (cfg.url.indexOf('YOUR_') === 0 || cfg.anonKey.indexOf('YOUR_') === 0) return null;
-    if (!cfg.anonKey || cfg.anonKey.length < 10) return null;
+    if (!cfg || !cfg.url || !cfg.anonKey) return false;
+    if (cfg.url.indexOf('YOUR_') === 0 || cfg.anonKey.indexOf('YOUR_') === 0) return false;
+    if (cfg.anonKey.length < 10) return false;
+    return true;
+  }
+
+  function getClient() {
+    if (!hasSupabaseConfig()) return null;
     if (!window.supabase || !window.supabase.createClient) return null;
-    return window.supabase.createClient(cfg.url, cfg.anonKey);
+    try {
+      return window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey);
+    } catch (err) {
+      console.warn('[PurpleLease] Supabase client init failed:', err);
+      return null;
+    }
   }
 
   function fmtDate(d) {
@@ -34,6 +44,7 @@
       duration: r.duration,
       date: fmtDate(r.published_at || r.created_at),
       url: 'https://www.youtube.com/watch?v=' + vid,
+      detailUrl: '/youtube-detail?id=' + r.id,
       isHomeMain: !!r.is_home_main,
       isHomeFeatured: !!r.is_home_featured
     };
@@ -87,6 +98,40 @@
     return rows;
   }
 
+  async function fetchYoutubeDetail(dbId) {
+    var client = getClient();
+    if (!client || !dbId) return null;
+    var res = await client
+      .from('youtube_videos')
+      .select('id,video_id,title,description,thumb_url,duration,sort_order,created_at,published_at,is_home_main,is_home_featured')
+      .eq('id', dbId)
+      .eq('is_active', true)
+      .maybeSingle();
+    if (res.error) throw res.error;
+    if (!res.data) return null;
+    return mapYoutubeRow(res.data);
+  }
+
+  async function fetchYoutubeDetailWithNav(dbId) {
+    var all = await fetchYoutubeVideos();
+    if (!all || !all.length) {
+      return { detail: await fetchYoutubeDetail(dbId), prev: null, next: null };
+    }
+    var sid = String(dbId);
+    var idx = -1;
+    for (var i = 0; i < all.length; i++) {
+      if (String(all[i].id) === sid) { idx = i; break; }
+    }
+    if (idx < 0) {
+      return { detail: await fetchYoutubeDetail(dbId), prev: null, next: null };
+    }
+    return {
+      detail: all[idx],
+      prev: idx < all.length - 1 ? all[idx + 1] : null,
+      next: idx > 0 ? all[idx - 1] : null
+    };
+  }
+
   async function fetchTimeSaleSettings() {
     var client = getClient();
     if (!client) return { is_visible: false };
@@ -117,42 +162,12 @@
     });
   }
 
-  async function fetchUsedCars() {
-    var client = getClient();
-    if (!client) return null;
-    var res = await client
-      .from('used_cars')
-      .select('badge,badge_class,name,meta,price,detail_slug,thumb_url,sort_order')
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true });
-    if (res.error) throw res.error;
-    return (res.data || []).map(function (r) {
-      return {
-        badge: r.badge,
-        badgeClass: r.badge_class,
-        name: r.name,
-        meta: r.meta,
-        price: r.price,
-        slug: r.detail_slug,
-        thumb: r.thumb_url
-      };
-    });
-  }
-
-  async function fetchUsedCarsList() {
-    var client = getClient();
-    if (!client) return null;
-    var res = await client
-      .from('used_cars')
-      .select('listing_id,origin,name,year,fuel,mileage,price_num,brand,segment,status,photo_count,thumb_url,tags,sort_order,detail_json')
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true });
-    if (res.error) throw res.error;
+  function mapUsedCarsListRows(data) {
     var norm = (window.PurpleUsedCarFilters && window.PurpleUsedCarFilters.normalizeFilterFields)
       ? window.PurpleUsedCarFilters.normalizeFilterFields.bind(window.PurpleUsedCarFilters)
       : function (r) { return { brand: r.brand || '', fuel: r.fuel || '', segment: r.segment || '', origin: r.origin || 'domestic' }; };
 
-    return (res.data || []).map(function (r) {
+    return (data || []).map(function (r) {
       var f = norm(r);
       return {
         id: r.listing_id,
@@ -168,9 +183,73 @@
         photoCount: r.photo_count || 0,
         thumb: r.thumb_url,
         tags: r.tags || [],
-        sortOrder: r.sort_order || r.listing_id || 0
+        sortOrder: r.sort_order || r.listing_id || 0,
+        lastSyncedAt: r.last_synced_at || ''
       };
     });
+  }
+
+  async function fetchUsedCarsListRest() {
+    if (!hasSupabaseConfig()) return null;
+    var cfg = window.SUPABASE_CONFIG;
+    var fields = 'listing_id,origin,name,year,fuel,mileage,price_num,brand,segment,status,photo_count,thumb_url,tags,sort_order,last_synced_at,detail_json';
+    var url = cfg.url.replace(/\/$/, '') + '/rest/v1/used_cars?select=' + encodeURIComponent(fields) +
+      '&is_active=eq.true&order=sort_order.asc&limit=500';
+    var res = await fetch(url, {
+      headers: {
+        apikey: cfg.anonKey,
+        Authorization: 'Bearer ' + cfg.anonKey,
+        'Cache-Control': 'no-cache'
+      }
+    });
+    if (!res.ok) throw new Error('used_cars REST ' + res.status);
+    return mapUsedCarsListRows(await res.json());
+  }
+
+  async function fetchUsedCarsList() {
+    var fields = 'listing_id,origin,name,year,fuel,mileage,price_num,brand,segment,status,photo_count,thumb_url,tags,sort_order,last_synced_at,detail_json';
+    var client = getClient();
+    if (client) {
+      try {
+        var res = await client
+          .from('used_cars')
+          .select(fields)
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true })
+          .range(0, 499);
+        if (res.error) throw res.error;
+        if (res.data && res.data.length) return mapUsedCarsListRows(res.data);
+      } catch (err) {
+        console.warn('[PurpleLease] fetchUsedCarsList client failed, REST fallback:', err);
+      }
+    }
+    return fetchUsedCarsListRest();
+  }
+
+  function mapUsedCarsHomeRows(list, limit) {
+    var rows = (list || []).slice();
+    var cap = limit > 0 ? limit : 8;
+    return rows.slice(0, cap).map(function (r) {
+      var ob = (window.PurpleUsedCarFilters && window.PurpleUsedCarFilters.originBadge)
+        ? window.PurpleUsedCarFilters.originBadge(r.origin)
+        : { badge: '국산차', badge_class: 'badge-grad' };
+      var km = Math.round((r.mileage || 0) / 10000 * 10) / 10;
+      return {
+        badge: ob.badge,
+        badgeClass: ob.badge_class,
+        name: r.name,
+        meta: (r.year ? r.year + '년' : '') + ' · ' + km + '만km',
+        price: (r.price || 0).toLocaleString('ko-KR') + '만원',
+        slug: String(r.id),
+        thumb: r.thumb
+      };
+    });
+  }
+
+  async function fetchUsedCars() {
+    var list = await fetchUsedCarsList();
+    if (!list || !list.length) return null;
+    return mapUsedCarsHomeRows(list, 8);
   }
 
   async function fetchUsedCarDetail(listingId) {
@@ -481,6 +560,22 @@
     return res.data;
   }
 
+  async function submitLeaseCalculatorInquiry(payload) {
+    var client = getClient();
+    if (!client) throw new Error('Supabase not configured');
+    var row = {
+      name: String(payload.name || '').trim(),
+      phone: String(payload.phone || '').trim(),
+      calc_json: payload.calc_json || {},
+      source_page: payload.source_page || 'lease-calculator',
+      is_read: false
+    };
+    if (!row.name || !row.phone) throw new Error('성함과 연락처를 입력해 주세요.');
+    var res = await client.from('lease_calculator_inquiries').insert([row]);
+    if (res.error) throw res.error;
+    return res.data;
+  }
+
   async function submitUsedCarInquiry(payload) {
     var client = getClient();
     if (!client) throw new Error('Supabase not configured');
@@ -505,12 +600,120 @@
     return res.data;
   }
 
+  function mapPartnerPublicRow(r) {
+    if (!r) return null;
+    return {
+      id: r.id,
+      name: r.name,
+      region: r.region || '',
+      sigungu: r.sigungu || '',
+      address: r.address || '',
+      desc: r.short_desc || '',
+      phone: r.phone || '',
+      tags: r.tag_names || [],
+      is_premium: !!r.is_premium,
+      video_youtube_id: r.video_youtube_id || '',
+      gallery: Array.isArray(r.gallery) ? r.gallery : [],
+      body_html: r.body_html || ''
+    };
+  }
+
+  async function fetchPartnersPageSettings() {
+    var client = getClient();
+    if (!client) return null;
+    var res = await client.from('partner_page_settings').select('*').eq('id', 1).maybeSingle();
+    if (res.error) throw res.error;
+    return res.data;
+  }
+
+  async function fetchPartnersTags() {
+    var client = getClient();
+    if (!client) return null;
+    var res = await client
+      .from('partner_tags')
+      .select('name')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+      .order('id', { ascending: true });
+    if (res.error) throw res.error;
+    return (res.data || []).map(function (r) { return r.name; });
+  }
+
+  async function fetchPartnersRegions() {
+    var client = getClient();
+    if (!client) return null;
+    var res = await client
+      .from('partner_regions')
+      .select('code,name,sigungu')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+      .order('id', { ascending: true });
+    if (res.error) throw res.error;
+    return (res.data || []).map(function (r) {
+      return {
+        code: r.code,
+        name: r.name,
+        sigungu: Array.isArray(r.sigungu) ? r.sigungu : []
+      };
+    });
+  }
+
+  async function fetchPartnersList() {
+    var client = getClient();
+    if (!client) return null;
+    var res = await client
+      .from('partners')
+      .select('*')
+      .eq('is_active', true)
+      .order('is_premium', { ascending: false })
+      .order('sort_order', { ascending: true })
+      .order('id', { ascending: true });
+    if (res.error) throw res.error;
+    return (res.data || []).map(mapPartnerPublicRow);
+  }
+
+  async function fetchPartnerById(id) {
+    var client = getClient();
+    if (!client) return null;
+    var n = parseInt(id, 10);
+    if (!n) return null;
+    var res = await client
+      .from('partners')
+      .select('*')
+      .eq('id', n)
+      .eq('is_active', true)
+      .maybeSingle();
+    if (res.error) throw res.error;
+    return mapPartnerPublicRow(res.data);
+  }
+
+  async function fetchPartnersBundle() {
+    if (!getClient()) return null;
+    var results = await Promise.all([
+      fetchPartnersPageSettings(),
+      fetchPartnersTags(),
+      fetchPartnersRegions(),
+      fetchPartnersList()
+    ]);
+    if (!results[0] && (!results[2] || !results[2].length) && (!results[3] || !results[3].length)) {
+      return null;
+    }
+    return {
+      pageSettings: results[0],
+      tags: results[1] || [],
+      regions: results[2] || [],
+      partners: results[3] || []
+    };
+  }
+
   window.PurpleLeaseData = {
     fetchYoutubeVideos: fetchYoutubeVideos,
     fetchYoutubeHomeMain: fetchYoutubeHomeMain,
     fetchYoutubeHomeFeatured: fetchYoutubeHomeFeatured,
     fetchYoutubeAll: fetchYoutubeAll,
     fetchYoutubeGrid: fetchYoutubeGrid,
+    fetchYoutubeDetail: fetchYoutubeDetail,
+    fetchYoutubeDetailWithNav: fetchYoutubeDetailWithNav,
     fetchTimeDeals: fetchTimeDeals,
     fetchTimeSaleSettings: fetchTimeSaleSettings,
     fetchUsedCars: fetchUsedCars,
@@ -528,7 +731,14 @@
     incrementBlogViews: incrementBlogViews,
     submitInquiry: submitInquiry,
     submitLeaseQuote: submitLeaseQuote,
+    submitLeaseCalculatorInquiry: submitLeaseCalculatorInquiry,
     submitUsedCarInquiry: submitUsedCarInquiry,
-    isConfigured: function () { return !!getClient(); }
+    fetchPartnersPageSettings: fetchPartnersPageSettings,
+    fetchPartnersTags: fetchPartnersTags,
+    fetchPartnersRegions: fetchPartnersRegions,
+    fetchPartnersList: fetchPartnersList,
+    fetchPartnerById: fetchPartnerById,
+    fetchPartnersBundle: fetchPartnersBundle,
+    isConfigured: function () { return hasSupabaseConfig(); }
   };
 })();

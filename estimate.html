@@ -74,7 +74,7 @@
 html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
 body {
   margin: 0;
-  background: var(--white);
+  background: var(--page-bg);
   color: var(--ink-700);
   font-family: var(--font-body);
   font-size: 15px;
@@ -185,6 +185,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   background: var(--surface-alt);
   flex-shrink: 0;
 }
+.category-nav { background: var(--white); border-bottom: 1px solid var(--line-soft); overflow: visible; }
+.category-nav-inner { display: flex; min-width: max-content; }
+.category-nav a { display: flex; align-items: center; padding: 14px 18px; font-size: 13px; font-weight: 700; color: var(--ink-500); border-bottom: 2px solid transparent; white-space: nowrap; }
+.category-nav a.active { color: var(--navy-900); border-bottom-color: var(--purple-600); }
 
 /* --- Step progress header --- */
 .step-header {
@@ -461,12 +465,44 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   margin-top: 6px;
 }
 .price-row { display: flex; align-items: center; justify-content: space-between; font-size: 13px; padding: 6px 0; }
+.price-row.subtotal { border-top: 1px dashed var(--line); margin-top: 4px; padding-top: 10px; }
+.price-row.subtotal .pr-label { font-weight: 700; color: var(--ink-700); }
 .price-row .pr-label { color: var(--ink-500); }
+.price-row .pr-label .ref-tag { font-size: 11px; font-weight: 600; color: var(--purple-600); margin-left: 4px; }
 .price-row .pr-value { font-family: var(--font-mono); font-weight: 700; color: var(--ink-900); }
 .price-row.total { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 12px; }
 .price-row.total .pr-label { font-size: 14px; font-weight: 800; color: var(--ink-900); }
 .price-row.total .pr-value { font-size: 20px; font-weight: 800; }
 .price-row.total .pr-value { background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+.opt-dropdown-wrap { padding: 0; }
+.opt-dropdown-head { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; width: 100%; }
+.opt-dropdown-toggle {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: none; border: none; padding: 0; margin: 0;
+  font: inherit; cursor: default; text-align: left;
+}
+.opt-dropdown-toggle.has-items { cursor: pointer; }
+.opt-dropdown-toggle.has-items:hover .pr-label { color: var(--purple-600); }
+.opt-dropdown-toggle .pr-label { color: var(--ink-500); transition: color .15s ease; }
+.opt-chevron {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; flex-shrink: 0;
+  color: var(--ink-400); transition: transform .2s ease, color .15s ease;
+  visibility: hidden;
+}
+.opt-dropdown-toggle.has-items .opt-chevron { visibility: visible; }
+.opt-dropdown-toggle.has-items:hover .opt-chevron { color: var(--purple-600); }
+.opt-dropdown-wrap.open .opt-chevron { transform: rotate(180deg); }
+.opt-dropdown-detail { display: none; padding: 2px 0 6px 10px; margin-left: 2px; border-left: 2px solid var(--purple-100); }
+.opt-dropdown-wrap.open .opt-dropdown-detail { display: block; }
+.opt-detail-list { list-style: none; margin: 0; padding: 0; }
+.opt-detail-item {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+  font-size: 12px; padding: 4px 0; color: var(--ink-500);
+}
+.opt-detail-item .od-name { flex: 1; line-height: 1.4; word-break: keep-all; }
+.opt-detail-item .od-price { font-family: var(--font-mono); font-weight: 600; color: var(--ink-700); white-space: nowrap; flex-shrink: 0; }
 
 .consent-row { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--ink-500); margin: 14px 0; }
 .consent-row a { color: var(--purple-600); text-decoration: underline; }
@@ -582,6 +618,27 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
       </a>
     </div>
   </div>
+  <nav class="category-nav">
+    <div class="wrap category-nav-inner">
+      <div class="category-nav-track">
+      <a href="/estimate" class="active">신차·리스·장기렌트카</a>
+      <a href="/used-cars">중고차</a>
+      <a href="/parts-register">수입차부품</a>
+      <a href="/partners">제휴업체</a>
+      <a href="/reviews-customer">퍼플리뷰</a>
+      </div>
+      <div class="category-nav-dropdown" data-calc-nav>
+        <button type="button" class="category-nav-trigger" aria-expanded="false" aria-haspopup="true">
+          내 차 월납입금 계산기
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="category-nav-submenu">
+          <a href="/lease-calculator?tab=monthly" data-calc-link="monthly">월납입금계산</a>
+          <a href="/lease-calculator?tab=rate" data-calc-link="rate">리스렌트금리계산</a>
+        </div>
+      </div>
+    </div>
+  </nav>
   <div class="step-header">
     <div class="wrap">
       <div class="step-bar" id="stepBar">
@@ -729,9 +786,24 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
       <div class="price-summary-card">
         <div class="price-row"><span class="pr-label">기본가격</span><span class="pr-value" id="sumBase">0원</span></div>
-        <div class="price-row"><span class="pr-label">색상 옵션</span><span class="pr-value" id="sumColor">+0원</span></div>
-        <div class="price-row"><span class="pr-label">추가옵션 (<span id="sumOptCount">0</span>개)</span><span class="pr-value" id="sumOpt">+0원</span></div>
-        <div class="price-row total"><span class="pr-label">합계 (월 환산 견적은 상담 시 안내)</span><span class="pr-value" id="sumTotal">0원</span></div>
+        <div class="opt-dropdown-wrap" id="sumOptWrap">
+          <div class="opt-dropdown-head">
+            <button type="button" class="opt-dropdown-toggle" id="sumOptToggle" aria-expanded="false" aria-controls="sumOptDetail">
+              <span class="pr-label">추가옵션 (<span id="sumOptCount">0</span>개)</span>
+              <span class="opt-chevron" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></span>
+            </button>
+            <span class="pr-value" id="sumOpt">+0원</span>
+          </div>
+          <div class="opt-dropdown-detail" id="sumOptDetail">
+            <ul class="opt-detail-list" id="sumOptList"></ul>
+          </div>
+        </div>
+        <div class="price-row subtotal"><span class="pr-label">차량 합계</span><span class="pr-value" id="sumVehicle">0원</span></div>
+        <div class="price-row" id="sumCarTaxRow" style="display:none;"><span class="pr-label">자동차세 (7%)</span><span class="pr-value" id="sumCarTax">+0원</span></div>
+        <div class="price-row"><span class="pr-label">보증금 (<span id="sumDepositPct">0</span>%)</span><span class="pr-value" id="sumDeposit">0원</span></div>
+        <div class="price-row"><span class="pr-label">선납금 (<span id="sumPrepayPct">0</span>%)</span><span class="pr-value" id="sumPrepay">0원</span></div>
+        <div class="price-row"><span class="pr-label">이용기간</span><span class="pr-value" id="sumPeriod">48개월</span></div>
+        <div class="price-row total"><span class="pr-label">월 환산 견적 <span class="ref-tag">(참고용)</span></span><span class="pr-value" id="sumMonthly">0원/월</span></div>
       </div>
 
       <label class="consent-row">
@@ -741,7 +813,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
       <div class="helper-note">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-        표시된 가격은 차량 기본가 기준 참고용이며, 실제 월 렌트/리스료는 보증금·선납금·신용도 등에 따라 상담을 통해 최종 안내됩니다.
+        표시된 월 환산 견적은 참고용이며, 차량 합계·자동차세(포함 시 7%)·보증금·선납금·이용기간을 반영한 단순 환산가입니다. 신용도는 상담 시 참고하며, 실제 월 렌트/리스료는 상담을 통해 최종 안내됩니다.
       </div>
     </div>
 
@@ -749,7 +821,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     <div class="sticky-next" id="stickyNextStep2" style="display:none;">
       <div class="wrap sticky-next-row">
         <div class="price-preview">
-          <span class="pp-label">합계</span>
+          <span class="pp-label">월 환산 <span style="font-size:11px;color:var(--purple-600);">(참고용)</span></span>
           <span class="pp-value" id="stickyTotal">0원</span>
         </div>
         <div style="display:flex; gap:8px;">
@@ -788,6 +860,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
       <a href="/">신차·리스·렌트</a>
       <a href="/used-cars">중고차 매물</a>
       <a href="/parts-register">수입차부품</a>
+      <a href="/partners">제휴업체</a>
       <a href="/reviews-customer">후기관리</a>
     </div>
     <div class="footer-meta">
@@ -802,7 +875,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="/js/supabase-config.js"></script>
-<script src="/js/supabase-data.js"></script>
+<script src="/js/supabase-data.js?v=20260701b"></script>
 <script src="/js/lease-catalog-map.js"></script>
 <script>
 /* ============================================================
@@ -1180,42 +1253,105 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
       group.querySelectorAll('.cond-pill').forEach(p => p.classList.remove('selected'));
       pill.classList.add('selected');
       state.cond[group.dataset.cond] = pill.dataset.value;
-      if (group.dataset.cond === 'deposit' || group.dataset.cond === 'prepay') {
-        updateDepositPrepayAmounts();
-      }
+      updateSummaryPrice();
     });
   });
 
-  function updateDepositPrepayAmounts() {
+  function getSelectedOptionItems() {
     const detail = getDetail();
-    const base = detail ? (detail.trimGroups[state.trimGroupIdx]?.trims[state.trimIdx]?.price || 0) : 0;
-    const depositPct = parseInt(state.cond.deposit, 10) || 0;
-    const prepayPct = parseInt(state.cond.prepay, 10) || 0;
-    document.getElementById('depositAmount').value = base ? fmt(Math.round(base * depositPct / 100)) + '원' : '';
-    document.getElementById('prepayAmount').value = base ? fmt(Math.round(base * prepayPct / 100)) + '원' : '';
+    if (!detail) return [];
+    const items = [];
+    const color = detail.colors?.[state.colorIdx];
+    if (color && (color.surcharge || 0) > 0) {
+      items.push({ name: '외장색상: ' + (color.name || ''), price: color.surcharge || 0 });
+    }
+    Array.from(state.selectedOptions).sort((a, b) => a - b).forEach(i => {
+      const o = detail.options[i];
+      if (o) items.push({ name: o.name || '', price: o.price || 0 });
+    });
+    return items;
   }
 
-  // ---- 가격 합산 ----
-  function updateSummaryPrice() {
+  function getVehiclePricing() {
     const detail = getDetail();
     let base = 0, colorPrice = 0, optPrice = 0;
-
     if (detail) {
       base = detail.trimGroups[state.trimGroupIdx]?.trims[state.trimIdx]?.price || 0;
       colorPrice = detail.colors[state.colorIdx]?.surcharge || 0;
       state.selectedOptions.forEach(i => { optPrice += detail.options[i]?.price || 0; });
     }
+    const optTotal = colorPrice + optPrice;
+    const optCount = state.selectedOptions.size + (colorPrice > 0 ? 1 : 0);
+    const vehicleTotal = base + optTotal;
+    return { base, colorPrice, optPrice, optTotal, optCount, vehicleTotal };
+  }
 
-    const total = base + colorPrice + optPrice;
+  const CAR_TAX_RATE = 0.07;
+
+  function calcEstimateSummary(vehicleTotal, cond) {
+    const depositPct = parseInt(cond.deposit, 10) || 0;
+    const prepayPct = parseInt(cond.prepay, 10) || 0;
+    const months = parseInt(cond.period, 10) || 48;
+    const carTaxIncluded = cond.carTax === 'included';
+    const depositAmount = Math.round(vehicleTotal * depositPct / 100);
+    const prepayAmount = Math.round(vehicleTotal * prepayPct / 100);
+    const carTaxAmount = carTaxIncluded ? Math.round(vehicleTotal * CAR_TAX_RATE) : 0;
+    const contractBase = vehicleTotal + carTaxAmount;
+    const netForMonthly = Math.max(0, contractBase - prepayAmount - depositAmount);
+    const monthly = months > 0 ? Math.round(netForMonthly / months) : 0;
+    return {
+      depositPct, prepayPct, months, depositAmount, prepayAmount,
+      carTaxIncluded, carTaxAmount, contractBase, netForMonthly, monthly
+    };
+  }
+
+  // ---- 가격 합산 ----
+  function updateSummaryPrice() {
+    const { base, optTotal, optCount, vehicleTotal } = getVehiclePricing();
+    const est = calcEstimateSummary(vehicleTotal, state.cond);
 
     document.getElementById('sumBase').textContent = fmt(base) + '원';
-    document.getElementById('sumColor').textContent = '+' + fmt(colorPrice) + '원';
-    document.getElementById('sumOptCount').textContent = state.selectedOptions.size;
-    document.getElementById('sumOpt').textContent = '+' + fmt(optPrice) + '원';
-    document.getElementById('sumTotal').textContent = fmt(total) + '원';
-    document.getElementById('stickyTotal').textContent = fmt(total) + '원';
+    document.getElementById('sumOptCount').textContent = optCount;
+    document.getElementById('sumOpt').textContent = '+' + fmt(optTotal) + '원';
 
-    updateDepositPrepayAmounts();
+    const optItems = getSelectedOptionItems();
+    const optWrap = document.getElementById('sumOptWrap');
+    const optToggle = document.getElementById('sumOptToggle');
+    const optList = document.getElementById('sumOptList');
+    const hasOptItems = optItems.length > 0;
+    optToggle.classList.toggle('has-items', hasOptItems);
+    optToggle.disabled = !hasOptItems;
+    if (!hasOptItems) {
+      optWrap.classList.remove('open');
+      optToggle.setAttribute('aria-expanded', 'false');
+    }
+    optList.innerHTML = optItems.map(item => `
+      <li class="opt-detail-item">
+        <span class="od-name">${item.name}</span>
+        <span class="od-price">${item.price > 0 ? '+' + fmt(item.price) + '원' : '포함'}</span>
+      </li>
+    `).join('');
+
+    document.getElementById('sumVehicle').textContent = fmt(vehicleTotal) + '원';
+
+    const carTaxRow = document.getElementById('sumCarTaxRow');
+    if (est.carTaxIncluded && vehicleTotal > 0) {
+      carTaxRow.style.display = '';
+      document.getElementById('sumCarTax').textContent = '+' + fmt(est.carTaxAmount) + '원';
+    } else {
+      carTaxRow.style.display = 'none';
+      document.getElementById('sumCarTax').textContent = '+0원';
+    }
+
+    document.getElementById('sumDepositPct').textContent = est.depositPct;
+    document.getElementById('sumDeposit').textContent = fmt(est.depositAmount) + '원';
+    document.getElementById('sumPrepayPct').textContent = est.prepayPct;
+    document.getElementById('sumPrepay').textContent = fmt(est.prepayAmount) + '원';
+    document.getElementById('sumPeriod').textContent = est.months + '개월';
+    document.getElementById('sumMonthly').textContent = fmt(est.monthly) + '원/월';
+    document.getElementById('stickyTotal').textContent = fmt(est.monthly) + '원/월';
+    document.getElementById('depositAmount').value = vehicleTotal ? fmt(est.depositAmount) + '원' : '';
+    document.getElementById('prepayAmount').value = vehicleTotal ? fmt(est.prepayAmount) + '원' : '';
   }
 
   // ============================================================
@@ -1263,6 +1399,14 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   document.getElementById('btnGoStep2').addEventListener('click', goToStep2);
   document.getElementById('btnBackStep1').addEventListener('click', goToStep1);
 
+  document.getElementById('sumOptToggle').addEventListener('click', () => {
+    const wrap = document.getElementById('sumOptWrap');
+    const toggle = document.getElementById('sumOptToggle');
+    if (!toggle.classList.contains('has-items')) return;
+    const open = wrap.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+
   function getConditionLabels() {
     const labels = {};
     document.querySelectorAll('.cond-options').forEach(group => {
@@ -1281,10 +1425,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     const trimGroup = detail?.trimGroups?.[state.trimGroupIdx];
     const trim = trimGroup?.trims?.[state.trimIdx];
     const color = detail?.colors?.[state.colorIdx];
-    const options = detail ? Array.from(state.selectedOptions).map(i => ({
-      name: detail.options[i]?.name || '',
-      price: detail.options[i]?.price || 0
-    })) : [];
+    const options = getSelectedOptionItems();
+
+    const pricing = getVehiclePricing();
+    const est = calcEstimateSummary(pricing.vehicleTotal, state.cond);
 
     return {
       origin: state.origin,
@@ -1307,11 +1451,17 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
         prepay_amount: document.getElementById('prepayAmount')?.value || ''
       },
       pricing: {
-        base: document.getElementById('sumBase')?.textContent || '',
-        color: document.getElementById('sumColor')?.textContent || '',
-        options: document.getElementById('sumOpt')?.textContent || '',
-        total: document.getElementById('sumTotal')?.textContent || '',
-        option_count: state.selectedOptions.size
+        base: fmt(pricing.base) + '원',
+        options: '+' + fmt(pricing.optTotal) + '원',
+        vehicle_total: fmt(pricing.vehicleTotal) + '원',
+        car_tax: est.carTaxIncluded ? '+' + fmt(est.carTaxAmount) + '원' : '0원',
+        contract_base: fmt(est.contractBase) + '원',
+        deposit: fmt(est.depositAmount) + '원',
+        prepay: fmt(est.prepayAmount) + '원',
+        period_months: est.months,
+        monthly_reference: fmt(est.monthly) + '원/월',
+        option_count: pricing.optCount,
+        reference_only: true
       }
     };
   }
@@ -1434,8 +1584,13 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 <script src="/js/device-type.js"></script>
 <script src="/js/visit-tracker.js"></script>
+<link rel="stylesheet" href="/css/category-nav.css?v=20260701d">
+<link rel="stylesheet" href="/css/site-page-bg.css?v=20260703d">
 <link rel="stylesheet" href="/css/float-consult.css?v=20260630b">
+<script src="/js/category-nav.js?v=20260701c"></script>
 <script src="/js/float-consult.js?v=20260630b"></script>
+<link rel="stylesheet" href="/css/floating-quote-banner.css?v=20260704a">
+<script src="/js/floating-quote-banner.js?v=20260704a"></script>
 
 </body>
 </html>

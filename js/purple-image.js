@@ -13,7 +13,9 @@
   var SIZES = {
     THUMB: { w: 800, h: 600 },
     GALLERY: { w: 1280, h: 960 },
-    MINI: { w: 128, h: 96 }
+    MINI: { w: 128, h: 96 },
+    PARTNER_GALLERY_W: 1280,
+    PARTNER_THUMB_W: 800
   };
 
   function isFetchableSameOrigin(url) {
@@ -81,12 +83,33 @@
     canvas.height = height;
     var ctx = canvas.getContext('2d');
     drawCover(ctx, img, width, height);
+    return canvasToJpegBlob(canvas, quality);
+  }
+
+  function canvasToJpegBlob(canvas, quality) {
     return new Promise(function (resolve, reject) {
       canvas.toBlob(function (blob) {
         if (blob) resolve(blob);
         else reject(new Error('canvas toBlob failed'));
       }, 'image/jpeg', quality || 0.88);
     });
+  }
+
+  /** 가로 maxWidth 기준 비율 유지 리사이즈 (제휴업체 갤러리용) */
+  function resizeImageToWidthBlob(img, maxWidth, quality) {
+    var iw = img.naturalWidth || img.width;
+    var ih = img.naturalHeight || img.height;
+    if (!iw || !ih) return Promise.reject(new Error('이미지 크기를 읽을 수 없습니다.'));
+    var w = Math.min(maxWidth, iw);
+    var h = Math.max(1, Math.round(ih * (w / iw)));
+    var canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#f4f2fa';
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(img, 0, 0, w, h);
+    return canvasToJpegBlob(canvas, quality);
   }
 
   async function resizeUrlToBlob(url, width, height, quality) {
@@ -128,6 +151,11 @@
     return resizeImageToBlob(img, width, height, quality);
   }
 
+  async function resizeFileToWidthBlob(file, maxWidth, quality) {
+    var img = await loadFileAsImage(file);
+    return resizeImageToWidthBlob(img, maxWidth, quality);
+  }
+
   return {
     SIZES: SIZES,
     loadImage: loadImage,
@@ -135,6 +163,8 @@
     resizeUrlToBlob: resizeUrlToBlob,
     resizeUrlToBlobs: resizeUrlToBlobs,
     resizeImageToBlob: resizeImageToBlob,
-    resizeFileToBlob: resizeFileToBlob
+    resizeImageToWidthBlob: resizeImageToWidthBlob,
+    resizeFileToBlob: resizeFileToBlob,
+    resizeFileToWidthBlob: resizeFileToWidthBlob
   };
 }));

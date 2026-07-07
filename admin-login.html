@@ -11,13 +11,14 @@
   --navy-900: #11143A;
   --ink-900: #15151D;
   --ink-500: #6B6B7B;
+  --page-bg: #ececec;
   --line: #E7E5F0;
   --radius-md: 12px;
 }
 * { box-sizing: border-box; }
 body {
   margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(160deg, #F4F2FA 0%, #FAFAFC 50%, #EDE8FA 100%);
+  background: var(--page-bg);
   font-family: 'Noto Sans KR', sans-serif; color: var(--ink-900);
 }
 .login-card {
@@ -42,6 +43,7 @@ body {
 .error { color: #E0395B; font-size: 12px; min-height: 18px; margin-top: 8px; }
 .back { display: block; text-align: center; margin-top: 18px; font-size: 12.5px; color: var(--ink-500); text-decoration: none; }
 </style>
+<link rel="stylesheet" href="/css/site-page-bg.css?v=20260703d">
 </head>
 <body>
   <div class="login-card">

@@ -1,0 +1,299 @@
+/* PC 플로팅 견적문의 배너 — floating-quote-banner.js (원형 FAB와 별도) */
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@700&family=JetBrains+Mono:wght@500;700&display=swap');
+
+.pa-float {
+  --pa-purple: #8B2FE0;
+  --pa-navy: #1A1E6E;
+  --pa-gradient: linear-gradient(135deg, #8B2FE0 0%, #1A1E6E 100%);
+  --pa-ink: #14152B;
+  --pa-sub: #6B6D85;
+  --pa-line: #E9E8F2;
+  --pa-bg-soft: #F7F6FC;
+
+  position: fixed;
+  right: 28px;
+  top: 50%;
+  transform: translateY(-50%) scale(0.9);
+  transform-origin: right center;
+  z-index: 9990;
+  display: flex;
+  align-items: center;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+.pa-tab {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 52px;
+  height: 148px;
+  background: var(--pa-gradient);
+  border-radius: 14px 0 0 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: -6px 6px 24px rgba(26, 30, 110, 0.28);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, right 0.25s ease;
+}
+
+.pa-float.collapsed .pa-tab {
+  opacity: 1;
+  pointer-events: auto;
+  right: -1px;
+}
+
+.pa-tab svg { width: 20px; height: 20px; }
+
+.pa-tab span {
+  writing-mode: vertical-rl;
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
+.pa-card {
+  width: 268px;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 12px 40px rgba(26, 30, 110, 0.18), 0 2px 8px rgba(26, 30, 110, 0.08);
+  border: 1px solid var(--pa-line);
+  overflow: hidden;
+  transform-origin: right center;
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.22s ease;
+}
+
+.pa-float.collapsed .pa-card {
+  transform: translateX(24px) scale(0.92);
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+}
+
+.pa-header {
+  background: var(--pa-gradient);
+  padding: 18px 18px 16px;
+  position: relative;
+}
+
+.pa-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.pa-badge {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.pa-badge-icon {
+  width: 22px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pa-badge-icon svg { width: 13px; height: 13px; }
+
+.pa-title {
+  font-family: 'Sora', sans-serif;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+.pa-controls { display: flex; gap: 6px; }
+
+.pa-icon-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: none;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  line-height: 1;
+  transition: background 0.15s ease;
+}
+
+.pa-icon-btn:hover { background: rgba(255, 255, 255, 0.3); }
+
+.pa-sub {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 11.5px;
+  font-weight: 500;
+  padding-left: 30px;
+  margin-top: -2px;
+}
+
+.pa-body { padding: 16px 18px 18px; }
+
+.pa-field {
+  width: 100%;
+  border: 1.4px solid var(--pa-line);
+  border-radius: 9px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-family: 'Noto Sans KR', sans-serif;
+  color: var(--pa-ink);
+  margin-bottom: 8px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  background: var(--pa-bg-soft);
+}
+
+.pa-field::placeholder { color: #A6A7BE; }
+
+.pa-field:focus {
+  border-color: var(--pa-purple);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(139, 47, 224, 0.1);
+}
+
+.pa-label-row {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pa-ink);
+  margin: 12px 0 8px;
+}
+
+.pa-radio-group {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.pa-radio {
+  flex: 1;
+  text-align: center;
+  border: 1.4px solid var(--pa-line);
+  border-radius: 8px;
+  padding: 7px 0;
+  font-size: 12px;
+  color: var(--pa-sub);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.pa-radio input { display: none; }
+
+.pa-radio.checked {
+  border-color: var(--pa-purple);
+  background: rgba(139, 47, 224, 0.07);
+  color: var(--pa-purple);
+  font-weight: 700;
+}
+
+.pa-consent {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--pa-sub);
+  margin: 14px 0 14px;
+}
+
+.pa-consent input { accent-color: var(--pa-purple); width: 14px; height: 14px; }
+
+.pa-consent a { color: var(--pa-navy); font-weight: 700; text-decoration: underline; margin-left: 2px; }
+
+.pa-submit {
+  width: 100%;
+  padding: 12px 0;
+  border: none;
+  border-radius: 10px;
+  background: var(--pa-gradient);
+  color: #fff;
+  font-family: 'Sora', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.15s ease;
+}
+
+.pa-submit:hover { filter: brightness(1.08); transform: translateY(-1px); }
+
+.pa-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.pa-divider { height: 1px; background: var(--pa-line); }
+
+.pa-quick {
+  background: var(--pa-bg-soft);
+  padding: 6px;
+}
+
+.pa-quick-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  text-decoration: none;
+}
+
+.pa-quick-item:hover { background: #fff; }
+
+.pa-quick-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: #fff;
+  border: 1px solid var(--pa-line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pa-quick-icon svg { width: 16px; height: 16px; }
+
+.pa-quick-text-label {
+  font-size: 10.5px;
+  color: var(--pa-sub);
+  font-weight: 500;
+  margin-bottom: 1px;
+}
+
+.pa-quick-text-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13.5px;
+  color: var(--pa-ink);
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.pa-quick-text-value.text-only {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 12.5px;
+}
+
+@media (max-width: 1024px) {
+  .pa-float { display: none !important; }
+}

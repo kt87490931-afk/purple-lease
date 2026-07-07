@@ -1,0 +1,24 @@
+/* 공통 페이지 배경 — 카드·헤더·내비 흰색 유지 */
+:root {
+  --page-bg: #ececec;
+}
+
+body,
+body.pd-page {
+  background-color: var(--page-bg) !important;
+}
+
+.site-footer {
+  background-color: var(--page-bg) !important;
+}
+
+/* index 전체폭 섹션 */
+.video-quote-section,
+.video-section,
+.timesale-section {
+  background-color: var(--page-bg) !important;
+}
+
+.partners-page {
+  background-color: transparent;
+}

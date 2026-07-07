@@ -36,13 +36,15 @@ async function main() {
   var reviews = await sbGet('customer_reviews', 'select=listing_id,id,updated_at,published_at,created_at&is_active=eq.true&order=listing_id.asc');
   var cars = await sbGet('used_cars', 'select=listing_id,id,updated_at,created_at&is_active=eq.true&order=listing_id.asc');
   var parts = await sbGet('parts', 'select=listing_id,id,updated_at,created_at&is_active=eq.true&order=listing_id.asc');
+  var youtubeVideos = await sbGet('youtube_videos', 'select=id,updated_at,published_at,created_at&is_active=eq.true&order=sort_order.desc');
 
   var xml = await SitemapBuilder.buildXml({
     siteUrl: SITE_URL,
     pageMeta: pageMeta,
     reviews: reviews,
     usedCars: cars,
-    parts: parts
+    parts: parts,
+    youtubeVideos: youtubeVideos
   });
 
   fs.writeFileSync(OUT, xml, 'utf8');

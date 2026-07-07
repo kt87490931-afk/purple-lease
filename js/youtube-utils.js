@@ -29,6 +29,18 @@
     return videoId ? 'https://www.youtube.com/watch?v=' + videoId : '';
   }
 
+  function embedUrl(videoId, opts) {
+    if (!videoId) return '';
+    opts = opts || {};
+    var q = 'playsinline=1&rel=0&modestbranding=1';
+    if (opts.autoplay) q += '&autoplay=1';
+    var origin = (typeof window !== 'undefined' && window.location && window.location.origin)
+      ? window.location.origin
+      : 'https://purpleauto.co.kr';
+    q += '&origin=' + encodeURIComponent(origin);
+    return 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(videoId) + '?' + q;
+  }
+
   function formatIsoDuration(iso) {
     if (!iso || typeof iso !== 'string') return '';
     var m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
@@ -45,6 +57,7 @@
     getThumbUrl: getThumbUrl,
     resolveThumb: resolveThumb,
     watchUrl: watchUrl,
+    embedUrl: embedUrl,
     formatIsoDuration: formatIsoDuration
   };
 })();

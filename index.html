@@ -50,6 +50,7 @@
 
   /* --- Neutral / surface --- */
   --white: #FFFFFF;
+  --page-bg: #ececec;
   --surface: #FAFAFC;
   --surface-alt: #F4F2FA;
   --line: #E7E5F0;
@@ -82,7 +83,7 @@
 html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
 body {
   margin: 0;
-  background: var(--white);
+  background: var(--page-bg);
   color: var(--ink-700);
   font-family: var(--font-body);
   font-size: 15px;
@@ -194,10 +195,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .category-nav {
   background: var(--white);
   border-bottom: 1px solid var(--line-soft);
-  overflow-x: auto;
-  scrollbar-width: none;
+  overflow: visible;
 }
-.category-nav::-webkit-scrollbar { display: none; }
 .category-nav-inner { display: flex; min-width: max-content; }
 .category-nav a {
   display: flex; align-items: center;
@@ -261,7 +260,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 /* --- Footer --- */
 .site-footer {
-  background: var(--surface-alt);
+  background: var(--page-bg);
   border-top: 1px solid var(--line-soft);
   padding: 32px 0 100px;
   margin-top: 24px;
@@ -368,8 +367,39 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   }
   .hero-dots span.active { background: #fff; width: 18px; border-radius: 4px; }
 
-  /* ============ 2. YOUTUBE VIDEO ============ */
-  .video-section { background: var(--surface); }
+  /* ============ 2. YOUTUBE + 빠른견적 (5:5) ============ */
+  .video-quote-section { background: var(--page-bg); }
+  .video-quote-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .video-quote-col--quote { order: 1; }
+  .video-quote-col--video { order: 2; }
+  .video-quote-intro { margin-bottom: 14px; }
+  .video-quote-intro h2 {
+    font-size: 22px;
+    margin-top: 8px;
+    line-height: 1.35;
+  }
+  .video-quote-intro p {
+    font-size: 13px;
+    color: var(--ink-500);
+    margin-top: 8px;
+    line-height: 1.6;
+  }
+  .video-quote-col--quote {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+  }
+  .video-quote-col--video {
+    min-width: 0;
+  }
+  .video-quote-col--video .section-title {
+    margin-bottom: 14px;
+  }
   .video-frame {
     position: relative;
     aspect-ratio: 16/9;
@@ -383,8 +413,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .video-caption h3 { font-size: 15.5px; }
   .video-caption p { font-size: 12.5px; color: var(--ink-500); margin-top: 2px; }
 
-  /* --- 영상 썸네일 캐러셀 (메인 영상 아래, 좌우 넘기기) --- */
-  .video-carousel { position: relative; margin-top: 22px; }
+  /* --- 영상 썸네일 캐러셀 (합친 섹션 하단 풀폭) --- */
+  .video-quote-section .video-carousel { position: relative; margin-top: 28px; }
   .video-carousel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
   .video-carousel-head .vc-label { font-size: 12.5px; font-weight: 700; color: var(--ink-500); }
   .video-carousel-nav { display: flex; gap: 6px; }
@@ -435,7 +465,13 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .vc-thumb-title { font-size: 11.5px; font-weight: 700; color: var(--ink-900); margin-top: 6px; line-height: 1.35;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-  /* ============ 3. QUICK ESTIMATE ============ */
+  /* ============ 3. QUICK ESTIMATE (video-quote 우측) ============ */
+  .video-quote-col--quote .quick-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
   .quick-card {
     background: var(--white);
     border: 1px solid var(--line);
@@ -470,7 +506,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .quick-consent { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--ink-500); margin: 10px 0 16px; }
 
   /* ============ 4. TIME SALE ============ */
-  .timesale-section { background: var(--surface); }
+  .timesale-section { background: var(--page-bg); }
   .deal-scroll { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
   .deal-scroll::-webkit-scrollbar { display: none; }
   .deal-card {
@@ -625,7 +661,16 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     .hero-slide { min-height: 380px; }
     .hero-slide h1 { font-size: 36px; max-width: 540px; }
     .hero-slide p { font-size: 15px; max-width: 460px; }
-    .quick-estimate-flex { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: center; }
+    .video-quote-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: stretch;
+    }
+    .video-quote-col--video { order: 1; }
+    .video-quote-col--quote { order: 2; }
+    .video-quote-intro { margin-bottom: 16px; }
+    .video-quote-intro h2 { font-size: 24px; }
+    .video-quote-intro p { font-size: 13.5px; max-width: 380px; }
   }
 
   /* ============ EMPTY STATES ============ */
@@ -668,10 +713,23 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   </div>
   <nav class="category-nav">
     <div class="wrap category-nav-inner">
+      <div class="category-nav-track">
       <a href="/estimate">신차·리스·장기렌트카</a>
       <a href="/used-cars">중고차</a>
       <a href="/parts-register">수입차부품</a>
+      <a href="/partners">제휴업체</a>
       <a href="/reviews-customer">퍼플리뷰</a>
+      </div>
+      <div class="category-nav-dropdown" data-calc-nav>
+        <button type="button" class="category-nav-trigger" aria-expanded="false" aria-haspopup="true">
+          내 차 월납입금 계산기
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="category-nav-submenu">
+          <a href="/lease-calculator?tab=monthly" data-calc-link="monthly">월납입금계산</a>
+          <a href="/lease-calculator?tab=rate" data-calc-link="rate">리스렌트금리계산</a>
+        </div>
+      </div>
     </div>
   </nav>
 </header>
@@ -684,12 +742,48 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     <div class="hero-dots" id="heroDots"></div>
   </section>
 
-  <!-- ============ 2. 유튜브 메인 영상 ============ -->
-  <section class="video-section section">
+  <!-- ============ 2. 유튜브 메인 영상 + 빠른 견적 (5:5) ============ -->
+  <section class="video-quote-section section">
     <div class="wrap">
-      <span class="eyebrow">퍼플오토 STORY</span>
-      <h2 class="section-title" style="margin-bottom:18px;">영상으로 만나는 퍼플오토</h2>
-      <div id="videoSlot"><!-- JS가 영상 유무에 따라 채우거나 빈 상태를 표시합니다 --></div>
+      <div class="video-quote-grid">
+        <div class="video-quote-col video-quote-col--video">
+          <span class="eyebrow">퍼플오토 STORY</span>
+          <h2 class="section-title">영상으로 만나는 퍼플오토</h2>
+          <div id="videoSlot"><!-- JS가 영상 유무에 따라 채우거나 빈 상태를 표시합니다 --></div>
+        </div>
+
+        <div class="video-quote-col video-quote-col--quote">
+          <div class="video-quote-intro">
+            <span class="eyebrow">FREE QUICK ESTIMATE</span>
+            <h2>10초면 끝나는<br><span class="grad-text">빠른 견적문의</span></h2>
+            <p>브랜드와 연락처만 남기면, 담당 플래너가 가장 빠르게 맞춤 견적으로 연락드립니다.</p>
+          </div>
+          <div class="quick-card">
+            <h2>무료 견적 신청</h2>
+            <p class="lead">간단한 정보만 입력하면 비교 견적을 보내드려요.</p>
+            <div class="quick-form-row">
+              <select id="quickBrand">
+                <option value="">브랜드 선택</option>
+                <option>현대</option><option>기아</option><option>제네시스</option>
+                <option>BMW</option><option>벤츠</option><option>아우디</option>
+              </select>
+              <select id="quickUsage">
+                <option value="">이용방식</option>
+                <option>장기렌트</option><option>리스</option><option>승계매입</option>
+              </select>
+            </div>
+            <div class="quick-form-row">
+              <input type="text" id="quickName" placeholder="성함">
+              <input type="text" id="quickPhone" placeholder="연락처 (010-0000-0000)">
+            </div>
+            <label class="quick-consent">
+              <input type="checkbox" id="quickConsent" style="accent-color:#6C3CE0;"> 개인정보 수집·이용에 동의합니다 <a href="#" style="color:var(--purple-600); text-decoration:underline; margin-left:2px;">[보기]</a>
+            </label>
+            <button type="button" class="btn btn-primary btn-block" id="btnQuickEstimate">무료 견적 받아보기</button>
+          </div>
+        </div>
+      </div>
+
       <div class="video-carousel" id="videoCarousel" style="display:none;">
         <div class="video-carousel-head">
           <span class="vc-label">다른 영상 보기</span>
@@ -707,42 +801,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     </div>
   </section>
 
-  <!-- ============ 3. 빠른견적문의 ============ -->
-  <section class="section" style="background: var(--surface-alt);">
-    <div class="wrap quick-estimate-flex">
-      <div>
-        <span class="eyebrow">FREE QUICK ESTIMATE</span>
-        <h2 style="font-size:24px; margin-top:8px; line-height:1.35;">10초면 끝나는<br><span class="grad-text">빠른 견적문의</span></h2>
-        <p style="font-size:13.5px; color:var(--ink-500); margin-top:10px; max-width:380px;">브랜드와 연락처만 남기면, 담당 플래너가 가장 빠르게 맞춤 견적으로 연락드립니다.</p>
-      </div>
-
-      <div class="quick-card">
-        <h2>무료 견적 신청</h2>
-        <p class="lead">간단한 정보만 입력하면 비교 견적을 보내드려요.</p>
-        <div class="quick-form-row">
-          <select id="quickBrand">
-            <option value="">브랜드 선택</option>
-            <option>현대</option><option>기아</option><option>제네시스</option>
-            <option>BMW</option><option>벤츠</option><option>아우디</option>
-          </select>
-          <select id="quickUsage">
-            <option value="">이용방식</option>
-            <option>장기렌트</option><option>리스</option><option>승계매입</option>
-          </select>
-        </div>
-        <div class="quick-form-row">
-          <input type="text" id="quickName" placeholder="성함">
-          <input type="text" id="quickPhone" placeholder="연락처 (010-0000-0000)">
-        </div>
-        <label class="quick-consent">
-          <input type="checkbox" id="quickConsent" style="accent-color:#6C3CE0;"> 개인정보 수집·이용에 동의합니다 <a href="#" style="color:var(--purple-600); text-decoration:underline; margin-left:2px;">[보기]</a>
-        </label>
-        <button type="button" class="btn btn-primary btn-block" id="btnQuickEstimate">무료 견적 받아보기</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ 4. 타임특가 ============ -->
+  <!-- ============ 3. 타임특가 ============ -->
   <section class="timesale-section section" id="timesale" style="display:none" hidden>
     <div class="wrap">
       <div class="section-head">
@@ -791,6 +850,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
       <a href="/">신차·리스·렌트</a>
       <a href="/used-cars">중고차 매물</a>
       <a href="/parts-register">수입차부품</a>
+      <a href="/partners">제휴업체</a>
       <a href="/reviews-customer">후기관리</a>
     </div>
     <div class="footer-meta">
@@ -825,7 +885,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="/js/supabase-config.js"></script>
 <script src="/js/youtube-utils.js"></script>
-<script src="/js/supabase-data.js?v=20260630d"></script>
+<script src="/js/supabase-data.js?v=20260701c"></script>
 <script>
   // Supabase 연동 — 메인영상 1개 + 추천영상 캐러셀 (index 전용)
   let mainVideo = null;
@@ -1105,19 +1165,22 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   }
 
   async function loadSupabaseData() {
-    if (!window.PurpleLeaseData || !window.PurpleLeaseData.isConfigured()) return;
+    if (!window.PurpleLeaseData) return;
     try {
-      const dealPromise = timeSaleVisible
+      const dealPromise = timeSaleVisible && window.PurpleLeaseData.isConfigured()
         ? window.PurpleLeaseData.fetchTimeDeals()
         : Promise.resolve(null);
-      const [mainV, featuredV, deals, cars, latestB, popularB] = await Promise.all([
-        window.PurpleLeaseData.fetchYoutubeHomeMain(),
-        window.PurpleLeaseData.fetchYoutubeHomeFeatured(),
-        dealPromise,
-        window.PurpleLeaseData.fetchUsedCars(),
-        window.PurpleLeaseData.fetchBlogHomeLatest(4),
-        window.PurpleLeaseData.fetchBlogHomePopular(4)
-      ]);
+      const dataPromise = window.PurpleLeaseData.isConfigured()
+        ? Promise.all([
+            window.PurpleLeaseData.fetchYoutubeHomeMain(),
+            window.PurpleLeaseData.fetchYoutubeHomeFeatured(),
+            window.PurpleLeaseData.fetchBlogHomeLatest(4),
+            window.PurpleLeaseData.fetchBlogHomePopular(4)
+          ])
+        : Promise.resolve([null, null, null, null]);
+      const [mainV, featuredV, latestB, popularB] = await dataPromise;
+      const deals = await dealPromise;
+      const cars = await window.PurpleLeaseData.fetchUsedCars();
       mainVideo = mainV || null;
       featuredVideos = featuredV || [];
       currentPlaying = mainVideo || (featuredVideos[0] || null);
@@ -1208,8 +1271,13 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 <script src="/js/hero-banner.js"></script>
 <script src="/js/device-type.js"></script>
 <script src="/js/visit-tracker.js"></script>
+<link rel="stylesheet" href="/css/category-nav.css?v=20260701d">
+<link rel="stylesheet" href="/css/site-page-bg.css?v=20260703e">
 <link rel="stylesheet" href="/css/float-consult.css?v=20260630b">
+<script src="/js/category-nav.js?v=20260701c"></script>
 <script src="/js/float-consult.js?v=20260630b"></script>
+<link rel="stylesheet" href="/css/floating-quote-banner.css?v=20260704a">
+<script src="/js/floating-quote-banner.js?v=20260704a"></script>
 
 </body>
 </html>

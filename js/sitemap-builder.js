@@ -50,7 +50,7 @@
     } else {
       [
         ['/reviews-customer', 1.0], ['/reviews-youtube', 0.95], ['/reviews-blog', 0.95],
-        ['/', 0.85], ['/estimate', 0.8], ['/used-cars', 0.7], ['/parts-register', 0.6]
+        ['/', 0.85], ['/estimate', 0.8], ['/lease-calculator', 0.75], ['/used-cars', 0.7], ['/parts-register', 0.6]
       ].forEach(function (pair) {
         urls.push(urlEntry(pageLoc(siteUrl, pair[0]), pair[1], 'weekly', today));
       });
@@ -86,6 +86,16 @@
         0.55,
         'weekly',
         lastmodFromRow(p, today)
+      ));
+    });
+
+    (deps.youtubeVideos || []).forEach(function (v) {
+      if (v.id == null) return;
+      urls.push(urlEntry(
+        siteUrl + '/youtube-detail?id=' + v.id,
+        0.8,
+        'monthly',
+        lastmodFromRow(v, today)
       ));
     });
 

@@ -18,6 +18,8 @@
   var leaseQuoteUnread = 0;
   var usedCarInquiryData = [];
   var usedCarInquiryUnread = 0;
+  var leaseCalcInquiryData = [];
+  var leaseCalcInquiryUnread = 0;
   var activeInquiryTab = 'general';
   var leaseBrands = [];
   var selectedLeaseBrand = null;
@@ -27,6 +29,72 @@
   var pendingKsSyncCountry = null;
 
   var pendingPartListingId = null;
+  var aiReviewProgressTimer = null;
+  var aiReviewProgressStartMs = 0;
+
+  function clearAiReviewProgressTimer() {
+    if (aiReviewProgressTimer) {
+      clearInterval(aiReviewProgressTimer);
+      aiReviewProgressTimer = null;
+    }
+  }
+
+  function setAiReviewProgress(opts) {
+    opts = opts || {};
+    var box = opts.box || document.getElementById('dashboardAiReviewProgress');
+    if (!box) return;
+    var titleEl = document.getElementById('dashboardAiReviewProgressTitle');
+    var stepEl = document.getElementById('dashboardAiReviewProgressStep');
+    var elapsedEl = document.getElementById('dashboardAiReviewProgressElapsed');
+    var spinner = document.getElementById('dashboardAiReviewSpinner');
+    var statusEl = document.getElementById('dashboardAiReviewStatus');
+
+    if (opts.hidden) {
+      box.hidden = true;
+      clearAiReviewProgressTimer();
+      return;
+    }
+
+    box.hidden = false;
+    box.classList.remove('is-error', 'is-success');
+    if (opts.error) box.classList.add('is-error');
+    if (opts.success) box.classList.add('is-success');
+
+    if (titleEl && opts.title) titleEl.textContent = opts.title;
+    if (stepEl && opts.step) stepEl.textContent = opts.step;
+    if (spinner) spinner.style.display = opts.loading === false ? 'none' : '';
+    if (statusEl && opts.statusText != null) statusEl.textContent = opts.statusText;
+
+    if (opts.startTimer) {
+      aiReviewProgressStartMs = Date.now();
+      clearAiReviewProgressTimer();
+      aiReviewProgressTimer = setInterval(function () {
+        if (!elapsedEl) return;
+        var sec = Math.floor((Date.now() - aiReviewProgressStartMs) / 1000);
+        elapsedEl.textContent = '경과 ' + sec + '초 · 보통 30초~2분 소요';
+        if (sec >= 15 && sec < 45 && stepEl) {
+          stepEl.textContent = '② Gemini가 후기 본문을 작성 중입니다…';
+        } else if (sec >= 45 && stepEl) {
+          stepEl.textContent = '② Gemini 작성 중 (긴 글은 1~2분 걸릴 수 있습니다)…';
+        }
+      }, 1000);
+    }
+  }
+
+  async function checkDashboardAiReviewApi() {
+    var hint = document.getElementById('dashboardAiReviewApiHint');
+    if (!hint) return;
+    try {
+      var st = await API.getCustomerReviewGenStatus();
+      if (!st) {
+        hint.innerHTML = '<span style="color:#b45309;">⚠ AI 생성 API에 연결되지 않았습니다. 서버 review-gen-api·nginx 설정을 확인하세요.</span>';
+        return;
+      }
+      hint.textContent = 'API 연결 OK · 오늘 AI 후기 ' + (st.todayCount || 0) + '/' + (st.dailyMax || 2) + '건';
+    } catch (e) {
+      hint.innerHTML = '<span style="color:#b45309;">⚠ API 확인 실패: ' + (e.message || e) + '</span>';
+    }
+  }
 
   var analyticsTab = 'daily';
   var analyticsDays = 30;
@@ -283,7 +351,8 @@
     updateTabBadge('inquiryTabBadgeGeneral', inquiryUnread);
     updateTabBadge('inquiryTabBadgeNewcar', leaseQuoteUnread);
     updateTabBadge('inquiryTabBadgeUsedcar', usedCarInquiryUnread);
-    updateInquiryNavBadge(inquiryUnread + leaseQuoteUnread + usedCarInquiryUnread);
+    updateTabBadge('inquiryTabBadgeCalculator', leaseCalcInquiryUnread);
+    updateInquiryNavBadge(inquiryUnread + leaseQuoteUnread + usedCarInquiryUnread + leaseCalcInquiryUnread);
   }
 
   function setActiveInquiryTab(tab) {
@@ -294,7 +363,9 @@
     document.querySelectorAll('.inquiry-tab-panel').forEach(function (panel) {
       panel.classList.remove('active');
     });
-    var panelId = tab === 'general' ? 'inquiryTabGeneral' : (tab === 'newcar' ? 'inquiryTabNewcar' : 'inquiryTabUsedcar');
+    var panelId = tab === 'general' ? 'inquiryTabGeneral'
+      : (tab === 'newcar' ? 'inquiryTabNewcar'
+      : (tab === 'usedcar' ? 'inquiryTabUsedcar' : 'inquiryTabCalculator'));
     var panel = document.getElementById(panelId);
     if (panel) panel.classList.add('active');
   }
@@ -304,6 +375,7 @@
       inquiryUnread = await API.countUnreadInquiries();
       leaseQuoteUnread = await API.countUnreadLeaseQuotes();
       usedCarInquiryUnread = await API.countUnreadUsedCarInquiries();
+      leaseCalcInquiryUnread = await API.countUnreadLeaseCalculatorInquiries();
       updateInquiryTabBadges();
     } catch (err) {
       console.warn('[Admin] inquiry badge:', err);
@@ -360,6 +432,9 @@
     } else if (tab === 'usedcar') {
       await API.markAllUsedCarInquiriesRead();
       usedCarInquiryUnread = 0;
+    } else if (tab === 'calculator') {
+      await API.markAllLeaseCalculatorInquiriesRead();
+      leaseCalcInquiryUnread = 0;
     }
     updateInquiryTabBadges();
   }
@@ -380,6 +455,9 @@
       } else if (tab === 'usedcar') {
         usedCarInquiryData = await API.listUsedCarInquiries();
         renderUsedCarInquiriesTable();
+      } else if (tab === 'calculator') {
+        leaseCalcInquiryData = await API.listLeaseCalculatorInquiries();
+        renderLeaseCalcInquiriesTable();
       }
     } catch (err) {
       showError(err);
@@ -391,10 +469,12 @@
       inquiryData = await API.listInquiries();
       leaseQuoteData = await API.listLeaseQuotes();
       usedCarInquiryData = await API.listUsedCarInquiries();
+      leaseCalcInquiryData = await API.listLeaseCalculatorInquiries();
       inquiryTotal = inquiryData.length;
       renderInquiriesTable();
       renderLeaseQuotesTable();
       renderUsedCarInquiriesTable();
+      renderLeaseCalcInquiriesTable();
       updateKpis();
       setActiveInquiryTab(activeInquiryTab || 'general');
     } catch (err) {
@@ -556,6 +636,118 @@
     body.querySelectorAll('[data-view-uci]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         openUsedCarInquiryDetail(parseInt(btn.dataset.viewUci, 10));
+      });
+    });
+  }
+
+  function fmtCalcRate(calc) {
+    var inp = (calc && calc.inputs) || {};
+    var res = (calc && calc.results) || {};
+    if (calc.calculator_type === 'monthly') {
+      return inp.annual_rate_pct != null ? parseFloat(inp.annual_rate_pct).toFixed(2) + '%' : '-';
+    }
+    if (!res.calculated || res.annual_rate_pct == null) return '-';
+    return parseFloat(res.annual_rate_pct).toFixed(2) + '%';
+  }
+
+  function fmtCalcPeriod(calc) {
+    var inp = (calc && calc.inputs) || {};
+    return inp.period ? inp.period + '개월' : '-';
+  }
+
+  function fmtCalcMonthly(calc) {
+    var inp = (calc && calc.inputs) || {};
+    var res = (calc && calc.results) || {};
+    if (calc.calculator_type === 'monthly') {
+      if (res.calculated && res.monthly_payment != null) return fmtWon(res.monthly_payment);
+      return '-';
+    }
+    return inp.monthly ? fmtWon(inp.monthly) : '-';
+  }
+
+  function renderLeaseCalcInquiryDetailHtml(row) {
+    var calc = row.calc || {};
+    var inp = calc.inputs || {};
+    var res = calc.results || {};
+    var isMonthly = calc.calculator_type === 'monthly';
+    var typeLabel = isMonthly ? '월납입금계산기' : '리스렌트금리계산기';
+    var inputRows = isMonthly ? [
+      ['리스(렌트) 기간', inp.period ? inp.period + '개월' : '-'],
+      ['이율(연)', '3% (고정)'],
+      ['취득원가', inp.acquisition ? fmtWon(inp.acquisition) : '-'],
+      ['잔존가치', inp.residual != null ? fmtWon(inp.residual) : '-'],
+      ['선수금', inp.prepay != null ? fmtWon(inp.prepay) : '-']
+    ] : [
+      ['리스(렌트) 기간', inp.period ? inp.period + '개월' : '-'],
+      ['월 납입금', inp.monthly ? fmtWon(inp.monthly) : '-'],
+      ['취득원가', inp.acquisition ? fmtWon(inp.acquisition) : '-'],
+      ['잔존가치', inp.residual != null ? fmtWon(inp.residual) : '-'],
+      ['선수금', inp.prepay != null ? fmtWon(inp.prepay) : '-']
+    ];
+    var resultRows = res.calculated ? (isMonthly ? [
+      ['월 납입금', res.monthly_payment != null ? fmtWon(res.monthly_payment) : '-']
+    ] : [
+      ['이율', fmtCalcRate(calc)],
+      ['총 구매비용', res.total_cost != null ? fmtWon(res.total_cost) : '-'],
+      ['월 이자비용', res.monthly_interest != null ? fmtWon(res.monthly_interest) : '-'],
+      ['총 이자비용', res.total_interest != null ? fmtWon(res.total_interest) : '-']
+    ]) : [['계산 결과', '미계산 (입력값만 접수)']];
+
+    function tableHtml(title, rows) {
+      return '<div style="margin-bottom:14px;"><b>' + title + '</b>' +
+        '<table class="data-table" style="margin-top:8px;font-size:12.5px;"><tbody>' +
+        rows.map(function (pair) {
+          return '<tr><th style="width:38%;background:var(--surface-alt);">' + pair[0] + '</th><td>' + pair[1] + '</td></tr>';
+        }).join('') +
+        '</tbody></table></div>';
+    }
+
+    return '<div style="display:grid;gap:12px;">' +
+      '<div><b>유형</b><br>' + typeLabel + '</div>' +
+      '<div><b>고객</b><br>' + row.name + ' · ' + row.phone + '</div>' +
+      tableHtml('계산기 입력', inputRows) +
+      tableHtml('계산 결과', resultRows) +
+      '</div>';
+  }
+
+  function openLeaseCalcInquiryDetail(id) {
+    var row = leaseCalcInquiryData.find(function (r) { return r.id === id; });
+    if (!row) return;
+    document.getElementById('modalLeaseCalcInquiryTitle').textContent = '리스렌트계산기 — ' + row.name;
+    document.getElementById('modalLeaseCalcInquiryBody').innerHTML = renderLeaseCalcInquiryDetailHtml(row);
+    openModal('modalLeaseCalcInquiryDetail');
+  }
+
+  function renderLeaseCalcInquiriesTable() {
+    var body = document.getElementById('leaseCalcInquiryTableBody');
+    var countEl = document.getElementById('leaseCalcInquiryCount');
+    if (countEl) countEl.textContent = leaseCalcInquiryData.length;
+    var checkAll = document.getElementById('leaseCalcInquiryCheckAll');
+    if (checkAll) checkAll.checked = false;
+    if (!body) return;
+
+    if (!leaseCalcInquiryData.length) {
+      body.innerHTML = '<tr><td colspan="9"><div class="empty-row">접수된 리스렌트계산기 문의가 없습니다.</div></td></tr>';
+      return;
+    }
+
+    body.innerHTML = leaseCalcInquiryData.map(function (row) {
+      return '<tr>' +
+        '<td style="text-align:center;"><input type="checkbox" class="lease-calc-inquiry-check" value="' + row.id + '" aria-label="선택"></td>' +
+        '<td class="num-cell">' + row.date + '</td>' +
+        '<td class="num-cell">' + row.time + '</td>' +
+        '<td class="num-cell">' + fmtCalcRate(row.calc) + '</td>' +
+        '<td class="num-cell">' + fmtCalcPeriod(row.calc) + '</td>' +
+        '<td class="num-cell">' + fmtCalcMonthly(row.calc) + '</td>' +
+        '<td class="title-cell">' + row.name + '</td>' +
+        '<td class="num-cell">' + row.phone + '</td>' +
+        '<td><button type="button" class="btn btn-outline btn-sm" data-view-lci="' + row.id + '">상세</button></td>' +
+        '</tr>';
+    }).join('');
+
+    body.querySelectorAll('[data-view-lci]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        openLeaseCalcInquiryDetail(parseInt(btn.dataset.viewLci, 10));
       });
     });
   }
@@ -764,6 +956,234 @@
       reviewData = await API.listReviews();
       renderReviewTable();
     } catch (err) { showError(err); }
+  }
+
+  function initAiReviewTopicSelect() {
+    var sel = document.getElementById('aiReviewTopicId');
+    if (!sel || sel.dataset.initialized === '1') return;
+    var topics = API.getReviewTopicsForAdmin();
+    topics.forEach(function (t) {
+      var opt = document.createElement('option');
+      opt.value = String(t.id);
+      opt.textContent = '#' + t.id + ' [' + t.categoryLabel + '] ' + t.titleSample.slice(0, 42) + (t.titleSample.length > 42 ? '…' : '');
+      sel.appendChild(opt);
+    });
+    sel.dataset.initialized = '1';
+  }
+
+  function fmtReviewGenTime(iso) {
+    if (!iso) return '—';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return String(iso);
+    return d.toLocaleString('ko-KR', { hour12: false });
+  }
+
+  async function renderAiReviewGenLogs() {
+    var area = document.getElementById('aiReviewGenLogArea');
+    if (!area) return;
+    try {
+      var logs = await API.listCustomerReviewGenLogs(8);
+      var queue = await API.listCustomerReviewGenQueue(5);
+      var html = '';
+      if (queue.length) {
+        html += '<div style="margin-bottom:8px;"><b>최근 큐</b></div><ul style="margin:0 0 10px;padding-left:18px;">';
+        queue.forEach(function (q) {
+          html += '<li>#' + q.id + ' · ' + q.status + ' · topic=' + (q.topic_id || '랜덤') +
+            (q.dry_run ? ' · dry-run' : '') + ' · ' + fmtReviewGenTime(q.created_at) +
+            (q.error_msg ? ' · <span style="color:#c0392b;">' + q.error_msg + '</span>' : '') + '</li>';
+        });
+        html += '</ul>';
+      }
+      html += '<div style="margin-bottom:6px;"><b>생성 로그</b></div>';
+      if (!logs.length) {
+        html += '<div style="color:var(--ink-400);">로그 없음 — migration-customer-review-ai.sql 실행 후 테스트하세요.</div>';
+      } else {
+        html += '<ul style="margin:0;padding-left:18px;">';
+        logs.forEach(function (l) {
+          html += '<li>' + (l.ok ? '✓' : '✗') + ' ' + fmtReviewGenTime(l.started_at) +
+            ' · ' + (l.msg || '') +
+            (l.topic_id ? ' · topic#' + l.topic_id : '') +
+            (l.char_count ? ' · ' + l.char_count + '자' : '') +
+            (l.listing_id ? ' · 후기#' + l.listing_id : '') + '</li>';
+        });
+        html += '</ul>';
+      }
+      area.innerHTML = html;
+    } catch (err) {
+      area.innerHTML = '<span style="color:#c0392b;">로그 조회 실패: ' + (err.message || err) + '</span>';
+    }
+  }
+
+  async function loadAiReviewGenPanel() {
+    initAiReviewTopicSelect();
+    await renderAiReviewGenStatus();
+    await renderAiReviewGenLogs();
+  }
+
+  async function renderAiReviewGenStatus() {
+    var el = document.getElementById('aiReviewGenToday');
+    var dashEl = document.getElementById('dashboardAiReviewToday');
+    var text = '오늘 AI 후기: —';
+    try {
+      var st = await API.getCustomerReviewGenStatus();
+      if (!st) {
+        text = '오늘 AI 후기: (API 연결 확인)';
+      } else {
+        text = '오늘 AI 후기: ' + (st.todayCount || 0) + '/' + (st.dailyMax || 2) +
+          (st.canAutoPublish ? ' · 자동 생성 가능' : ' · 자동 대기 중');
+      }
+    } catch (e) {
+      text = '오늘 AI 후기: —';
+    }
+    if (el) el.textContent = text;
+    if (dashEl) dashEl.textContent = text;
+  }
+
+  function renderAiReviewPreview(previewEl, result, dryRun) {
+    if (!previewEl) return;
+    previewEl.style.display = 'block';
+    var link = result.listingId
+      ? '<a href="/review-detail?id=' + result.listingId + '" target="_blank" rel="noopener" style="color:var(--purple-600);font-weight:700;">상세 보기</a>'
+      : '';
+    previewEl.innerHTML =
+      '<div style="font-weight:700;margin-bottom:6px;">' + (result.title || '') + '</div>' +
+      '<div style="color:var(--ink-500);margin-bottom:8px;">' +
+      (dryRun ? '[테스트 · DB 미저장] · ' : '') +
+      'topic #' + (result.topic && result.topic.id) + ' · ' +
+      (result.tone && result.tone.name) + ' · ' + (result.charCount || 0) + '자 · ' + (result.elapsedMs || 0) + 'ms</div>' +
+      '<div style="white-space:pre-wrap;color:var(--ink-700);max-height:200px;overflow:auto;">' +
+      (result.bodyPreview || '') + (result.bodyPreview && result.bodyPreview.length >= 400 ? '…' : '') + '</div>' +
+      (link ? '<div style="margin-top:8px;">' + link + '</div>' : '');
+  }
+
+  async function runAiReviewGeneration(opts) {
+    opts = opts || {};
+    var statusEl = opts.statusEl || document.getElementById('aiReviewGenStatus');
+    var btn = opts.btn || document.getElementById('btnGenerateAiReviewNow');
+    var preview = opts.previewEl || document.getElementById('aiReviewGenPreview');
+    var topicSel = document.getElementById('aiReviewTopicId');
+    var dryRunEl = document.getElementById('aiReviewDryRun');
+    var topicVal = opts.topicId != null ? String(opts.topicId) : (topicSel ? topicSel.value : '');
+    var dryRun = opts.dryRun != null ? !!opts.dryRun : (dryRunEl ? dryRunEl.checked : false);
+    var useDashboardUi = !!opts.useDashboardUi || btn && btn.id === 'btnDashboardAiReviewTest';
+
+    if (useDashboardUi) {
+      setAiReviewProgress({
+        title: 'AI 후기 생성·게시 중…',
+        step: '① 서버에 생성 요청을 보내는 중…',
+        startTimer: true,
+        loading: true,
+        statusText: ''
+      });
+    } else if (statusEl) {
+      statusEl.textContent = 'Gemini 생성 중… (최대 1~2분)';
+    }
+
+    var btnLabel = btn ? btn.textContent : '';
+    if (btn) {
+      btn.disabled = true;
+      if (useDashboardUi) btn.textContent = '생성 중…';
+    }
+    if (preview) preview.style.display = 'none';
+
+    try {
+      if (useDashboardUi) {
+        setAiReviewProgress({ step: '② Gemini API 호출 중 (30초~2분)…' });
+      }
+
+      var result = await API.generateCustomerReviewNow({
+        topicId: topicVal ? parseInt(topicVal, 10) : null,
+        publish: !dryRun,
+        dryRun: dryRun,
+        skipDailyLimit: true
+      });
+
+      if (useDashboardUi) {
+        setAiReviewProgress({
+          title: dryRun ? '테스트 생성 완료' : '후기 게시 완료',
+          step: '③ ' + (result.title || '제목 없음'),
+          loading: false,
+          success: true,
+          statusText: dryRun
+            ? '테스트 완료 (' + (result.charCount || 0) + '자, DB 미저장)'
+            : '게시 완료 · 후기 #' + (result.listingId || '—') + ' · 공개 목록에 노출됨'
+        });
+        clearAiReviewProgressTimer();
+        var elapsedEl = document.getElementById('dashboardAiReviewProgressElapsed');
+        if (elapsedEl && result.elapsedMs) {
+          elapsedEl.textContent = '완료 · 소요 ' + Math.round(result.elapsedMs / 1000) + '초';
+        }
+      } else if (statusEl) {
+        statusEl.textContent = dryRun
+          ? '테스트 완료 (' + (result.charCount || 0) + '자, DB 미저장)'
+          : '게시 완료 · 후기 #' + (result.listingId || '—');
+      }
+
+      renderAiReviewPreview(preview, result, dryRun);
+
+      if (!dryRun) {
+        reviewData = await API.listReviews();
+        renderReviewTable();
+        renderDashboardAiReviewRecent();
+        updateKpis();
+      }
+      await renderAiReviewGenStatus();
+      await checkDashboardAiReviewApi();
+      await renderAiReviewGenLogs();
+      return result;
+    } catch (err) {
+      var msg = (err && err.message) ? err.message : String(err);
+      if (useDashboardUi) {
+        setAiReviewProgress({
+          title: '생성 실패',
+          step: msg,
+          loading: false,
+          error: true,
+          statusText: '오류가 발생했습니다. 아래 메시지를 확인하세요.'
+        });
+        clearAiReviewProgressTimer();
+      } else if (statusEl) {
+        statusEl.textContent = '오류: ' + msg;
+      }
+      showError(err);
+      throw err;
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        if (useDashboardUi && btnLabel) btn.textContent = btnLabel;
+      }
+    }
+  }
+
+  async function generateAiReviewNow() {
+    return runAiReviewGeneration({});
+  }
+
+  async function dashboardAiReviewTest() {
+    return runAiReviewGeneration({
+      dryRun: false,
+      topicId: null,
+      useDashboardUi: true,
+      btn: document.getElementById('btnDashboardAiReviewTest'),
+      previewEl: document.getElementById('dashboardAiReviewPreview')
+    });
+  }
+
+  function renderDashboardAiReviewRecent() {
+    var el = document.getElementById('dashboardAiReviewRecent');
+    if (!el) return;
+    var rows = (reviewData || []).slice(0, 5);
+    if (!rows.length) {
+      el.innerHTML = '<div style="color:var(--ink-400);">등록된 후기 없음</div>';
+      return;
+    }
+    el.innerHTML = '<div style="font-weight:700;margin-bottom:8px;">최근 고객후기 (어드민·공개 목록)</div>' +
+      '<ul style="margin:0;padding-left:18px;line-height:1.7;">' +
+      rows.map(function (r) {
+        return '<li><a href="/review-detail?id=' + r.id + '" target="_blank" rel="noopener" style="color:var(--purple-600);">' +
+          (r.title || '제목 없음') + '</a> · ' + (r.date || '') + ' · 조회 ' + (r.views || 0) + '</li>';
+      }).join('') +
+      '</ul>';
   }
 
   function renderPartsTable() {
@@ -1315,6 +1735,7 @@
     renderYoutubeTable();
     renderBlogTable();
     renderReviewTable();
+    initAiReviewTopicSelect();
     renderPartsTable();
     renderUsedcarsTable();
     await renderLeaseBrandList();
@@ -1323,6 +1744,9 @@
     await visitorsPromise;
     await usedCarAutoSyncPromise;
     await refreshUnifiedInquiryBadge();
+    await renderAiReviewGenStatus();
+    await checkDashboardAiReviewApi();
+    renderDashboardAiReviewRecent();
     updateKpis();
   }
 
@@ -1803,6 +2227,12 @@
         if (item.dataset.panel === 'hero' && window.PurpleAdminHero) {
           await window.PurpleAdminHero.load();
         }
+        if (item.dataset.panel === 'partners' && window.PurpleAdminPartners) {
+          await window.PurpleAdminPartners.load();
+        }
+        if (item.dataset.panel === 'customer-review') {
+          await loadAiReviewGenPanel();
+        }
       });
     });
 
@@ -1933,6 +2363,29 @@
       document.querySelectorAll('.used-car-inquiry-check').forEach(function (el) { el.checked = checked; });
     });
 
+    document.getElementById('btnDeleteLeaseCalcInquiries').addEventListener('click', async function () {
+      var ids = [];
+      document.querySelectorAll('.lease-calc-inquiry-check:checked').forEach(function (el) {
+        ids.push(parseInt(el.value, 10));
+      });
+      if (!ids.length) {
+        alert('삭제할 항목을 선택해 주세요.');
+        return;
+      }
+      if (!confirm('선택한 ' + ids.length + '건을 삭제하시겠습니까?')) return;
+      try {
+        await API.deleteLeaseCalculatorInquiries(ids);
+        leaseCalcInquiryData = await API.listLeaseCalculatorInquiries();
+        renderLeaseCalcInquiriesTable();
+        await refreshUnifiedInquiryBadge();
+      } catch (err) { showError(err); }
+    });
+
+    document.getElementById('leaseCalcInquiryCheckAll').addEventListener('change', function () {
+      var checked = document.getElementById('leaseCalcInquiryCheckAll').checked;
+      document.querySelectorAll('.lease-calc-inquiry-check').forEach(function (el) { el.checked = checked; });
+    });
+
     document.getElementById('btnSyncYoutube').addEventListener('click', async function () {
       var btn = document.getElementById('btnSyncYoutube');
       if (!confirm('@purplelease 채널의 영상을 동기화하시겠습니까?\n기존 메인/추천 설정은 유지됩니다.')) return;
@@ -2017,6 +2470,25 @@
         reviewData = await API.listReviews();
         renderReviewTable();
       } catch (err) { showError(err); }
+    });
+
+    var btnGenerateAiReviewNow = document.getElementById('btnGenerateAiReviewNow');
+    if (btnGenerateAiReviewNow) btnGenerateAiReviewNow.addEventListener('click', generateAiReviewNow);
+    var btnDashboardAiReviewTest = document.getElementById('btnDashboardAiReviewTest');
+    if (btnDashboardAiReviewTest) {
+      btnDashboardAiReviewTest.addEventListener('click', function () {
+        dashboardAiReviewTest().catch(function () { /* 오류는 runAiReviewGeneration에서 표시 */ });
+      });
+    }
+    var btnGoCustomerReviewPanel = document.getElementById('btnGoCustomerReviewPanel');
+    if (btnGoCustomerReviewPanel) btnGoCustomerReviewPanel.addEventListener('click', function () {
+      var nav = document.querySelector('.admin-nav-item[data-panel="customer-review"]');
+      if (nav) nav.click();
+    });
+    var btnRefreshReviewGenLogs = document.getElementById('btnRefreshReviewGenLogs');
+    if (btnRefreshReviewGenLogs) btnRefreshReviewGenLogs.addEventListener('click', function () {
+      renderAiReviewGenStatus();
+      renderAiReviewGenLogs();
     });
 
     document.getElementById('btnAddPart').addEventListener('click', function () {
@@ -2193,6 +2665,7 @@
     if (email) document.getElementById('adminUserEmail').textContent = email;
     bindEvents();
     if (window.PurpleAdminHero) window.PurpleAdminHero.init(API);
+    if (window.PurpleAdminPartners) window.PurpleAdminPartners.init(API);
     try {
       await loadAll();
       await loadFloatConsultSettingsForm();

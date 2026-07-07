@@ -1,0 +1,120 @@
+/* 상단 카테고리 메뉴 + 계산기 드롭다운 */
+.category-nav {
+  overflow: visible;
+}
+
+.category-nav-inner {
+  display: flex;
+  align-items: stretch;
+  min-width: max-content;
+  overflow: visible;
+}
+
+.category-nav-track {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.category-nav-track::-webkit-scrollbar {
+  display: none;
+}
+
+.category-nav-dropdown {
+  position: relative;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.category-nav-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  margin: 6px 10px 6px 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #fff;
+  border: none;
+  border-bottom: none;
+  border-radius: 100px;
+  background: linear-gradient(135deg, #8B2FE0 0%, #5B2FD6 45%, #1A1E6E 100%);
+  box-shadow: 0 6px 18px rgba(76, 40, 180, 0.28);
+  white-space: nowrap;
+  cursor: pointer;
+  font-family: inherit;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.category-nav-trigger:hover {
+  box-shadow: 0 8px 22px rgba(76, 40, 180, 0.38);
+  transform: translateY(-1px);
+}
+
+.category-nav-trigger svg {
+  width: 12px;
+  height: 12px;
+  stroke: #fff;
+  transition: transform 0.15s ease;
+}
+
+.category-nav-dropdown.open .category-nav-trigger svg {
+  transform: rotate(180deg);
+}
+
+.category-nav-dropdown.active .category-nav-trigger,
+.category-nav-dropdown.open .category-nav-trigger {
+  color: #fff;
+  border-bottom-color: transparent;
+}
+
+.category-nav a.active {
+  color: var(--navy-900, #11143A);
+  border-bottom-color: var(--purple-600, #8B2FE0);
+}
+
+.category-nav-submenu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 148px;
+  background: #fff;
+  border: 1px solid var(--line-soft, #EFEDF6);
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 12px 28px rgba(40, 30, 90, 0.12);
+  z-index: 1200;
+  overflow: hidden;
+}
+
+.category-nav-dropdown.open {
+  z-index: 1210;
+}
+
+.category-nav-dropdown.open .category-nav-submenu {
+  display: block;
+}
+
+.category-nav-submenu a {
+  display: block;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-700, #383846);
+  border-bottom: none;
+  white-space: nowrap;
+}
+
+.category-nav-submenu a:hover,
+.category-nav-submenu a.active {
+  background: var(--purple-50, #FAF6FE);
+  color: var(--purple-600, #8B2FE0);
+}
+
+.category-nav-submenu a + a {
+  border-top: 1px solid var(--line-soft, #EFEDF6);
+}

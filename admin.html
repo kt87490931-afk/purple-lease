@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -36,7 +36,7 @@
 }
 
 * { box-sizing: border-box; }
-body { margin:0; background: var(--surface); color: var(--ink-700); font-family: var(--font-body); font-size: 14px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+body { margin:0; background: var(--page-bg); color: var(--ink-700); font-family: var(--font-body); font-size: 14px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
 img { max-width: 100%; display: block; }
 a { color: inherit; text-decoration: none; }
 button { font-family: inherit; cursor: pointer; }
@@ -124,6 +124,31 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
 .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:9px 15px; border-radius: var(--radius-sm); font-weight:700; font-size:12.5px; border:1px solid transparent; transition: all .15s ease; white-space:nowrap; }
 .btn-primary { background: var(--grad-main); color:#fff; box-shadow: var(--shadow-sm); }
 .btn-primary:hover { opacity:.92; }
+.btn-primary:disabled, .btn-outline:disabled { opacity:.55; cursor:not-allowed; }
+.ai-review-progress {
+  margin-top:12px; padding:14px 16px; border-radius:10px;
+  border:1px solid #d4c4f5; background:var(--purple-50);
+}
+.ai-review-progress.is-error { border-color:#fecaca; background:#fef2f2; }
+.ai-review-progress.is-success { border-color:#bbf7d0; background:#f0fdf4; }
+.ai-review-spinner {
+  width:22px; height:22px; border:3px solid var(--purple-100);
+  border-top-color:var(--purple-600); border-radius:50%;
+  animation:aiReviewSpin .8s linear infinite; flex-shrink:0;
+}
+@keyframes aiReviewSpin { to { transform:rotate(360deg); } }
+.ai-review-progress-bar {
+  height:6px; background:var(--line-soft); border-radius:999px; overflow:hidden; margin-top:10px;
+}
+.ai-review-progress-bar > span {
+  display:block; height:100%; width:30%; background:var(--grad-main);
+  border-radius:999px; animation:aiReviewIndeterminate 1.4s ease-in-out infinite;
+}
+@keyframes aiReviewIndeterminate {
+  0% { transform:translateX(-100%); width:40%; }
+  50% { width:60%; }
+  100% { transform:translateX(280%); width:40%; }
+}
 .btn-outline { background:#fff; border-color: var(--line); color: var(--ink-900); }
 .btn-outline:hover { border-color: var(--purple-600); color: var(--purple-600); }
 .btn-danger-text { background:none; border:none; color: var(--danger-600); font-weight:700; font-size:12px; padding:6px 8px; }
@@ -232,6 +257,7 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
   .tree-cols { grid-template-columns:1fr; }
 }
 </style>
+<link rel="stylesheet" href="/css/site-page-bg.css?v=20260703d">
 </head>
 <body>
 
@@ -260,6 +286,10 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
         <span class="nav-label">견적문의</span>
         <span class="nav-badge" id="inquiryNavBadge" aria-label="미확인 견적문의"></span>
       </a>
+      <a class="admin-nav-item" data-panel="estimate">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><line x1="9" y1="9" x2="10" y2="9"/></svg>
+        <span class="nav-label">견적서</span>
+      </a>
       <a class="admin-nav-item" data-panel="youtube">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
         유튜브 영상
@@ -275,6 +305,10 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
       <a class="admin-nav-item" data-panel="parts">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M3 17V9l3-5h9l4 5v8"/></svg>
         수입차부품
+      </a>
+      <a class="admin-nav-item" data-panel="partners">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+        <span class="nav-label">제휴업체</span>
       </a>
       <a class="admin-nav-item" data-panel="lease">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="6" rx="1"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/><path d="M5 11l1.5-4h11L19 11"/></svg>
@@ -318,6 +352,36 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
           <div class="kpi-card"><div class="kpi-label">등록된 부품</div><div class="kpi-value" id="kpiParts">0</div></div>
           <div class="kpi-card"><div class="kpi-label">등록된 중고차</div><div class="kpi-value" id="kpiUsedcars">0</div></div>
           <div class="kpi-card"><div class="kpi-label">중고차 자동동기화</div><div class="kpi-value" id="kpiUsedCarAutoSync">—</div><div class="kpi-sub" id="kpiUsedCarAutoSyncSub" style="font-size:11px;color:var(--ink-400);margin-top:4px;">오늘 KST 04:00 cron</div></div>
+        </div>
+        <div style="background:#fff; border-radius:var(--radius-md); padding:20px 22px; box-shadow:var(--shadow-sm); margin-bottom:16px;" id="dashboardAiReviewBox">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
+            <h2 style="font-size:16px;margin:0;">AI 고객후기 생성 테스트</h2>
+            <div id="dashboardAiReviewToday" style="font-size:12px;color:var(--ink-600);font-weight:700;">오늘 AI 후기: —</div>
+          </div>
+          <p style="font-size:12.5px;color:var(--ink-500);margin:0 0 8px;line-height:1.65;">
+            Gemini로 후기를 생성해 <b>고객후기 목록에 바로 게시</b>합니다. 존댓말 톤·주제 랜덤 적용.
+            생성 후 어드민·공개 페이지(<code>/reviews-customer</code>) 목록에 즉시 노출됩니다.
+          </p>
+          <div id="dashboardAiReviewApiHint" style="font-size:12px;color:var(--ink-400);margin-bottom:12px;">API 연결 확인 중…</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <button class="btn btn-primary btn-sm" type="button" id="btnDashboardAiReviewTest">리뷰 생성·게시</button>
+            <button class="btn btn-outline btn-sm" type="button" id="btnGoCustomerReviewPanel">고객후기 패널</button>
+            <a class="btn btn-outline btn-sm" href="/reviews-customer" target="_blank" rel="noopener">공개 목록</a>
+          </div>
+          <div id="dashboardAiReviewProgress" class="ai-review-progress" hidden role="status" aria-live="polite">
+            <div style="display:flex;align-items:flex-start;gap:12px;">
+              <div class="ai-review-spinner" id="dashboardAiReviewSpinner"></div>
+              <div style="flex:1;min-width:0;">
+                <div id="dashboardAiReviewProgressTitle" style="font-weight:700;font-size:13.5px;color:var(--ink-900);">AI 후기 생성 중…</div>
+                <div id="dashboardAiReviewProgressStep" style="font-size:12.5px;color:var(--ink-600);margin-top:4px;">준비 중…</div>
+                <div id="dashboardAiReviewProgressElapsed" style="font-size:11.5px;color:var(--ink-400);margin-top:4px;">경과 0초 · 보통 30초~2분 소요</div>
+              </div>
+            </div>
+            <div class="ai-review-progress-bar"><span></span></div>
+          </div>
+          <div id="dashboardAiReviewStatus" style="font-size:12.5px;color:var(--ink-600);margin-top:10px;"></div>
+          <div id="dashboardAiReviewPreview" style="display:none;margin-top:12px;padding:12px;border-radius:8px;background:var(--surface-alt,#f8f7fc);border:1px solid var(--ink-100);font-size:12.5px;line-height:1.65;"></div>
+          <div id="dashboardAiReviewRecent" style="margin-top:14px;font-size:12.5px;color:var(--ink-600);"></div>
         </div>
         <div style="background:#fff; border-radius:var(--radius-md); padding:18px 20px; box-shadow:var(--shadow-sm); font-size:13px; color:var(--ink-700); line-height:1.8; margin-bottom:16px;">
           <b>안내:</b> 등록·수정·삭제한 내용은 Supabase DB에 저장되며, 메인·후기·부품·중고차·간편견적 페이지에 반영됩니다.
@@ -401,6 +465,7 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
           <button type="button" class="inquiry-tab active" data-inquiry-tab="general">일반문의 <span class="tab-badge" id="inquiryTabBadgeGeneral"></span></button>
           <button type="button" class="inquiry-tab" data-inquiry-tab="newcar">신차문의 <span class="tab-badge" id="inquiryTabBadgeNewcar"></span></button>
           <button type="button" class="inquiry-tab" data-inquiry-tab="usedcar">중고차문의 <span class="tab-badge" id="inquiryTabBadgeUsedcar"></span></button>
+          <button type="button" class="inquiry-tab" data-inquiry-tab="calculator">리스렌트계산기 <span class="tab-badge" id="inquiryTabBadgeCalculator"></span></button>
         </div>
 
         <div class="inquiry-tab-panel active" id="inquiryTabGeneral">
@@ -444,6 +509,20 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
             <tbody id="usedCarInquiryTableBody"></tbody>
           </table>
         </div>
+
+        <div class="inquiry-tab-panel" id="inquiryTabCalculator">
+          <div class="toolbar">
+            <div class="toolbar-left">리스렌트계산기 <b id="leaseCalcInquiryCount">0</b>건 — 금리계산기 「이 조건으로 무료 견적 받기」 접수 내역</div>
+            <button class="btn btn-outline" type="button" id="btnDeleteLeaseCalcInquiries">선택 삭제</button>
+          </div>
+          <table class="data-table">
+            <thead><tr>
+              <th style="width:36px;text-align:center;"><input type="checkbox" id="leaseCalcInquiryCheckAll" aria-label="전체 선택"></th>
+              <th>날짜</th><th>시간</th><th>이율</th><th>리스기간</th><th>월납입금</th><th>성함</th><th>연락처</th><th></th>
+            </tr></thead>
+            <tbody id="leaseCalcInquiryTableBody"></tbody>
+          </table>
+        </div>
       </section>
 
       <section class="panel" id="panel-youtube">
@@ -474,7 +553,39 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
       <section class="panel" id="panel-customer-review">
         <div class="toolbar">
           <div class="toolbar-left">등록된 후기 <b id="reviewCount">0</b>개 — 고객이 직접 작성할 수 없으며, 운영자만 작성합니다.</div>
-          <button class="btn btn-primary" id="btnAddReview">+ 후기 작성</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-outline" type="button" id="btnRefreshReviewGenLogs">AI 로그 새로고침</button>
+            <button class="btn btn-primary" id="btnAddReview">+ 후기 작성</button>
+          </div>
+        </div>
+        <div class="panel-sub" id="aiReviewGenBox" style="margin-bottom:16px;padding:14px 16px;border:1px solid var(--ink-100);border-radius:10px;background:var(--surface-alt,#f8f7fc);">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <div style="font-weight:700;font-size:13.5px;">AI 후기 자동 생성 (Gemini)</div>
+            <div id="aiReviewGenToday" style="font-size:12px;color:var(--ink-600);font-weight:700;">오늘 AI 후기: —</div>
+          </div>
+          <p style="margin:0 0 10px;font-size:12px;color:var(--ink-500);line-height:1.6;">주제를 선택하고 「즉시 생성·게시」를 누르면 Gemini가 후기를 작성해 <code>customer_reviews</code>에 저장됩니다. 자동 생성은 <b>매일 10:00·16:00 (KST)</b> 하루 2건까지 실행됩니다.</p>
+          <div class="form-grid-2" style="margin-bottom:10px;">
+            <div class="form-row" style="margin:0;">
+              <label>주제 (50개 풀)</label>
+              <select id="aiReviewTopicId" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--ink-100);">
+                <option value="">랜덤 (최근 주제 회피)</option>
+              </select>
+            </div>
+            <div class="form-row" style="margin:0;">
+              <label>옵션</label>
+              <div style="display:flex;flex-direction:column;gap:6px;font-size:12.5px;">
+                <label><input type="checkbox" id="aiReviewDryRun"> dry-run (DB 저장 없이 테스트)</label>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <button class="btn btn-primary btn-sm" type="button" id="btnGenerateAiReviewNow">즉시 생성·게시</button>
+            <button class="btn btn-outline btn-sm" type="button" id="btnRefreshReviewGenLogs">로그 새로고침</button>
+            <a class="btn btn-outline btn-sm" href="/reviews-customer" target="_blank" rel="noopener">공개 목록 보기</a>
+            <span id="aiReviewGenStatus" style="font-size:12px;color:var(--ink-500);"></span>
+          </div>
+          <div id="aiReviewGenPreview" style="display:none;margin-top:12px;padding:12px;border-radius:8px;background:#fff;border:1px solid var(--ink-100);font-size:12.5px;line-height:1.65;"></div>
+          <div id="aiReviewGenLogArea" style="margin-top:12px;font-size:12px;color:var(--ink-600);max-height:220px;overflow:auto;"></div>
         </div>
         <table class="data-table">
           <thead><tr><th>번호</th><th>제목</th><th>날짜</th><th>조회수</th><th></th></tr></thead>
@@ -491,6 +602,67 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
           <thead><tr><th>썸네일</th><th>부품명</th><th>브랜드</th><th>분류</th><th>가격</th><th>재고</th><th></th></tr></thead>
           <tbody id="partsTableBody"></tbody>
         </table>
+      </section>
+
+      <section class="panel" id="panel-partners">
+        <div class="inquiry-tabs">
+          <button type="button" class="inquiry-tab active" data-partners-tab="video">상단 영상 수정</button>
+          <button type="button" class="inquiry-tab" data-partners-tab="regions">지역 관련</button>
+          <button type="button" class="inquiry-tab" data-partners-tab="list">제휴업체 관리</button>
+        </div>
+
+        <div class="inquiry-tab-panel active" id="partnersTabVideo">
+          <p style="font-size:12.5px;color:var(--ink-500);margin:0 0 16px;line-height:1.65;">
+            <code>/partners</code> 목록 상단 「제휴업체 소개 영상」 카드 — YouTube ID·제목·설명·썸네일을 관리합니다.
+            저장 즉시 공개 페이지에 반영됩니다. (<code>migration-partners.sql</code> 최초 1회 실행)
+          </p>
+          <form id="partnerVideoForm" style="max-width:640px;background:#fff;border-radius:var(--radius-md);padding:18px 20px;box-shadow:var(--shadow-sm);">
+            <div class="form-row"><label>YouTube 영상 URL 또는 ID</label><input type="text" id="partnerVideoYoutube" class="form-input" placeholder="https://youtu.be/YTQT_mUChww"><span class="hint">저장 시 영상 ID만 DB에 저장되며, 다시 열면 youtu.be 주소로 표시됩니다.</span></div>
+            <div class="form-row"><label>영상 제목</label><input type="text" id="partnerVideoTitle" class="form-input"></div>
+            <div class="form-row"><label>영상 설명</label><textarea id="partnerVideoDesc" rows="3" class="form-input"></textarea></div>
+            <div class="form-row">
+              <label>썸네일 URL (비우면 YouTube 기본 썸네일)</label>
+              <input type="text" id="partnerVideoThumb" class="form-input" placeholder="https://...">
+              <img id="partnerVideoThumbPreview" class="seo-og-preview" alt="썸네일 미리보기" hidden>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px;">
+              <button type="submit" class="btn btn-primary">저장</button>
+              <span id="partnerVideoUpdatedAt" style="font-size:12px;color:var(--ink-400);"></span>
+              <span id="partnerVideoSaveStatus" style="font-size:12px;color:var(--ink-600);"></span>
+            </div>
+          </form>
+        </div>
+
+        <div class="inquiry-tab-panel" id="partnersTabRegions">
+          <div class="toolbar">
+            <div class="toolbar-left">해시태그 <b id="partnerTagsCount">0</b>개 · 지역 <b id="partnerRegionsCount">0</b>개</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button type="button" class="btn btn-outline" id="btnAddPartnerTag">+ 해시태그</button>
+              <button type="button" class="btn btn-primary" id="btnAddPartnerRegion">+ 지역 추가</button>
+            </div>
+          </div>
+          <h3 style="font-size:14px;margin:18px 0 8px;">분류 해시태그</h3>
+          <table class="data-table">
+            <thead><tr><th>순서</th><th>태그</th><th>상태</th><th></th></tr></thead>
+            <tbody id="partnerTagsTableBody"></tbody>
+          </table>
+          <h3 style="font-size:14px;margin:24px 0 8px;">광역시·도 / 시·군·구</h3>
+          <table class="data-table">
+            <thead><tr><th>코드</th><th>이름</th><th>시·군·구</th><th>순서</th><th>상태</th><th></th></tr></thead>
+            <tbody id="partnerRegionsTableBody"></tbody>
+          </table>
+        </div>
+
+        <div class="inquiry-tab-panel" id="partnersTabList">
+          <div class="toolbar">
+            <div class="toolbar-left">등록된 제휴업체 <b id="partnersAdminCount">0</b>개</div>
+            <button type="button" class="btn btn-primary" id="btnAddPartner">+ 제휴업체 등록</button>
+          </div>
+          <table class="data-table">
+            <thead><tr><th>썸네일</th><th>업체명</th><th>지역</th><th>분류</th><th>연락처</th><th>순서</th><th>상태</th><th></th></tr></thead>
+            <tbody id="partnersAdminTableBody"></tbody>
+          </table>
+        </div>
       </section>
 
       <section class="panel" id="panel-lease">
@@ -637,6 +809,10 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
             <p id="seoSitemapStatus" style="margin-top:12px;font-size:12px;color:var(--ink-600);min-height:18px;"></p>
           </div>
         </div>
+      </section>
+
+      <section class="panel" id="panel-estimate">
+        <div id="estimateRoot"></div>
       </section>
 
     </div>
@@ -815,6 +991,70 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
   </div>
 </div>
 
+<div class="modal-overlay" id="modalPartnerTag">
+  <div class="modal-box" style="max-width:420px;">
+    <div class="modal-head"><h3 id="modalPartnerTagTitle">해시태그</h3><button class="modal-close" data-close="modalPartnerTag">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><label>태그명 (# 없이)</label><input type="text" id="partnerTagName" class="form-input" placeholder="예: 디테일링"></div>
+      <div class="form-row"><label>정렬 순서</label><input type="number" id="partnerTagSort" class="form-input" value="0"></div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;"><input type="checkbox" id="partnerTagActive" checked> 노출</label>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" data-close="modalPartnerTag">취소</button><button class="btn btn-primary" id="btnSavePartnerTag">저장</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalPartnerRegion">
+  <div class="modal-box" style="max-width:520px;">
+    <div class="modal-head"><h3 id="modalPartnerRegionTitle">지역</h3><button class="modal-close" data-close="modalPartnerRegion">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><label>코드 (영문, 예: gyeonggi)</label><input type="text" id="partnerRegionCode" class="form-input"></div>
+      <div class="form-row"><label>광역시·도 이름</label><input type="text" id="partnerRegionNameInput" class="form-input" placeholder="예: 경기"></div>
+      <div class="form-row"><label>시·군·구 (한 줄에 하나)</label><textarea id="partnerRegionSigungu" rows="5" class="form-input" placeholder="용인시&#10;수원시"></textarea></div>
+      <div class="form-row"><label>정렬 순서</label><input type="number" id="partnerRegionSort" class="form-input" value="0"></div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;"><input type="checkbox" id="partnerRegionActive" checked> 노출</label>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" data-close="modalPartnerRegion">취소</button><button class="btn btn-primary" id="btnSavePartnerRegion">저장</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalPartner">
+  <div class="modal-box" style="max-width:720px;">
+    <div class="modal-head"><h3 id="modalPartnerTitle">제휴업체</h3><button class="modal-close" data-close="modalPartner">✕</button></div>
+    <div class="modal-body" style="max-height:70vh;overflow:auto;">
+      <div class="form-row"><label>업체명</label><input type="text" id="partnerName" class="form-input"></div>
+      <div class="form-grid-2">
+        <div class="form-row"><label>광역시·도</label><select id="partnerRegionName" class="form-input"></select></div>
+        <div class="form-row"><label>시·군·구</label><select id="partnerSigungu" class="form-input"></select></div>
+      </div>
+      <div class="form-row"><label>주소</label><input type="text" id="partnerAddress" class="form-input"></div>
+      <div class="form-row"><label>한줄 소개 (목록용)</label><input type="text" id="partnerShortDesc" class="form-input"></div>
+      <div class="form-row"><label>연락처</label><input type="text" id="partnerPhone" class="form-input" placeholder="02-1234-5678"></div>
+      <div class="form-row"><label>분류 해시태그</label><div id="partnerTagChecks"></div></div>
+      <div class="form-grid-2">
+        <div class="form-row"><label>소개 영상 YouTube URL / ID</label><input type="text" id="partnerVideoId" class="form-input" placeholder="https://youtu.be/... 또는 영상 ID"></div>
+        <div class="form-row"><label>정렬 순서</label><input type="number" id="partnerSortOrder" class="form-input" value="0"></div>
+      </div>
+      <div class="form-row">
+        <label>갤러리 사진 첨부</label>
+        <div id="partnerPhotosPreview" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;min-height:40px;"></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <input type="file" id="partnerPhotosFiles" accept="image/jpeg,image/png,image/webp,image/gif" multiple>
+          <button type="button" class="btn btn-outline btn-sm" id="btnUploadPartnerPhotos">선택 사진 업로드</button>
+        </div>
+        <span class="hint">영상은 YouTube URL · 사진은 파일 첨부 (가로 1280px / 목록 썸네일 800px 자동 리사이즈)</span>
+      </div>
+      <div class="form-row">
+        <label>상세 본문 HTML</label>
+        <textarea id="partnerBodyHtml" rows="6" class="form-input" placeholder="<p>업체 소개...</p>"></textarea>
+        <span class="hint">이미지: &lt;figure class=&quot;pd-body-figure&quot;&gt;&lt;img src=&quot;URL&quot; alt=&quot;&quot;&gt;&lt;/figure&gt;</span>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px;"><input type="checkbox" id="partnerPremium"> PREMIUM 업체</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;"><input type="checkbox" id="partnerActive" checked> 노출</label>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" data-close="modalPartner">취소</button><button class="btn btn-primary" id="btnSavePartner">저장</button></div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modalLeaseQuoteDetail">
   <div class="modal-box" style="max-width:640px;">
     <div class="modal-head"><h3 id="modalLeaseQuoteTitle">신차문의 상세</h3><button class="modal-close" data-close="modalLeaseQuoteDetail">✕</button></div>
@@ -828,6 +1068,14 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
     <div class="modal-head"><h3 id="modalUsedCarInquiryTitle">중고차문의 상세</h3><button class="modal-close" data-close="modalUsedCarInquiryDetail">✕</button></div>
     <div class="modal-body" id="modalUsedCarInquiryBody"></div>
     <div class="modal-foot"><button class="btn btn-outline" data-close="modalUsedCarInquiryDetail">닫기</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalLeaseCalcInquiryDetail">
+  <div class="modal-box" style="max-width:560px;">
+    <div class="modal-head"><h3 id="modalLeaseCalcInquiryTitle">리스렌트계산기 상세</h3><button class="modal-close" data-close="modalLeaseCalcInquiryDetail">✕</button></div>
+    <div class="modal-body" id="modalLeaseCalcInquiryBody" style="font-size:13px;line-height:1.6;"></div>
+    <div class="modal-foot"><button class="btn btn-outline" data-close="modalLeaseCalcInquiryDetail">닫기</button></div>
   </div>
 </div>
 
@@ -874,16 +1122,459 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
 <script src="/js/youtube-utils.js"></script>
 <script src="/js/swautopia-sync.js?v=20260629e"></script>
 <script src="/js/ks-lease-sync.js"></script>
-<script src="/js/purple-image.js?v=20260629e"></script>
+<script src="/js/purple-image.js?v=20260703a"></script>
 <script src="/js/part-utils.js"></script>
 <script src="/js/used-car-filters.js"></script>
 <script src="/js/sitemap-builder.js?v=20260627e"></script>
 <script src="/js/seo-static-meta.js?v=20260627e"></script>
 <script src="/js/admin-auth.js?v=20260630d"></script>
-<script src="/js/admin-api.js?v=20260630d"></script>
-<script src="/js/admin-hero.js?v=20260630d"></script>
+<script src="/js/review-topics.js?v=20260704a"></script>
+<script src="/js/admin-api.js?v=20260706b"></script>
+<script src="/js/admin-hero.js?v=20260703a"></script>
+<script src="/js/admin-partners.js?v=20260703a"></script>
 <script src="/js/lease-catalog-map.js"></script>
-<script src="/js/admin-app.js?v=20260630d"></script>
+<script src="/js/admin-app.js?v=20260706b"></script>
+<script>
+/* 퍼플오토 어드민 — 견적서 작성 (부품 / 장기렌트·리스) : #panel-estimate 자체 초기화 */
+(function () {
+  'use strict';
+
+  var COMPANY = {
+    name: '퍼플오토',
+    ceo: '이호준',
+    address: '경기도 용인시 기흥구 강남서로9, 7층 703호',
+    phone: '1555-6362',
+    fax: '',
+    bizNo: '885-68-00449',
+    logoUrl: 'https://purpleauto.co.kr/assets/brand-logos/purple-logo.png'
+  };
+
+  var TAILWIND_CDN = 'https://cdn.tailwindcss.com';
+  var REMIXICON_CDN = 'https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css';
+  var FONT_CDN = 'https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap';
+
+  var booted = false;
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function num(v) { var n = parseInt(String(v).replace(/[^\d-]/g, ''), 10); return isNaN(n) ? 0 : n; }
+  function fmt(n) { return (Number(n) || 0).toLocaleString('ko-KR'); }
+  function todayStr() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function fmtDateKo(s) { if (!s) return ''; var p = String(s).split('-'); if (p.length < 3) return s; return p[0] + '년 ' + p[1] + '월 ' + p[2] + '일'; }
+  function val(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
+
+  function injectStyle() {
+    if (document.getElementById('estimateScopedStyle')) return;
+    var css = [
+      '#panel-estimate .est-hub{display:grid;grid-template-columns:1fr;gap:16px;max-width:760px;}',
+      '@media(min-width:720px){#panel-estimate .est-hub{grid-template-columns:1fr 1fr;}}',
+      '#panel-estimate .est-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius-lg);padding:26px 24px;text-align:left;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s;}',
+      '#panel-estimate .est-card:hover{border-color:var(--purple-600);box-shadow:var(--shadow-md);transform:translateY(-1px);}',
+      '#panel-estimate .est-card-ico{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;}',
+      '#panel-estimate .est-card-ico svg{width:26px;height:26px;}',
+      '#panel-estimate .est-card h3{font-size:17px;color:var(--ink-900);margin-bottom:8px;}',
+      '#panel-estimate .est-card p{font-size:12.5px;color:var(--ink-500);line-height:1.6;margin-bottom:16px;}',
+      '#panel-estimate .est-card .est-go{font-size:12.5px;font-weight:700;display:inline-flex;align-items:center;gap:6px;}',
+      '#panel-estimate .est-builder{background:#fff;border:1px solid var(--line-soft);border-radius:var(--radius-md);padding:22px 24px;max-width:900px;box-shadow:var(--shadow-sm);}',
+      '#panel-estimate .est-section{margin-bottom:22px;}',
+      '#panel-estimate .est-section-title{font-size:13.5px;font-weight:800;color:var(--ink-900);margin-bottom:12px;display:flex;align-items:center;gap:7px;}',
+      '#panel-estimate .est-grid{display:grid;grid-template-columns:1fr;gap:12px;}',
+      '@media(min-width:640px){#panel-estimate .est-grid.cols-2{grid-template-columns:1fr 1fr;}#panel-estimate .est-grid.cols-3{grid-template-columns:1fr 1fr 1fr;}}',
+      '#panel-estimate .est-field{display:flex;flex-direction:column;gap:5px;}',
+      '#panel-estimate .est-field.span-2{grid-column:1/-1;}',
+      '#panel-estimate .est-field label{font-size:11.5px;font-weight:700;color:var(--ink-500);}',
+      '#panel-estimate .est-field input,#panel-estimate .est-field textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface);font-size:13px;color:var(--ink-900);font-family:inherit;}',
+      '#panel-estimate .est-field input:focus,#panel-estimate .est-field textarea:focus{outline:none;border-color:var(--purple-600);background:#fff;}',
+      '#panel-estimate .est-field input.num{text-align:right;font-family:var(--font-mono);}',
+      '#panel-estimate .est-divider{border-top:1px solid var(--line-soft);margin:18px 0;}',
+      '#panel-estimate .est-parts-table{width:100%;border-collapse:collapse;font-size:12px;}',
+      '#panel-estimate .est-parts-table th{text-align:left;padding:8px 6px;font-size:11px;font-weight:700;color:var(--ink-500);border-bottom:2px solid var(--line);white-space:nowrap;}',
+      '#panel-estimate .est-parts-table td{padding:5px 6px;border-bottom:1px solid var(--line-soft);}',
+      '#panel-estimate .est-parts-table input{width:100%;padding:7px 8px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface);font-size:12px;font-family:inherit;}',
+      '#panel-estimate .est-parts-table input:focus{outline:none;border-color:var(--purple-600);background:#fff;}',
+      '#panel-estimate .est-parts-table input.num{text-align:right;font-family:var(--font-mono);}',
+      '#panel-estimate .est-amount{font-family:var(--font-mono);font-weight:700;color:var(--ink-900);text-align:right;white-space:nowrap;}',
+      '#panel-estimate .est-row-del{width:28px;height:28px;border:none;background:transparent;color:var(--ink-400);cursor:pointer;border-radius:6px;}',
+      '#panel-estimate .est-row-del:hover{color:var(--danger-600);background:#fdecef;}',
+      '#panel-estimate .est-totals{display:flex;justify-content:flex-end;margin-top:14px;}',
+      '#panel-estimate .est-totals-box{width:280px;border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden;}',
+      '#panel-estimate .est-totals-box .row{display:flex;justify-content:space-between;padding:9px 14px;font-size:12.5px;border-bottom:1px solid var(--line-soft);}',
+      '#panel-estimate .est-totals-box .row.total{background:var(--purple-50);border-bottom:none;}',
+      '#panel-estimate .est-totals-box .row .v{font-family:var(--font-mono);font-weight:700;color:var(--ink-900);}',
+      '#panel-estimate .est-totals-box .row.total .v{color:var(--purple-600);font-size:15px;}',
+      '#panel-estimate .est-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap;}',
+      '#panel-estimate .est-back{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--ink-500);background:none;border:none;cursor:pointer;}',
+      '#panel-estimate .est-back:hover{color:var(--purple-600);}',
+      '#panel-estimate [data-est-addrow]{padding:6px 12px;font-size:12px;}',
+      '#panel-estimate .est-hint{font-size:12px;color:var(--ink-400);margin:0 0 16px;line-height:1.6;}'
+    ].join('');
+    var style = document.createElement('style');
+    style.id = 'estimateScopedStyle';
+    style.textContent = css;
+    document.head.appendChild(style);
+  }
+
+  function field(id, label, value, extraClass, type, ph) {
+    return '<div class="est-field ' + (extraClass || '') + '"><label for="' + id + '">' + esc(label) + '</label>' +
+      '<input id="' + id + '" type="' + (type || 'text') + '" value="' + esc(value) + '"' + (ph ? ' placeholder="' + esc(ph) + '"' : '') + '></div>';
+  }
+  function numField(id, label, value, extraClass, ph) {
+    return '<div class="est-field ' + (extraClass || '') + '"><label for="' + id + '">' + esc(label) + '</label>' +
+      '<input id="' + id + '" class="num" type="number" min="0" value="' + (value || '') + '"' + (ph ? ' placeholder="' + esc(ph) + '"' : '') + '></div>';
+  }
+  function companyFieldsHtml(prefix) {
+    return '<div class="est-grid cols-2">' +
+      field(prefix + 'CoName', '상호명', COMPANY.name) +
+      field(prefix + 'CoCeo', '대표자', COMPANY.ceo) +
+      field(prefix + 'CoAddr', '주소', COMPANY.address, 'span-2') +
+      field(prefix + 'CoPhone', '전화번호', COMPANY.phone) +
+      field(prefix + 'CoFax', '팩스', COMPANY.fax) +
+      field(prefix + 'CoLogo', '로고 URL', COMPANY.logoUrl, 'span-2') + '</div>';
+  }
+  function collectCompany(prefix) {
+    return {
+      name: val(prefix + 'CoName'), ceo: val(prefix + 'CoCeo'), address: val(prefix + 'CoAddr'),
+      phone: val(prefix + 'CoPhone'), fax: val(prefix + 'CoFax'), logoUrl: val(prefix + 'CoLogo')
+    };
+  }
+
+  function showView(name) {
+    var root = document.getElementById('estimateRoot');
+    if (!root) return;
+    if (name === 'parts') renderPartsBuilder(root);
+    else if (name === 'rental') renderRentalBuilder(root);
+    else renderHub(root);
+  }
+
+  function renderHub(root) {
+    root.innerHTML =
+      '<p class="est-hint">회원에게 발송할 견적서를 작성합니다. 작성 후 <b>미리보기</b>에서 확인하고 <b>HTML 다운로드</b>로 파일을 저장해 전달하세요.</p>' +
+      '<div class="est-hub">' +
+        '<button type="button" class="est-card" data-est-open="parts">' +
+          '<div class="est-card-ico" style="background:var(--purple-50);color:var(--purple-600);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>' +
+          '<h3>자동차 부품 견적서</h3><p>차량 부품별 품번·품명·규격·수량·단가를 입력하여 부품 견적서를 작성합니다.</p>' +
+          '<span class="est-go" style="color:var(--purple-600);">작성하기 →</span></button>' +
+        '<button type="button" class="est-card" data-est-open="rental">' +
+          '<div class="est-card-ico" style="background:#eef0ff;color:#4f46e5;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="6" rx="1"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/><path d="M5 11l1.5-4h11L19 11"/></svg></div>' +
+          '<h3>장기렌트카 / 리스 견적서</h3><p>오토리스 &amp; 장기렌트 비교분석 견적서를 작성합니다. 퍼플오토 전용 양식.</p>' +
+          '<span class="est-go" style="color:#4f46e5;">작성하기 →</span></button>' +
+      '</div>';
+  }
+
+  var partsSeq = 0;
+  function partsRowHtml(row) {
+    row = row || {};
+    var id = 'pr' + (++partsSeq);
+    var amount = num(row.quantity) * num(row.unitPrice);
+    return '<tr data-row="' + id + '">' +
+      '<td><input type="text" data-f="partNo" value="' + esc(row.partNo) + '" placeholder="품번"></td>' +
+      '<td><input type="text" data-f="partName" value="' + esc(row.partName) + '" placeholder="품명"></td>' +
+      '<td><input type="text" data-f="spec" value="' + esc(row.spec) + '" placeholder="규격"></td>' +
+      '<td><input type="number" min="1" class="num" data-f="quantity" value="' + (row.quantity != null ? row.quantity : 1) + '"></td>' +
+      '<td><input type="number" min="0" class="num" data-f="unitPrice" value="' + (row.unitPrice != null ? row.unitPrice : 0) + '"></td>' +
+      '<td class="est-amount" data-amount>' + fmt(amount) + '</td>' +
+      '<td><input type="text" data-f="remark" value="' + esc(row.remark) + '" placeholder="비고"></td>' +
+      '<td><button type="button" class="est-row-del" data-est-delrow title="삭제"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></td></tr>';
+  }
+  function renderPartsBuilder(root) {
+    partsSeq = 0;
+    root.innerHTML =
+      '<div class="est-toolbar"><button type="button" class="est-back" data-est-open="hub">← 견적서 유형 선택</button>' +
+        '<button type="button" class="btn btn-primary" data-est-preview="parts">미리보기 / HTML 다운로드</button></div>' +
+      '<div class="est-builder">' +
+        '<div class="est-section"><div class="est-section-title">공급자 정보</div>' + companyFieldsHtml('parts') + '</div>' +
+        '<div class="est-divider"></div>' +
+        '<div class="est-section"><div class="est-section-title">견적 정보 / 거래처 / 차량</div><div class="est-grid cols-3">' +
+          field('partsEstNo', '견적번호', '', '', 'text', '비우면 자동생성') +
+          field('partsEstDate', '견적일자', todayStr(), '', 'date') +
+          field('partsCustomer', '고객사명', '', '', 'text', '고객사명') +
+          field('partsCarModel', '차종', '', '', 'text', '예: 그랜저 IG') +
+          field('partsVin', '차대번호', '', '', 'text', '차대번호') +
+        '</div></div>' +
+        '<div class="est-divider"></div>' +
+        '<div class="est-section"><div class="est-section-title" style="justify-content:space-between;"><span>부품 목록</span>' +
+          '<button type="button" class="btn btn-outline" data-est-addrow>+ 항목 추가</button></div>' +
+          '<div style="overflow-x:auto;"><table class="est-parts-table"><thead><tr>' +
+            '<th style="min-width:90px;">품번</th><th style="min-width:120px;">품명</th><th style="min-width:90px;">규격</th>' +
+            '<th style="width:66px;">수량</th><th style="width:100px;">단가</th><th style="width:110px;text-align:right;">공급가액</th>' +
+            '<th style="min-width:80px;">비고</th><th style="width:34px;"></th></tr></thead>' +
+            '<tbody id="partsRows">' + partsRowHtml({ quantity: 1, unitPrice: 0 }) + '</tbody></table></div>' +
+          '<div class="est-totals"><div class="est-totals-box">' +
+            '<div class="row"><span>공급가액</span><span class="v" id="partsSupply">0</span></div>' +
+            '<div class="row"><span>부가세 (10%)</span><span class="v" id="partsVat">0</span></div>' +
+            '<div class="row total"><span>합계</span><span class="v" id="partsTotal">0</span></div>' +
+          '</div></div></div>' +
+        '<div class="est-divider"></div>' +
+        '<div class="est-section"><div class="est-section-title">비고</div><div class="est-field"><textarea id="partsNotes" rows="3" placeholder="특이사항을 입력하세요"></textarea></div></div>' +
+      '</div>';
+    recalcParts();
+  }
+  function collectPartsRows() {
+    var rows = [];
+    document.querySelectorAll('#partsRows tr[data-row]').forEach(function (tr) {
+      function f(name) { var el = tr.querySelector('[data-f="' + name + '"]'); return el ? el.value : ''; }
+      var q = num(f('quantity')), u = num(f('unitPrice'));
+      rows.push({ partNo: f('partNo').trim(), partName: f('partName').trim(), spec: f('spec').trim(), quantity: q, unitPrice: u, amount: q * u, remark: f('remark').trim() });
+    });
+    return rows;
+  }
+  function recalcParts() {
+    var supply = 0;
+    document.querySelectorAll('#partsRows tr[data-row]').forEach(function (tr) {
+      var q = num((tr.querySelector('[data-f="quantity"]') || {}).value);
+      var u = num((tr.querySelector('[data-f="unitPrice"]') || {}).value);
+      var amt = q * u;
+      var cell = tr.querySelector('[data-amount]');
+      if (cell) cell.textContent = fmt(amt);
+      supply += amt;
+    });
+    var vat = Math.round(supply * 0.1);
+    var s = document.getElementById('partsSupply'), v = document.getElementById('partsVat'), t = document.getElementById('partsTotal');
+    if (s) s.textContent = fmt(supply);
+    if (v) v.textContent = fmt(vat);
+    if (t) t.textContent = fmt(supply + vat);
+  }
+  function collectPartsData() {
+    var estNo = val('partsEstNo');
+    if (!estNo) {
+      var d = new Date();
+      estNo = 'EST-' + d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0') + '-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+    }
+    return {
+      companyInfo: collectCompany('parts'), estimateNumber: estNo, estimateDate: val('partsEstDate') || todayStr(),
+      customerName: val('partsCustomer'), carModel: val('partsCarModel'), vin: val('partsVin'), parts: collectPartsRows(), notes: val('partsNotes')
+    };
+  }
+
+  function renderRentalBuilder(root) {
+    root.innerHTML =
+      '<div class="est-toolbar"><button type="button" class="est-back" data-est-open="hub">← 견적서 유형 선택</button>' +
+        '<button type="button" class="btn btn-primary" data-est-preview="rental">미리보기 / HTML 다운로드</button></div>' +
+      '<div class="est-builder">' +
+        '<div class="est-section"><div class="est-section-title">공급자 정보</div>' + companyFieldsHtml('rental') + '</div>' +
+        '<div class="est-divider"></div>' +
+        '<div class="est-section"><div class="est-section-title">차량 정보</div><div class="est-grid cols-2">' +
+          field('rtPlate', '차량번호', '', '', 'text', '예: 172호8946') +
+          field('rtCarName', '차량명', '', '', 'text', '예: GV80.5 터보 2WD 5인승') +
+          field('rtYear', '연식', '', '', 'text', '예: 2023') +
+          field('rtMileage', '주행거리', '', '', 'text', '예: 13,731') +
+          field('rtAccident', '사고유무', '', 'span-2', 'text', '예: 내차피해 2건') +
+        '</div></div>' +
+        '<div class="est-divider"></div>' +
+        '<div class="est-section"><div class="est-section-title">금액 정보</div><div class="est-grid cols-2">' +
+          field('rtCategory', '종류', '', 'span-2', 'text', '예: 신한카드 장기렌트카') +
+          numField('rtMarketValue', '(a) 시세산출액', '') +
+          numField('rtTransferFee', '(b) 송개수수료', '') +
+          numField('rtActualLoss', '(b) 실손비용', '') +
+          numField('rtDeposit', '(c) 보증금', '') +
+          numField('rtTerminationFee', '(d) 해지금', '') +
+        '</div></div>' +
+        '<div class="est-divider"></div>' +
+        '<div class="est-section"><div class="est-section-title">비교견적</div><div class="est-grid cols-2">' +
+          field('rtPurpleDesc', '퍼플오토 이용시 내용', '납부 예상 금액(승계수수료 별도)') +
+          numField('rtPurpleAmount', '퍼플오토 이용시 금액', '') +
+          field('rtReturnDesc', '반납 내용', '납부 예상 금액') +
+          numField('rtReturnAmount', '반납 금액', '') +
+        '</div></div>' +
+        '<div class="est-divider"></div>' +
+        '<div class="est-section"><div class="est-section-title">비고</div><div class="est-field"><textarea id="rtNotes" rows="4" placeholder="예: 고객 지역, 특이사항 등"></textarea></div></div>' +
+      '</div>';
+  }
+  function collectRentalData() {
+    return {
+      companyInfo: collectCompany('rental'), plateNumber: val('rtPlate'), carName: val('rtCarName'), year: val('rtYear'), mileage: val('rtMileage'), accident: val('rtAccident'),
+      category: val('rtCategory'), marketValue: num(val('rtMarketValue')), transferFee: num(val('rtTransferFee')), actualLoss: num(val('rtActualLoss')), deposit: num(val('rtDeposit')), terminationFee: num(val('rtTerminationFee')),
+      purpleAutoDesc: val('rtPurpleDesc'), purpleAutoAmount: num(val('rtPurpleAmount')), returnDesc: val('rtReturnDesc'), returnAmount: num(val('rtReturnAmount')), notes: val('rtNotes')
+    };
+  }
+
+  function buildPartsContent(d) {
+    var c = d.companyInfo;
+    var supply = d.parts.reduce(function (s, r) { return s + (r.amount || 0); }, 0);
+    var vat = Math.round(supply * 0.1), total = supply + vat, rows = d.parts.slice(), rowsHtml = '', count = Math.max(rows.length, 8);
+    for (var i = 0; i < count; i++) {
+      var r = rows[i], bg = (i % 2 === 0) ? 'bg-white' : 'bg-stone-50/40';
+      if (r) {
+        rowsHtml += '<tr class="border-b border-stone-100 ' + bg + '">' +
+          '<td class="py-3 px-4 text-center text-stone-400 text-[11px] font-light">' + (i + 1) + '</td>' +
+          '<td class="py-3 px-4 text-stone-700 text-[11px]">' + (esc(r.partNo) || '-') + '</td>' +
+          '<td class="py-3 px-4 text-stone-800 text-[11px] font-semibold">' + (esc(r.partName) || '-') + '</td>' +
+          '<td class="py-3 px-4 text-stone-600 text-[11px]">' + (esc(r.spec) || '-') + '</td>' +
+          '<td class="py-3 px-4 text-center text-stone-700 text-[11px] font-medium">' + (r.quantity || 0) + '</td>' +
+          '<td class="py-3 px-4 text-right text-stone-700 text-[11px] font-mono">' + (r.unitPrice > 0 ? fmt(r.unitPrice) : '-') + '</td>' +
+          '<td class="py-3 px-4 text-right text-stone-800 text-[11px] font-bold font-mono">' + (r.amount > 0 ? fmt(r.amount) : '-') + '</td>' +
+          '<td class="py-3 px-4 text-center text-stone-400 text-[11px] font-light">' + esc(r.remark) + '</td></tr>';
+      } else {
+        rowsHtml += '<tr class="border-b border-stone-100 ' + bg + '"><td class="py-3 px-4 text-center text-stone-300 text-[11px] font-light">' + (i + 1) + '</td><td class="py-3 px-4"></td><td class="py-3 px-4"></td><td class="py-3 px-4"></td><td class="py-3 px-4"></td><td class="py-3 px-4"></td><td class="py-3 px-4"></td><td class="py-3 px-4"></td></tr>';
+      }
+    }
+    var notesBlock = d.notes ? ('<div class="px-12 pt-6"><div class="rounded-lg border border-stone-200 bg-stone-50/60 px-5 py-4"><div class="flex items-center gap-2.5 mb-2"><div class="w-5 h-5 rounded-md bg-purple-50 flex items-center justify-center border border-purple-100"><i class="ri-information-line text-purple-500 text-[11px]"></i></div><h4 class="text-[11px] font-bold text-stone-500 tracking-wider">비 고</h4></div><p class="text-[11px] text-stone-600 leading-relaxed whitespace-pre-wrap font-light">' + esc(d.notes) + '</p></div></div>') : '';
+    return '<div id="estimate-parts-content" class="bg-white" style="width:1120px;font-family:\'Noto Sans KR\',sans-serif;">' +
+      '<div class="h-1 bg-gradient-to-r from-purple-700 via-purple-500 to-indigo-400"></div>' +
+      '<div class="px-12 pt-9 pb-6"><div class="flex items-start justify-between"><div class="flex items-center gap-5">' +
+        (c.logoUrl ? '<div class="w-[72px] h-[72px] rounded-xl overflow-hidden bg-stone-50 flex-shrink-0 flex items-center justify-center"><img src="' + esc(c.logoUrl) + '" alt="" class="w-full h-full object-contain"></div>' : '') +
+        '<div><h2 class="text-[22px] font-black text-stone-800 leading-tight">' + (esc(c.name) || '퍼플오토') + '</h2><div class="mt-2 text-[11px] text-stone-500 leading-relaxed space-y-0.5 font-light">' +
+          (c.address ? '<p>' + esc(c.address) + '</p>' : '') + '<p class="flex items-center gap-4 flex-wrap">' + (c.phone ? '<span>TEL. ' + esc(c.phone) + '</span>' : '') + (c.fax ? '<span>FAX. ' + esc(c.fax) + '</span>' : '') + '</p></div></div></div>' +
+        '<div class="text-right"><h1 class="text-[42px] font-black text-stone-800 tracking-[0.12em] mb-5 leading-none">견 적 서</h1><div class="space-y-2 text-[11px]">' +
+          '<div class="flex items-center justify-end gap-4"><span class="text-stone-400 font-light tracking-wider">NO.</span><span class="font-semibold text-stone-700 min-w-[170px] text-left bg-purple-50 px-4 py-1 rounded-md tracking-wide">' + esc(d.estimateNumber) + '</span></div>' +
+          '<div class="flex items-center justify-end gap-4"><span class="text-stone-400 font-light tracking-wider">견적일자</span><span class="font-medium text-stone-600 min-w-[170px] text-left tracking-wide">' + (fmtDateKo(d.estimateDate) || '-') + '</span></div></div></div></div></div>' +
+      '<div class="px-12"><div class="h-[2px] bg-gradient-to-r from-purple-500 via-stone-200 to-transparent rounded-full"></div></div>' +
+      '<div class="px-12 py-6"><div class="grid grid-cols-3 gap-10">' +
+        '<div><div class="flex items-center gap-2.5 mb-4"><div class="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center border border-purple-100"><i class="ri-user-3-line text-purple-600 text-[13px]"></i></div><h4 class="text-xs font-bold text-stone-600 tracking-[0.08em]">거 래 처</h4></div><div class="space-y-2.5"><div class="flex"><span class="text-stone-400 w-10 flex-shrink-0 text-[11px] font-light">상호</span><span class="font-semibold text-stone-800 text-[11px]">' + (esc(d.customerName) || '-') + '</span></div></div></div>' +
+        '<div><div class="flex items-center gap-2.5 mb-4"><div class="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center border border-purple-100"><i class="ri-car-line text-purple-600 text-[13px]"></i></div><h4 class="text-xs font-bold text-stone-600 tracking-[0.08em]">차 량 정 보</h4></div><div class="space-y-2.5"><div class="flex"><span class="text-stone-400 w-[52px] flex-shrink-0 text-[11px] font-light">차종</span><span class="font-semibold text-stone-800 text-[11px]">' + (esc(d.carModel) || '-') + '</span></div><div class="flex"><span class="text-stone-400 w-[52px] flex-shrink-0 text-[11px] font-light">차대번호</span><span class="font-medium text-stone-700 tracking-wider text-[11px]">' + (esc(d.vin) || '-') + '</span></div></div></div>' +
+        '<div><div class="flex items-center gap-2.5 mb-4"><div class="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center border border-purple-100"><i class="ri-building-4-line text-purple-600 text-[13px]"></i></div><h4 class="text-xs font-bold text-stone-600 tracking-[0.08em]">공 급 자</h4></div><div class="space-y-2.5"><div class="flex"><span class="text-stone-400 w-10 flex-shrink-0 text-[11px] font-light">상호</span><span class="font-bold text-stone-800 text-[11px]">' + (esc(c.name) || '퍼플오토') + '</span></div><div class="flex"><span class="text-stone-400 w-10 flex-shrink-0 text-[11px] font-light">주소</span><span class="font-medium text-stone-700 text-[11px] leading-snug">' + (esc(c.address) || '-') + '</span></div><div class="flex"><span class="text-stone-400 w-10 flex-shrink-0 text-[11px] font-light">연락처</span><span class="font-medium text-stone-700 text-[11px]">' + (esc(c.phone) || '-') + '</span></div></div></div>' +
+      '</div></div>' +
+      '<div class="px-12 pt-2 pb-3"><div class="flex items-center gap-2 mb-3"><div class="w-1 h-4 rounded-full bg-purple-500"></div><h4 class="text-xs font-bold text-stone-600 tracking-[0.06em]">부 품 명 세</h4></div>' +
+        '<div class="overflow-hidden rounded-lg border border-stone-200"><table class="w-full text-[11px] border-collapse"><thead><tr class="bg-stone-50">' +
+          '<th class="py-3 px-4 text-[11px] font-bold text-stone-500 text-center w-10 border-b border-stone-200">NO.</th><th class="py-3 px-4 text-[11px] font-bold text-stone-500 text-left border-b border-stone-200">품번</th><th class="py-3 px-4 text-[11px] font-bold text-stone-500 text-left border-b border-stone-200">품명</th><th class="py-3 px-4 text-[11px] font-bold text-stone-500 text-left border-b border-stone-200">규격</th><th class="py-3 px-4 text-[11px] font-bold text-stone-500 text-center w-[60px] border-b border-stone-200">수량</th><th class="py-3 px-4 text-[11px] font-bold text-stone-500 text-right w-[110px] border-b border-stone-200">단가</th><th class="py-3 px-4 text-[11px] font-bold text-stone-500 text-right w-[120px] border-b border-stone-200">공급가액</th><th class="py-3 px-4 text-[11px] font-bold text-stone-500 text-center w-[80px] border-b border-stone-200">비고</th>' +
+        '</tr></thead><tbody>' + rowsHtml + '</tbody></table></div></div>' +
+      '<div class="px-12 pt-4"><div class="flex justify-end"><div class="w-[280px] rounded-lg border border-stone-200 overflow-hidden">' +
+        '<div class="flex justify-between items-center px-5 py-3 bg-white border-b border-stone-100"><span class="text-[11px] text-stone-500 font-medium tracking-wider">공 급 가 액</span><span class="text-[12px] font-semibold text-stone-700 font-mono">' + fmt(supply) + '</span></div>' +
+        '<div class="flex justify-between items-center px-5 py-3 bg-white border-b border-stone-100"><span class="text-[11px] text-stone-500 font-medium tracking-wider">부 가 세</span><span class="text-[12px] font-semibold text-stone-700 font-mono">' + fmt(vat) + '</span></div>' +
+        '<div class="flex justify-between items-center px-5 py-3.5 bg-purple-50"><span class="text-[13px] font-bold text-stone-800 tracking-wider">합 계</span><span class="text-[15px] font-black text-purple-700 font-mono">' + fmt(total) + '</span></div>' +
+      '</div></div><div class="flex justify-end mt-2"><div class="w-[280px] text-right"><span class="text-[10px] text-stone-400 font-light tracking-wider">(부가세 포함)</span></div></div></div>' +
+      notesBlock +
+      '<div class="px-12 pt-8 pb-10"><div class="flex justify-between items-end"><div class="text-[10px] text-stone-400 font-light space-y-0.5">' + (c.address ? '<p>' + esc(c.address) + '</p>' : '') + (c.phone ? '<p>TEL. ' + esc(c.phone) + '</p>' : '') + '</div>' +
+        '<div class="text-center"><p class="text-[11px] text-stone-400 font-light mb-5 tracking-wide">위와 같이 견적합니다.</p><p class="text-[11px] text-stone-400 font-light mb-4 tracking-wide">' + (fmtDateKo(d.estimateDate) || '-') + '</p>' +
+        '<div class="relative inline-block"><p class="text-[14px] font-bold text-stone-800 mb-1">' + (esc(c.name) || '퍼플오토') + (c.ceo ? ' <span class="font-medium text-stone-500">대표 ' + esc(c.ceo) + '</span>' : '') + '</p><div class="absolute -right-8 top-1/2 flex items-center justify-center" style="width:68px;height:68px;border:2px solid rgba(139,47,224,.3);border-radius:9999px;transform:translateY(-50%) rotate(-15deg);opacity:.55;"><span class="text-[10px] font-bold text-center leading-tight" style="color:rgba(139,47,224,.5);">확인</span></div></div></div></div></div>' +
+    '</div>';
+  }
+
+  function rInfo(label, value, hl) { return '<div class="flex items-baseline border-b border-stone-100 py-2.5 px-1"><span class="text-[10px] font-medium text-purple-600 tracking-wider w-[100px] flex-shrink-0">' + esc(label) + '</span><span class="text-[12px] leading-snug ' + (hl ? 'font-bold text-stone-900' : 'text-stone-700') + '">' + (value === 0 || value ? esc(value) : '-') + '</span></div>'; }
+  function rMobileInfo(label, value, hl) { return '<div class="flex flex-col border-b border-stone-100 py-1.5"><span class="text-[9px] font-medium text-purple-600 tracking-wider">' + esc(label) + '</span><span class="text-[11px] leading-snug ' + (hl ? 'font-bold text-stone-900' : 'text-stone-700') + '">' + (value === 0 || value ? esc(value) : '-') + '</span></div>'; }
+
+  function buildRentalContent(d) {
+    var c = d.companyInfo, money = function (n) { return n > 0 ? fmt(n) : '0'; };
+    return '<div id="estimate-rental-content" class="w-full max-w-[800px] mx-auto" style="font-family:\'Noto Sans KR\',sans-serif;">' +
+      '<div class="hidden lg:block bg-white shadow-sm" style="min-height:1120px;">' +
+        '<div class="bg-purple-600 px-10 py-6 flex items-center justify-between"><div class="flex items-center gap-4">' + (c.logoUrl ? '<div class="w-12 h-12 rounded-lg overflow-hidden bg-white/10 flex-shrink-0 flex items-center justify-center"><img src="' + esc(c.logoUrl) + '" alt="" class="w-full h-full object-contain"></div>' : '') + '<div class="text-white"><h2 class="text-[14px] font-black tracking-tight">' + (esc(c.name) || '퍼플오토') + '</h2></div></div><h1 class="text-white text-[16px] font-black tracking-[0.06em]">오토리스 &amp; 장기렌트 비교분석 견적서</h1></div>' +
+        '<div class="h-[3px] bg-gradient-to-r from-purple-500 via-purple-300 to-transparent"></div>' +
+        '<div class="px-10 pt-10 pb-2"><div class="grid grid-cols-2 gap-12">' +
+          '<div><div class="flex items-center gap-2 mb-5"><div class="w-[3px] h-4 bg-purple-500 rounded-full"></div><h3 class="text-[11px] font-bold text-stone-500 tracking-[0.1em]">차 량 정 보</h3></div><div>' + rInfo('차량번호', d.plateNumber) + rInfo('차량명', d.carName) + rInfo('연식', d.year) + rInfo('주행거리', d.mileage) + rInfo('사고유무', d.accident) + '</div></div>' +
+          '<div><div class="flex items-center gap-2 mb-5"><div class="w-[3px] h-4 bg-purple-500 rounded-full"></div><h3 class="text-[11px] font-bold text-stone-500 tracking-[0.1em]">금 액 정 보</h3></div><div>' + rInfo('종류', d.category) + rInfo('(a) 시세산출액', money(d.marketValue), true) + rInfo('(b) 송개수수료', money(d.transferFee)) + rInfo('(b) 실손비용', money(d.actualLoss)) + rInfo('(c) 보증금', money(d.deposit)) + rInfo('(d) 해지금', money(d.terminationFee), true) + '</div></div>' +
+        '</div></div>' +
+        '<div class="px-10 py-6"><div class="h-px bg-stone-200"></div></div>' +
+        '<div class="px-10"><div class="flex items-center gap-2 mb-4"><div class="w-[3px] h-4 bg-purple-500 rounded-full"></div><h3 class="text-[11px] font-bold text-stone-500 tracking-[0.1em]">비 교 견 적</h3></div>' +
+          '<div class="overflow-hidden rounded-lg border border-stone-200"><div class="h-[2px] bg-purple-500"></div><table class="w-full text-[11px] border-collapse"><thead><tr class="bg-stone-50"><th class="py-3 px-5 text-center w-[130px] text-[11px] font-bold text-stone-500 tracking-wider border-b border-stone-100">비교견적</th><th class="py-3 px-5 text-center text-[11px] font-bold text-stone-500 tracking-wider border-b border-stone-100">내용</th><th class="py-3 px-5 text-center w-[160px] text-[11px] font-bold text-stone-500 tracking-wider border-b border-stone-100">금액</th></tr></thead><tbody>' +
+            '<tr class="border-b border-stone-50"><td class="py-4 px-5 text-center font-bold text-stone-800 text-[12px] border-r border-stone-50">퍼플오토 이용시</td><td class="py-4 px-5 text-center text-stone-600 text-[11px] border-r border-stone-50">' + (esc(d.purpleAutoDesc) || '-') + '</td><td class="py-4 px-5 text-right font-bold text-stone-800 text-[13px] font-mono">' + money(d.purpleAutoAmount) + '</td></tr>' +
+            '<tr class="border-b border-stone-50"><td class="py-4 px-5 text-center font-bold text-stone-800 text-[12px] border-r border-stone-50">반납</td><td class="py-4 px-5 text-center text-stone-600 text-[11px] border-r border-stone-50">' + (esc(d.returnDesc) || '-') + '</td><td class="py-4 px-5 text-right font-bold text-red-600 text-[13px] font-mono">' + money(d.returnAmount) + '</td></tr>' +
+            '<tr><td class="py-4 px-5 text-center font-bold text-stone-800 text-[12px] border-r border-stone-50 bg-stone-50/40">비고</td><td colspan="2" class="py-4 px-5 text-left text-stone-600 text-[11px] leading-relaxed whitespace-pre-wrap bg-stone-50/40">' + (esc(d.notes) || '-') + '</td></tr>' +
+          '</tbody></table></div></div>' +
+        '<div class="px-10 pt-8"><div class="border-l-[3px] border-purple-500 bg-stone-50/50 pl-4 py-3 pr-4 rounded-r-md"><p class="text-[11px] text-stone-500 font-light tracking-wide leading-relaxed">※ 진행시 승계확정날짜(인수 날짜)에 재산정하므로 소폭 변동있을 수 있음</p></div></div>' +
+        '<div class="px-10 pt-10 pb-12"><div class="flex justify-between items-end"><div class="text-[10px] text-stone-300 font-light tracking-wider space-y-0.5">' + (c.address ? '<p>' + esc(c.address) + '</p>' : '') + (c.phone ? '<p>TEL. ' + esc(c.phone) + '</p>' : '') + '</div><div class="text-[10px] text-stone-300 font-light tracking-wider">' + (esc(c.name) || '퍼플오토') + (c.ceo ? ' 대표 ' + esc(c.ceo) : '') + '</div></div></div>' +
+      '</div>' +
+      '<div class="lg:hidden bg-white">' +
+        '<div class="bg-purple-600 px-4 py-3 flex items-center justify-between"><div class="flex items-center gap-2">' + (c.logoUrl ? '<div class="w-8 h-8 rounded-md overflow-hidden bg-white/10 flex-shrink-0 flex items-center justify-center"><img src="' + esc(c.logoUrl) + '" alt="" class="w-full h-full object-contain"></div>' : '') + '<span class="text-white text-[12px] font-bold tracking-tight">' + (esc(c.name) || '퍼플오토') + '</span></div><span class="text-white text-[11px] font-bold tracking-wide whitespace-nowrap">오토리스 견적서</span></div>' +
+        '<div class="h-[2px] bg-gradient-to-r from-purple-500 via-purple-300 to-transparent"></div>' +
+        '<div class="px-4 pt-4"><div class="mb-4"><div class="flex items-center gap-1.5 mb-2"><div class="w-[2px] h-3 bg-purple-500 rounded-full"></div><h3 class="text-[10px] font-bold text-stone-400 tracking-[0.1em]">차량정보</h3></div><div class="grid grid-cols-2 gap-x-3">' + rMobileInfo('차량번호', d.plateNumber) + rMobileInfo('차량명', d.carName) + rMobileInfo('연식', d.year) + rMobileInfo('주행거리', d.mileage) + rMobileInfo('사고유무', d.accident) + rMobileInfo('종류', d.category) + '</div></div>' +
+        '<div class="mb-4"><div class="flex items-center gap-1.5 mb-2"><div class="w-[2px] h-3 bg-purple-500 rounded-full"></div><h3 class="text-[10px] font-bold text-stone-400 tracking-[0.1em]">금액정보</h3></div><div class="grid grid-cols-2 gap-x-3">' + rMobileInfo('(a) 시세산출액', money(d.marketValue), true) + rMobileInfo('(b) 송개수수료', money(d.transferFee)) + rMobileInfo('(b) 실손비용', money(d.actualLoss)) + rMobileInfo('(c) 보증금', money(d.deposit)) + rMobileInfo('(d) 해지금', money(d.terminationFee), true) + '</div></div></div>' +
+        '<div class="px-4"><div class="h-px bg-stone-200"></div></div>' +
+        '<div class="px-4 pt-3"><div class="flex items-center gap-1.5 mb-2"><div class="w-[2px] h-3 bg-purple-500 rounded-full"></div><h3 class="text-[10px] font-bold text-stone-400 tracking-[0.1em]">비교견적</h3></div><div class="space-y-2">' +
+          '<div class="rounded-lg border border-stone-200 overflow-hidden"><div class="bg-stone-50 px-3 py-2 flex items-center justify-between border-b border-stone-100"><span class="text-[11px] font-bold text-stone-800">퍼플오토 이용시</span><span class="text-[12px] font-bold text-stone-800 font-mono">' + money(d.purpleAutoAmount) + '</span></div><div class="px-3 py-2"><span class="text-[10px] text-stone-500">' + (esc(d.purpleAutoDesc) || '-') + '</span></div></div>' +
+          '<div class="rounded-lg border border-stone-200 overflow-hidden"><div class="bg-stone-50 px-3 py-2 flex items-center justify-between border-b border-stone-100"><span class="text-[11px] font-bold text-stone-800">반납</span><span class="text-[12px] font-bold text-red-600 font-mono">' + money(d.returnAmount) + '</span></div><div class="px-3 py-2"><span class="text-[10px] text-stone-500">' + (esc(d.returnDesc) || '-') + '</span></div></div>' +
+          (d.notes ? '<div class="rounded-lg border border-stone-200 overflow-hidden"><div class="bg-stone-50 px-3 py-1.5 border-b border-stone-100"><span class="text-[10px] font-bold text-stone-500">비고</span></div><div class="px-3 py-2"><span class="text-[10px] text-stone-500 leading-relaxed whitespace-pre-wrap">' + esc(d.notes) + '</span></div></div>' : '') +
+        '</div></div>' +
+        '<div class="px-4 pt-3"><div class="border-l-[2px] border-purple-400 bg-stone-50/50 pl-3 py-2 pr-3 rounded-r-md"><p class="text-[9px] text-stone-400 font-light leading-relaxed">※ 진행시 승계확정날짜(인수 날짜)에 재산정하므로 소폭 변동있을 수 있음</p></div></div>' +
+        '<div class="px-4 pt-3 pb-5"><div class="flex justify-between items-end"><div class="text-[9px] text-stone-300 font-light space-y-0.5">' + (c.address ? '<p>' + esc(c.address) + '</p>' : '') + (c.phone ? '<p>TEL. ' + esc(c.phone) + '</p>' : '') + '</div><div class="text-[9px] text-stone-300 font-light">' + (esc(c.name) || '퍼플오토') + '</div></div></div>' +
+      '</div></div>';
+  }
+
+  function downloadDoc(kind, contentHtml) {
+    var widthCss = (kind === 'parts')
+      ? '#estimate-parts-content{transform:none !important;width:1120px !important;}'
+      : '#estimate-rental-content{max-width:800px !important;width:100% !important;}';
+    var title = (kind === 'parts') ? '부품 견적서 | 퍼플오토' : '장기렌트/리스 견적서 | 퍼플오토';
+    var name = (kind === 'parts') ? '부품견적서.html' : '장기렌트리스견적서.html';
+    var full = '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>' + title + '</title>' +
+      '<scr' + 'ipt src="' + TAILWIND_CDN + '"></scr' + 'ipt>' +
+      '<link href="' + REMIXICON_CDN + '" rel="stylesheet"><link href="' + FONT_CDN + '" rel="stylesheet">' +
+      '<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:\'Noto Sans KR\',sans-serif;background:#e7e5e4;display:flex;justify-content:center;padding:40px 20px;min-height:100vh;}' + widthCss + '</style>' +
+      '</head><body>' + contentHtml + '</body></html>';
+    var blob = new Blob([full], { type: 'text/html;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  function openPreview(kind) {
+    var contentHtml;
+    if (kind === 'parts') contentHtml = buildPartsContent(collectPartsData());
+    else contentHtml = buildRentalContent(collectRentalData());
+
+    var win = window.open('', '_blank', 'width=1200,height=900,scrollbars=yes');
+    if (!win) { alert('팝업이 차단되었습니다. 이 사이트의 팝업을 허용해 주세요.'); return; }
+
+    var doc = '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>견적서 미리보기 | 퍼플오토</title>' +
+      '<scr' + 'ipt src="' + TAILWIND_CDN + '"></scr' + 'ipt>' +
+      '<link href="' + REMIXICON_CDN + '" rel="stylesheet"><link href="' + FONT_CDN + '" rel="stylesheet">' +
+      '<style>body{margin:0;font-family:\'Noto Sans KR\',sans-serif;background:#e7e5e4;}' +
+        '.est-bar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.95);backdrop-filter:blur(6px);border-bottom:1px solid #d6d3d1;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 18px;}' +
+        '.est-bar .t{font-size:13px;font-weight:700;color:#44403c;}.est-bar .btns{display:flex;gap:8px;}' +
+        '.est-bar button{font-size:13px;font-weight:700;border:none;border-radius:8px;padding:9px 16px;cursor:pointer;}' +
+        '.est-bar .dl{background:#7c3aed;color:#fff;}.est-bar .dl:hover{background:#6d28d9;}.est-bar .pr,.est-bar .cl{background:#f5f5f4;color:#44403c;}' +
+        '.est-doc{display:flex;justify-content:center;padding:34px 16px;overflow-x:auto;}@media print{.est-bar{display:none;}}' +
+      '</style></head><body>' +
+      '<div class="est-bar"><span class="t">견적서 미리보기</span><div class="btns">' +
+        '<button class="dl" id="estDlBtn">HTML 다운로드</button><button class="pr" id="estPrintBtn">인쇄</button><button class="cl" id="estCloseBtn">닫기</button>' +
+      '</div></div><div class="est-doc">' + contentHtml + '</div></body></html>';
+
+    win.document.open(); win.document.write(doc); win.document.close();
+
+    try {
+      var dl = win.document.getElementById('estDlBtn');
+      if (dl) dl.onclick = function () { downloadDoc(kind, contentHtml); };
+      var pr = win.document.getElementById('estPrintBtn');
+      if (pr) pr.onclick = function () { win.focus(); win.print(); };
+      var cl = win.document.getElementById('estCloseBtn');
+      if (cl) cl.onclick = function () { win.close(); };
+    } catch (e) { /* cross-window timing */ }
+  }
+
+  function bindPanel() {
+    var panel = document.getElementById('panel-estimate');
+    if (!panel || panel.dataset.estBound) return;
+    panel.dataset.estBound = '1';
+    panel.addEventListener('click', function (e) {
+      var openBtn = e.target.closest('[data-est-open]');
+      if (openBtn) { showView(openBtn.dataset.estOpen); return; }
+      var previewBtn = e.target.closest('[data-est-preview]');
+      if (previewBtn) { openPreview(previewBtn.dataset.estPreview); return; }
+      if (e.target.closest('[data-est-addrow]')) {
+        var tbody = document.getElementById('partsRows');
+        if (tbody) { tbody.insertAdjacentHTML('beforeend', partsRowHtml({ quantity: 1, unitPrice: 0 })); recalcParts(); }
+        return;
+      }
+      var delBtn = e.target.closest('[data-est-delrow]');
+      if (delBtn) {
+        var tb = document.getElementById('partsRows'), tr = delBtn.closest('tr');
+        if (tb && tr && tb.querySelectorAll('tr[data-row]').length > 1) { tr.remove(); recalcParts(); }
+        return;
+      }
+    });
+    panel.addEventListener('input', function (e) {
+      if (e.target.matches('#partsRows [data-f="quantity"], #partsRows [data-f="unitPrice"]')) recalcParts();
+    });
+  }
+
+  function boot() {
+    if (booted) return;
+    var root = document.getElementById('estimateRoot');
+    if (!root) return;
+    booted = true;
+    injectStyle();
+    bindPanel();
+    renderHub(root);
+  }
+
+  window.PurpleAdminEstimate = { load: boot, init: boot };
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
+</script>
 <script>PurpleAdminApp.init();</script>
 
 </body>

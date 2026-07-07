@@ -21,6 +21,7 @@
     '/reviews-youtube': 'reviews-youtube.html',
     '/reviews-blog': 'reviews-blog.html',
     '/review-detail': 'review-detail.html',
+    '/youtube-detail': 'youtube-detail.html',
     '/reviews': 'reviews.html'
   };
 
