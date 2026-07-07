@@ -1,13 +1,25 @@
 /* 상단 카테고리 메뉴 + 계산기 드롭다운 */
+/* 모바일: .category-nav-track 만 좌우 스크롤, 페이지 전체 가로 밀림 방지 */
 .category-nav {
-  overflow: visible;
+  overflow-x: hidden;
 }
 
 .category-nav-inner {
   display: flex;
   align-items: stretch;
-  min-width: max-content;
-  overflow: visible;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* .wrap 미사용 페이지(youtube-detail 등)용 컨테이너 폭 */
+.category-nav-inner:not(.wrap) {
+  max-width: var(--container, 1180px);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 18px;
+  padding-right: 18px;
 }
 
 .category-nav-track {
@@ -18,10 +30,16 @@
   overflow-x: auto;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
 }
 
 .category-nav-track::-webkit-scrollbar {
   display: none;
+}
+
+.category-nav-track a {
+  flex-shrink: 0;
 }
 
 .category-nav-dropdown {
