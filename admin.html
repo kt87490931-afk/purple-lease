@@ -1249,7 +1249,7 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
 
   function renderHub(root) {
     root.innerHTML =
-      '<p class="est-hint">회원에게 발송할 견적서를 작성합니다. 작성 후 <b>미리보기</b>에서 확인하고 <b>HTML 다운로드</b>로 파일을 저장해 전달하세요.</p>' +
+      '<p class="est-hint">회원에게 발송할 견적서를 작성합니다. 작성 후 <b>미리보기</b>에서 확인하고 <b>인쇄</b>(PDF 저장)로 전달하세요.</p>' +
       '<div class="est-hub">' +
         '<button type="button" class="est-card" data-est-open="parts">' +
           '<div class="est-card-ico" style="background:var(--purple-50);color:var(--purple-600);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>' +
@@ -1281,7 +1281,7 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
     partsSeq = 0;
     root.innerHTML =
       '<div class="est-toolbar"><button type="button" class="est-back" data-est-open="hub">← 견적서 유형 선택</button>' +
-        '<button type="button" class="btn btn-primary" data-est-preview="parts">미리보기 / HTML 다운로드</button></div>' +
+        '<button type="button" class="btn btn-primary" data-est-preview="parts">미리보기</button></div>' +
       '<div class="est-builder">' +
         '<div class="est-section"><div class="est-section-title">공급자 정보</div>' + companyFieldsHtml('parts') + '</div>' +
         '<div class="est-divider"></div>' +
@@ -1350,7 +1350,7 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
   function renderRentalBuilder(root) {
     root.innerHTML =
       '<div class="est-toolbar"><button type="button" class="est-back" data-est-open="hub">← 견적서 유형 선택</button>' +
-        '<button type="button" class="btn btn-primary" data-est-preview="rental">미리보기 / HTML 다운로드</button></div>' +
+        '<button type="button" class="btn btn-primary" data-est-preview="rental">미리보기</button></div>' +
       '<div class="est-builder">' +
         '<div class="est-section"><div class="est-section-title">공급자 정보</div>' + companyFieldsHtml('rental') + '</div>' +
         '<div class="est-divider"></div>' +
@@ -1448,7 +1448,7 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
     var c = d.companyInfo, money = function (n) { return n > 0 ? fmt(n) : '0'; };
     return '<div id="estimate-rental-content" class="w-full max-w-[800px] mx-auto" style="font-family:\'Noto Sans KR\',sans-serif;">' +
       '<div class="hidden lg:block bg-white shadow-sm" style="min-height:1120px;">' +
-        '<div class="bg-purple-600 px-10 py-6 flex items-center justify-between"><div class="flex items-center gap-4">' + (c.logoUrl ? '<div class="w-12 h-12 rounded-lg overflow-hidden bg-white/10 flex-shrink-0 flex items-center justify-center"><img src="' + esc(c.logoUrl) + '" alt="" class="w-full h-full object-contain"></div>' : '') + '<div class="text-white"><h2 class="text-[14px] font-black tracking-tight">' + (esc(c.name) || '퍼플오토') + '</h2></div></div><h1 class="text-white text-[16px] font-black tracking-[0.06em]">오토리스 &amp; 장기렌트 비교분석 견적서</h1></div>' +
+        '<div class="px-10 py-6 flex items-center justify-between" style="background:linear-gradient(135deg,#8B2FE0 0%,#5B2FD6 45%,#1A1E6E 100%);"><div class="flex items-center">' + (c.logoUrl ? '<img src="' + esc(c.logoUrl) + '" alt="' + (esc(c.name) || '퍼플오토') + '" style="height:44px;width:auto;display:block;">' : '<div class="text-white"><h2 class="text-[16px] font-black tracking-tight">' + (esc(c.name) || '퍼플오토') + '</h2></div>') + '</div><h1 class="text-white text-[16px] font-black tracking-[0.06em]">오토리스 &amp; 장기렌트 비교분석 견적서</h1></div>' +
         '<div class="h-[3px] bg-gradient-to-r from-purple-500 via-purple-300 to-transparent"></div>' +
         '<div class="px-10 pt-10 pb-2"><div class="grid grid-cols-2 gap-12">' +
           '<div><div class="flex items-center gap-2 mb-5"><div class="w-[3px] h-4 bg-purple-500 rounded-full"></div><h3 class="text-[11px] font-bold text-stone-500 tracking-[0.1em]">차 량 정 보</h3></div><div>' + rInfo('차량번호', d.plateNumber) + rInfo('차량명', d.carName) + rInfo('연식', d.year) + rInfo('주행거리', d.mileage) + rInfo('사고유무', d.accident) + '</div></div>' +
@@ -1465,7 +1465,7 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
         '<div class="px-10 pt-10 pb-12"><div class="flex justify-between items-end"><div class="text-[10px] text-stone-300 font-light tracking-wider space-y-0.5">' + (c.address ? '<p>' + esc(c.address) + '</p>' : '') + (c.phone ? '<p>TEL. ' + esc(c.phone) + '</p>' : '') + '</div><div class="text-[10px] text-stone-300 font-light tracking-wider">' + (esc(c.name) || '퍼플오토') + (c.ceo ? ' 대표 ' + esc(c.ceo) : '') + '</div></div></div>' +
       '</div>' +
       '<div class="lg:hidden bg-white">' +
-        '<div class="bg-purple-600 px-4 py-3 flex items-center justify-between"><div class="flex items-center gap-2">' + (c.logoUrl ? '<div class="w-8 h-8 rounded-md overflow-hidden bg-white/10 flex-shrink-0 flex items-center justify-center"><img src="' + esc(c.logoUrl) + '" alt="" class="w-full h-full object-contain"></div>' : '') + '<span class="text-white text-[12px] font-bold tracking-tight">' + (esc(c.name) || '퍼플오토') + '</span></div><span class="text-white text-[11px] font-bold tracking-wide whitespace-nowrap">오토리스 견적서</span></div>' +
+        '<div class="px-4 py-3 flex items-center justify-between" style="background:linear-gradient(135deg,#8B2FE0 0%,#5B2FD6 45%,#1A1E6E 100%);"><div class="flex items-center">' + (c.logoUrl ? '<img src="' + esc(c.logoUrl) + '" alt="' + (esc(c.name) || '퍼플오토') + '" style="height:28px;width:auto;display:block;">' : '<span class="text-white text-[12px] font-bold tracking-tight">' + (esc(c.name) || '퍼플오토') + '</span>') + '</div><span class="text-white text-[11px] font-bold tracking-wide whitespace-nowrap">오토리스 견적서</span></div>' +
         '<div class="h-[2px] bg-gradient-to-r from-purple-500 via-purple-300 to-transparent"></div>' +
         '<div class="px-4 pt-4"><div class="mb-4"><div class="flex items-center gap-1.5 mb-2"><div class="w-[2px] h-3 bg-purple-500 rounded-full"></div><h3 class="text-[10px] font-bold text-stone-400 tracking-[0.1em]">차량정보</h3></div><div class="grid grid-cols-2 gap-x-3">' + rMobileInfo('차량번호', d.plateNumber) + rMobileInfo('차량명', d.carName) + rMobileInfo('연식', d.year) + rMobileInfo('주행거리', d.mileage) + rMobileInfo('사고유무', d.accident) + rMobileInfo('종류', d.category) + '</div></div>' +
         '<div class="mb-4"><div class="flex items-center gap-1.5 mb-2"><div class="w-[2px] h-3 bg-purple-500 rounded-full"></div><h3 class="text-[10px] font-bold text-stone-400 tracking-[0.1em]">금액정보</h3></div><div class="grid grid-cols-2 gap-x-3">' + rMobileInfo('(a) 시세산출액', money(d.marketValue), true) + rMobileInfo('(b) 송개수수료', money(d.transferFee)) + rMobileInfo('(b) 실손비용', money(d.actualLoss)) + rMobileInfo('(c) 보증금', money(d.deposit)) + rMobileInfo('(d) 해지금', money(d.terminationFee), true) + '</div></div></div>' +
@@ -1518,7 +1518,7 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
         '.est-doc{display:flex;justify-content:center;padding:34px 16px;overflow-x:auto;}@media print{.est-bar{display:none;}}' +
       '</style></head><body>' +
       '<div class="est-bar"><span class="t">견적서 미리보기</span><div class="btns">' +
-        '<button class="dl" id="estDlBtn">HTML 다운로드</button><button class="pr" id="estPrintBtn">인쇄</button><button class="cl" id="estCloseBtn">닫기</button>' +
+        '<button class="pr" id="estPrintBtn">인쇄</button><button class="cl" id="estCloseBtn">닫기</button>' +
       '</div></div><div class="est-doc">' + contentHtml + '</div></body></html>';
 
     win.document.open(); win.document.write(doc); win.document.close();
