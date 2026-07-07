@@ -1151,7 +1151,8 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
 
   var TAILWIND_CDN = 'https://cdn.tailwindcss.com';
   var REMIXICON_CDN = 'https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css';
-  var FONT_CDN = 'https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap';
+  var FONT_CDN = 'https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Sora:wght@600;700&display=swap';
+  var GRAD_MAIN = 'linear-gradient(135deg,#8B2FE0 0%,#5B2FD6 45%,#1A1E6E 100%)';
 
   var booted = false;
 
@@ -1163,6 +1164,48 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
   function todayStr() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function fmtDateKo(s) { if (!s) return ''; var p = String(s).split('-'); if (p.length < 3) return s; return p[0] + '년 ' + p[1] + '월 ' + p[2] + '일'; }
   function val(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
+
+  /* 견적서 헤드 샘플 A/B (estimate-header-sample.html 기준) */
+  function estBrandA(scale) {
+    scale = scale || 1;
+    var markSize = Math.round(26 * scale);
+    var nameSize = Math.round(22 * scale);
+    var gap = Math.round(10 * scale);
+    return '<div style="display:flex;align-items:center;gap:' + gap + 'px;">' +
+      '<span style="font-size:' + markSize + 'px;color:#fff;line-height:1;font-weight:700;">∞</span>' +
+      '<span style="font-family:\'Sora\',\'Noto Sans KR\',sans-serif;font-size:' + nameSize + 'px;font-weight:700;color:#fff;letter-spacing:0.5px;">THE <span style="color:#E8D9FF;">PURPLE</span> AUTO</span>' +
+      '</div>';
+  }
+  function estHeadA(docTitle, scale) {
+    scale = scale || 1;
+    var padY = Math.round(28 * scale);
+    var padX = Math.round(36 * scale);
+    var titleSize = Math.round(16 * scale);
+    return '<div style="background:' + GRAD_MAIN + ';padding:' + padY + 'px ' + padX + 'px;display:flex;align-items:center;justify-content:space-between;">' +
+      estBrandA(scale) +
+      '<div style="color:#fff;font-size:' + titleSize + 'px;font-weight:500;letter-spacing:0.3px;white-space:nowrap;">' + esc(docTitle) + '</div>' +
+      '</div>';
+  }
+  function estHeadB(c, metaHtml) {
+    return '<div style="background:#fff;">' +
+      '<div style="height:6px;background:' + GRAD_MAIN + ';"></div>' +
+      '<div style="padding:28px 36px 24px;display:flex;align-items:flex-start;justify-content:space-between;">' +
+        '<div style="display:flex;align-items:center;gap:14px;">' +
+          '<div style="width:56px;height:56px;border-radius:8px;background:' + GRAD_MAIN + ';display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:700;flex-shrink:0;">∞</div>' +
+          '<div>' +
+            '<div style="font-size:20px;font-weight:700;color:#1a1a1a;margin-bottom:4px;">' + (esc(c.name) || '퍼플오토') + '</div>' +
+            (c.address ? '<div style="font-size:12px;color:#777;line-height:1.5;">' + esc(c.address) + '</div>' : '') +
+            (c.phone ? '<div style="font-size:12px;color:#777;line-height:1.5;">TEL. ' + esc(c.phone) + '</div>' : '') +
+            (c.fax ? '<div style="font-size:12px;color:#777;line-height:1.5;">FAX. ' + esc(c.fax) + '</div>' : '') +
+          '</div>' +
+        '</div>' +
+        '<div style="text-align:right;align-self:center;">' +
+          '<div style="font-size:26px;font-weight:800;color:#1a1a1a;letter-spacing:6px;white-space:nowrap;margin-bottom:16px;">견 적 서</div>' +
+          metaHtml +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
 
   function injectStyle() {
     if (document.getElementById('estimateScopedStyle')) return;
@@ -1410,16 +1453,17 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
       }
     }
     var notesBlock = d.notes ? ('<div class="px-12 pt-6"><div class="rounded-lg border border-stone-200 bg-stone-50/60 px-5 py-4"><div class="flex items-center gap-2.5 mb-2"><div class="w-5 h-5 rounded-md bg-purple-50 flex items-center justify-center border border-purple-100"><i class="ri-information-line text-purple-500 text-[11px]"></i></div><h4 class="text-[11px] font-bold text-stone-500 tracking-wider">비 고</h4></div><p class="text-[11px] text-stone-600 leading-relaxed whitespace-pre-wrap font-light">' + esc(d.notes) + '</p></div></div>') : '';
+    var partsMetaHtml =
+      '<div style="display:flex;align-items:center;justify-content:flex-end;gap:16px;font-size:11px;margin-bottom:8px;">' +
+        '<span style="color:#a8a29e;font-weight:300;letter-spacing:0.05em;">NO.</span>' +
+        '<span style="font-weight:600;color:#44403c;min-width:170px;text-align:left;background:#faf5ff;padding:4px 16px;border-radius:6px;letter-spacing:0.05em;">' + esc(d.estimateNumber) + '</span>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;justify-content:flex-end;gap:16px;font-size:11px;">' +
+        '<span style="color:#a8a29e;font-weight:300;letter-spacing:0.05em;">견적일자</span>' +
+        '<span style="font-weight:500;color:#57534e;min-width:170px;text-align:left;letter-spacing:0.05em;">' + (fmtDateKo(d.estimateDate) || '-') + '</span>' +
+      '</div>';
     return '<div id="estimate-parts-content" class="bg-white" style="width:1120px;font-family:\'Noto Sans KR\',sans-serif;">' +
-      '<div class="h-1 bg-gradient-to-r from-purple-700 via-purple-500 to-indigo-400"></div>' +
-      '<div class="px-12 pt-9 pb-6"><div class="flex items-start justify-between"><div class="flex items-center gap-5">' +
-        (c.logoUrl ? '<div class="w-[72px] h-[72px] rounded-xl overflow-hidden bg-stone-50 flex-shrink-0 flex items-center justify-center"><img src="' + esc(c.logoUrl) + '" alt="" class="w-full h-full object-contain"></div>' : '') +
-        '<div><h2 class="text-[22px] font-black text-stone-800 leading-tight">' + (esc(c.name) || '퍼플오토') + '</h2><div class="mt-2 text-[11px] text-stone-500 leading-relaxed space-y-0.5 font-light">' +
-          (c.address ? '<p>' + esc(c.address) + '</p>' : '') + '<p class="flex items-center gap-4 flex-wrap">' + (c.phone ? '<span>TEL. ' + esc(c.phone) + '</span>' : '') + (c.fax ? '<span>FAX. ' + esc(c.fax) + '</span>' : '') + '</p></div></div></div>' +
-        '<div class="text-right"><h1 class="text-[42px] font-black text-stone-800 tracking-[0.12em] mb-5 leading-none">견 적 서</h1><div class="space-y-2 text-[11px]">' +
-          '<div class="flex items-center justify-end gap-4"><span class="text-stone-400 font-light tracking-wider">NO.</span><span class="font-semibold text-stone-700 min-w-[170px] text-left bg-purple-50 px-4 py-1 rounded-md tracking-wide">' + esc(d.estimateNumber) + '</span></div>' +
-          '<div class="flex items-center justify-end gap-4"><span class="text-stone-400 font-light tracking-wider">견적일자</span><span class="font-medium text-stone-600 min-w-[170px] text-left tracking-wide">' + (fmtDateKo(d.estimateDate) || '-') + '</span></div></div></div></div></div>' +
-      '<div class="px-12"><div class="h-[2px] bg-gradient-to-r from-purple-500 via-stone-200 to-transparent rounded-full"></div></div>' +
+      estHeadB(c, partsMetaHtml) +
       '<div class="px-12 py-6"><div class="grid grid-cols-3 gap-10">' +
         '<div><div class="flex items-center gap-2.5 mb-4"><div class="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center border border-purple-100"><i class="ri-user-3-line text-purple-600 text-[13px]"></i></div><h4 class="text-xs font-bold text-stone-600 tracking-[0.08em]">거 래 처</h4></div><div class="space-y-2.5"><div class="flex"><span class="text-stone-400 w-10 flex-shrink-0 text-[11px] font-light">상호</span><span class="font-semibold text-stone-800 text-[11px]">' + (esc(d.customerName) || '-') + '</span></div></div></div>' +
         '<div><div class="flex items-center gap-2.5 mb-4"><div class="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center border border-purple-100"><i class="ri-car-line text-purple-600 text-[13px]"></i></div><h4 class="text-xs font-bold text-stone-600 tracking-[0.08em]">차 량 정 보</h4></div><div class="space-y-2.5"><div class="flex"><span class="text-stone-400 w-[52px] flex-shrink-0 text-[11px] font-light">차종</span><span class="font-semibold text-stone-800 text-[11px]">' + (esc(d.carModel) || '-') + '</span></div><div class="flex"><span class="text-stone-400 w-[52px] flex-shrink-0 text-[11px] font-light">차대번호</span><span class="font-medium text-stone-700 tracking-wider text-[11px]">' + (esc(d.vin) || '-') + '</span></div></div></div>' +
@@ -1448,8 +1492,7 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
     var c = d.companyInfo, money = function (n) { return n > 0 ? fmt(n) : '0'; };
     return '<div id="estimate-rental-content" class="w-full max-w-[800px] mx-auto" style="font-family:\'Noto Sans KR\',sans-serif;">' +
       '<div class="hidden lg:block bg-white shadow-sm" style="min-height:1120px;">' +
-        '<div class="px-10 py-6 flex items-center justify-between" style="background:linear-gradient(135deg,#8B2FE0 0%,#5B2FD6 45%,#1A1E6E 100%);"><div class="flex items-center">' + (c.logoUrl ? '<img src="' + esc(c.logoUrl) + '" alt="' + (esc(c.name) || '퍼플오토') + '" style="height:44px;width:auto;display:block;">' : '<div class="text-white"><h2 class="text-[16px] font-black tracking-tight">' + (esc(c.name) || '퍼플오토') + '</h2></div>') + '</div><h1 class="text-white text-[16px] font-black tracking-[0.06em]">오토리스 &amp; 장기렌트 비교분석 견적서</h1></div>' +
-        '<div class="h-[3px] bg-gradient-to-r from-purple-500 via-purple-300 to-transparent"></div>' +
+        estHeadA('오토리스 & 장기렌트 비교분석 견적서') +
         '<div class="px-10 pt-10 pb-2"><div class="grid grid-cols-2 gap-12">' +
           '<div><div class="flex items-center gap-2 mb-5"><div class="w-[3px] h-4 bg-purple-500 rounded-full"></div><h3 class="text-[11px] font-bold text-stone-500 tracking-[0.1em]">차 량 정 보</h3></div><div>' + rInfo('차량번호', d.plateNumber) + rInfo('차량명', d.carName) + rInfo('연식', d.year) + rInfo('주행거리', d.mileage) + rInfo('사고유무', d.accident) + '</div></div>' +
           '<div><div class="flex items-center gap-2 mb-5"><div class="w-[3px] h-4 bg-purple-500 rounded-full"></div><h3 class="text-[11px] font-bold text-stone-500 tracking-[0.1em]">금 액 정 보</h3></div><div>' + rInfo('종류', d.category) + rInfo('(a) 시세산출액', money(d.marketValue), true) + rInfo('(b) 송개수수료', money(d.transferFee)) + rInfo('(b) 실손비용', money(d.actualLoss)) + rInfo('(c) 보증금', money(d.deposit)) + rInfo('(d) 해지금', money(d.terminationFee), true) + '</div></div>' +
@@ -1465,8 +1508,7 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
         '<div class="px-10 pt-10 pb-12"><div class="flex justify-between items-end"><div class="text-[10px] text-stone-300 font-light tracking-wider space-y-0.5">' + (c.address ? '<p>' + esc(c.address) + '</p>' : '') + (c.phone ? '<p>TEL. ' + esc(c.phone) + '</p>' : '') + '</div><div class="text-[10px] text-stone-300 font-light tracking-wider">' + (esc(c.name) || '퍼플오토') + (c.ceo ? ' 대표 ' + esc(c.ceo) : '') + '</div></div></div>' +
       '</div>' +
       '<div class="lg:hidden bg-white">' +
-        '<div class="px-4 py-3 flex items-center justify-between" style="background:linear-gradient(135deg,#8B2FE0 0%,#5B2FD6 45%,#1A1E6E 100%);"><div class="flex items-center">' + (c.logoUrl ? '<img src="' + esc(c.logoUrl) + '" alt="' + (esc(c.name) || '퍼플오토') + '" style="height:28px;width:auto;display:block;">' : '<span class="text-white text-[12px] font-bold tracking-tight">' + (esc(c.name) || '퍼플오토') + '</span>') + '</div><span class="text-white text-[11px] font-bold tracking-wide whitespace-nowrap">오토리스 견적서</span></div>' +
-        '<div class="h-[2px] bg-gradient-to-r from-purple-500 via-purple-300 to-transparent"></div>' +
+        estHeadA('오토리스 견적서', 0.72) +
         '<div class="px-4 pt-4"><div class="mb-4"><div class="flex items-center gap-1.5 mb-2"><div class="w-[2px] h-3 bg-purple-500 rounded-full"></div><h3 class="text-[10px] font-bold text-stone-400 tracking-[0.1em]">차량정보</h3></div><div class="grid grid-cols-2 gap-x-3">' + rMobileInfo('차량번호', d.plateNumber) + rMobileInfo('차량명', d.carName) + rMobileInfo('연식', d.year) + rMobileInfo('주행거리', d.mileage) + rMobileInfo('사고유무', d.accident) + rMobileInfo('종류', d.category) + '</div></div>' +
         '<div class="mb-4"><div class="flex items-center gap-1.5 mb-2"><div class="w-[2px] h-3 bg-purple-500 rounded-full"></div><h3 class="text-[10px] font-bold text-stone-400 tracking-[0.1em]">금액정보</h3></div><div class="grid grid-cols-2 gap-x-3">' + rMobileInfo('(a) 시세산출액', money(d.marketValue), true) + rMobileInfo('(b) 송개수수료', money(d.transferFee)) + rMobileInfo('(b) 실손비용', money(d.actualLoss)) + rMobileInfo('(c) 보증금', money(d.deposit)) + rMobileInfo('(d) 해지금', money(d.terminationFee), true) + '</div></div></div>' +
         '<div class="px-4"><div class="h-px bg-stone-200"></div></div>' +
