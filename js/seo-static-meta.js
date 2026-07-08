@@ -13,6 +13,8 @@
   var PAGE_TO_HTML = {
     '/': 'index.html',
     '/estimate': 'estimate.html',
+    '/lease-transfers': 'lease-transfers.html',
+    '/lease-transfer-detail': 'lease-transfer-detail.html',
     '/used-cars': 'used-cars.html',
     '/used-car-detail': 'used-car-detail.html',
     '/parts-register': 'parts-register.html',

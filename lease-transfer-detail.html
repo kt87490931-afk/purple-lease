@@ -7,21 +7,21 @@
 <meta name="naver-site-verification" content="2ed3a7e17962a10998d9eb0038561769eb19b957">
 <link rel="icon" type="image/png" sizes="48x48" href="/assets/brand-logos/favicon.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/brand-logos/apple-touch-icon.png">
-<meta name="description" content="퍼플오토 중고차 상세 정보.">
-<meta name="keywords" content="중고차,중고차 매물,퍼플오토">
-<link rel="canonical" href="https://purpleauto.co.kr/used-car-detail">
+<meta name="description" content="퍼플오토 리스 · 장기렌트 일반승계 매물 상세 정보.">
+<meta name="keywords" content="리스승계,장기렌트승계,일반승계,퍼플오토">
+<link rel="canonical" href="https://purpleauto.co.kr/lease-transfer-detail">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="퍼플오토">
-<meta property="og:title" content="중고차 상세 | 퍼플오토">
-<meta property="og:description" content="퍼플오토 중고차 상세 정보.">
-<meta property="og:url" content="https://purpleauto.co.kr/used-car-detail">
+<meta property="og:title" content="리스 · 장기렌트 일반승계 상세 | 퍼플오토">
+<meta property="og:description" content="퍼플오토 리스 · 장기렌트 일반승계 매물 상세 정보.">
+<meta property="og:url" content="https://purpleauto.co.kr/lease-transfer-detail">
 <meta property="og:image" content="https://purpleauto.co.kr/assets/brand-logos/og-image.png">
 <meta property="og:locale" content="ko_KR">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="중고차 상세 | 퍼플오토">
-<meta name="twitter:description" content="퍼플오토 중고차 상세 정보.">
+<meta name="twitter:title" content="리스 · 장기렌트 일반승계 상세 | 퍼플오토">
+<meta name="twitter:description" content="퍼플오토 리스 · 장기렌트 일반승계 매물 상세 정보.">
 <meta name="twitter:image" content="https://purpleauto.co.kr/assets/brand-logos/og-image.png">
-<title>중고차 상세 | 퍼플오토</title>
+<title>리스 · 장기렌트 일반승계 상세 | 퍼플오토</title>
 <script src="/js/supabase-config.js"></script>
 <script src="/js/seo-head.js?v=20260627c"></script>
 <style>
@@ -326,17 +326,17 @@ p { margin:0; }
   <nav class="category-nav">
     <div class="wrap category-nav-inner">
       <div class="category-nav-track">
-      <div class="category-nav-dropdown" data-estimate-nav>
+      <div class="category-nav-dropdown active" data-estimate-nav>
         <button type="button" class="category-nav-trigger" aria-expanded="false" aria-haspopup="true">
           신차·리스·장기렌트카
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="category-nav-submenu">
           <a href="/estimate" data-estimate-link="main">신차·리스·장기렌트카</a>
-          <a href="/lease-transfers" data-estimate-link="transfer">리스 · 장기렌트 일반승계</a>
+          <a href="/lease-transfers" class="active" data-estimate-link="transfer">리스 · 장기렌트 일반승계</a>
         </div>
       </div>
-      <a href="/used-cars" class="active">중고차</a>
+      <a href="/used-cars">중고차</a>
       <a href="/parts-register">수입차부품</a>
       <a href="/partners">제휴업체</a>
       <a href="/reviews-customer">퍼플리뷰</a>
@@ -359,7 +359,7 @@ p { margin:0; }
 <main>
   <div class="wrap">
     <div class="crumb">
-      <a href="/">홈</a><span class="sep">›</span><a href="/used-cars">중고차 매물</a><span class="sep">›</span>
+      <a href="/">홈</a><span class="sep">›</span><a href="/lease-transfers">일반승계 매물</a><span class="sep">›</span>
       <span class="cur" id="crumbName">상세</span>
     </div>
 
@@ -477,7 +477,7 @@ p { margin:0; }
     <div class="footer-logo"><img src="/assets/brand-logos/purple-logo.png" alt="퍼플오토" class="footer-logo-img"></div>
     <div class="footer-links">
       <a href="/">신차·리스·렌트</a>
-      <a href="/used-cars">중고차 매물</a>
+      <a href="/lease-transfers">일반승계 매물</a>
       <a href="/parts-register">수입차부품</a>
       <a href="/partners">제휴업체</a>
       <a href="/reviews-customer">후기관리</a>
@@ -788,7 +788,7 @@ p { margin:0; }
     document.querySelector('.detail-layout').innerHTML = `
       <div style="grid-column:1/-1; text-align:center; padding:80px 0;">
         <p style="font-size:14px; color:var(--ink-500); margin-bottom:16px;">해당 매물 정보를 찾을 수 없습니다.</p>
-        <a href="/used-cars" class="btn btn-outline">매물 목록으로</a>
+        <a href="/lease-transfers" class="btn btn-outline">매물 목록으로</a>
       </div>`;
     document.querySelector('.mobile-cta').style.display = 'none';
   }
@@ -1044,10 +1044,10 @@ p { margin:0; }
   async function bootstrap() {
     if (window.PurpleLeaseData && window.PurpleLeaseData.isConfigured() && id) {
       try {
-        const row = await window.PurpleLeaseData.fetchUsedCarDetail(id);
+        const row = await window.PurpleLeaseData.fetchLeaseTransferDetail(id);
         if (row) v = row;
       } catch (err) {
-        console.warn('[PurpleLease] used car detail load failed:', err);
+        console.warn('[PurpleLease] lease transfer detail load failed:', err);
       }
     }
     render();
@@ -1089,7 +1089,7 @@ p { margin:0; }
         mileage: v.mileage,
         status: v.status
       },
-      source_page: 'used-car-detail'
+      source_page: 'lease-transfer-detail'
     };
   }
 

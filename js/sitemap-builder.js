@@ -50,7 +50,7 @@
     } else {
       [
         ['/reviews-customer', 1.0], ['/reviews-youtube', 0.95], ['/reviews-blog', 0.95],
-        ['/', 0.85], ['/estimate', 0.8], ['/lease-calculator', 0.75], ['/used-cars', 0.7], ['/parts-register', 0.6]
+        ['/', 0.85], ['/estimate', 0.8], ['/lease-transfers', 0.75], ['/lease-calculator', 0.75], ['/used-cars', 0.7], ['/parts-register', 0.6]
       ].forEach(function (pair) {
         urls.push(urlEntry(pageLoc(siteUrl, pair[0]), pair[1], 'weekly', today));
       });
@@ -72,6 +72,17 @@
       if (id == null) return;
       urls.push(urlEntry(
         siteUrl + '/used-car-detail?id=' + id,
+        0.6,
+        'weekly',
+        lastmodFromRow(c, today)
+      ));
+    });
+
+    (deps.leaseTransfers || []).forEach(function (c) {
+      var id = c.listing_id != null ? c.listing_id : c.id;
+      if (id == null) return;
+      urls.push(urlEntry(
+        siteUrl + '/lease-transfer-detail?id=' + id,
         0.6,
         'weekly',
         lastmodFromRow(c, today)

@@ -169,7 +169,16 @@ h1 { margin:0; font-family: var(--font-display); color: var(--ink-900); letter-s
   <nav class="category-nav">
     <div class="category-nav-inner">
       <div class="category-nav-track">
-        <a href="/estimate">신차·리스·장기렌트카</a>
+        <div class="category-nav-dropdown" data-estimate-nav>
+          <button type="button" class="category-nav-trigger" aria-expanded="false" aria-haspopup="true">
+            신차·리스·장기렌트카
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="category-nav-submenu">
+            <a href="/estimate" data-estimate-link="main">신차·리스·장기렌트카</a>
+            <a href="/lease-transfers" data-estimate-link="transfer">리스 · 장기렌트 일반승계</a>
+          </div>
+        </div>
         <a href="/used-cars">중고차</a>
         <a href="/parts-register">수입차부품</a>
         <a href="/partners">제휴업체</a>

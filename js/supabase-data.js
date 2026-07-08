@@ -294,6 +294,92 @@
     }, d, { photos: photos, seller: null });
   }
 
+  function mapLeaseTransfersListRows(data) {
+    return mapUsedCarsListRows(data).map(function (r) {
+      r.lastSyncedAt = '';
+      return r;
+    });
+  }
+
+  async function fetchLeaseTransfersListRest() {
+    if (!hasSupabaseConfig()) return null;
+    var cfg = window.SUPABASE_CONFIG;
+    var fields = 'listing_id,origin,name,year,fuel,mileage,price_num,brand,segment,status,photo_count,thumb_url,tags,sort_order,detail_json';
+    var url = cfg.url.replace(/\/$/, '') + '/rest/v1/lease_transfers?select=' + encodeURIComponent(fields) +
+      '&is_active=eq.true&order=sort_order.asc&limit=500';
+    var res = await fetch(url, {
+      headers: {
+        apikey: cfg.anonKey,
+        Authorization: 'Bearer ' + cfg.anonKey,
+        'Cache-Control': 'no-cache'
+      }
+    });
+    if (!res.ok) throw new Error('lease_transfers REST ' + res.status);
+    return mapLeaseTransfersListRows(await res.json());
+  }
+
+  async function fetchLeaseTransfersList() {
+    var fields = 'listing_id,origin,name,year,fuel,mileage,price_num,brand,segment,status,photo_count,thumb_url,tags,sort_order,detail_json';
+    var client = getClient();
+    if (client) {
+      try {
+        var res = await client
+          .from('lease_transfers')
+          .select(fields)
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true })
+          .range(0, 499);
+        if (res.error) throw res.error;
+        if (res.data) return mapLeaseTransfersListRows(res.data);
+      } catch (err) {
+        console.warn('[PurpleLease] fetchLeaseTransfersList client failed, REST fallback:', err);
+      }
+    }
+    return fetchLeaseTransfersListRest();
+  }
+
+  async function fetchLeaseTransferDetail(listingId) {
+    var client = getClient();
+    if (!client) return null;
+    var res = await client
+      .from('lease_transfers')
+      .select('*')
+      .eq('listing_id', listingId)
+      .eq('is_active', true)
+      .maybeSingle();
+    if (res.error) throw res.error;
+    if (!res.data) return null;
+    var d = res.data.detail_json || {};
+    var photos = (d.photos && d.photos.length) ? d.photos : (res.data.thumb_url ? [res.data.thumb_url] : []);
+    return Object.assign({
+      id: res.data.listing_id,
+      listingId: res.data.listing_id,
+      brand: res.data.brand || '',
+      name: res.data.name,
+      origin: res.data.origin || 'domestic',
+      status: res.data.status || '판매중',
+      year: res.data.year,
+      mileage: res.data.mileage,
+      fuel: res.data.fuel,
+      price: res.data.price_num,
+      tags: res.data.tags || [],
+      photos: photos,
+      plate: d.plate || '',
+      color: d.color || '',
+      parkLocation: d.parkLocation || '',
+      registeredDate: d.registeredDate || '',
+      cost: d.cost || [],
+      description: d.description || '',
+      options: d.options || {},
+      perfDocs: d.perfDocs || [],
+      perfLinks: d.perfLinks || [],
+      underbodyDocs: d.underbodyDocs || [],
+      isEV: !!d.isEV,
+      battery: d.battery || null,
+      batteryDocs: d.batteryDocs || []
+    }, d, { photos: photos, seller: null });
+  }
+
   async function fetchParts() {
     var client = getClient();
     if (!client) return null;
@@ -719,6 +805,8 @@
     fetchUsedCars: fetchUsedCars,
     fetchUsedCarsList: fetchUsedCarsList,
     fetchUsedCarDetail: fetchUsedCarDetail,
+    fetchLeaseTransfersList: fetchLeaseTransfersList,
+    fetchLeaseTransferDetail: fetchLeaseTransferDetail,
     fetchParts: fetchParts,
     fetchPartDetail: fetchPartDetail,
     fetchCustomerReviews: fetchCustomerReviews,

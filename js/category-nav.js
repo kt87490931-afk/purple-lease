@@ -1,3 +1,6 @@
+/**
+ * category-nav — 계산기·신차견적 드롭다운 (모바일 포털 서브메뉴)
+ */
 (function () {
   'use strict';
 
@@ -16,7 +19,7 @@
     wrap._calcSubmenuPortaled = false;
   }
 
-  function closeAllCalcDropdowns() {
+  function closeAllDropdowns() {
     document.querySelectorAll('.category-nav-dropdown.open').forEach(function (wrap) {
       wrap.classList.remove('open');
       var btn = wrap.querySelector('.category-nav-trigger');
@@ -61,12 +64,12 @@
     docListenersBound = true;
 
     document.addEventListener('click', function (e) {
-      if (e.target.closest('[data-calc-nav]') || e.target.closest('.category-nav-submenu--portal')) return;
-      closeAllCalcDropdowns();
+      if (e.target.closest('[data-calc-nav]') || e.target.closest('[data-estimate-nav]') || e.target.closest('.category-nav-submenu--portal')) return;
+      closeAllDropdowns();
     });
 
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') closeAllCalcDropdowns();
+      if (e.key === 'Escape') closeAllDropdowns();
     });
 
     window.addEventListener('resize', function () {
@@ -90,8 +93,8 @@
     }, true);
   }
 
-  function initCalcNavDropdowns() {
-    document.querySelectorAll('[data-calc-nav]').forEach(function (wrap) {
+  function initNavDropdowns(selector) {
+    document.querySelectorAll(selector).forEach(function (wrap) {
       var btn = wrap.querySelector('.category-nav-trigger');
       if (!btn || btn.dataset.bound) return;
       btn.dataset.bound = '1';
@@ -100,7 +103,7 @@
         e.preventDefault();
         e.stopPropagation();
         var isOpen = wrap.classList.contains('open');
-        closeAllCalcDropdowns();
+        closeAllDropdowns();
         if (!isOpen) {
           wrap.classList.add('open');
           btn.setAttribute('aria-expanded', 'true');
@@ -127,9 +130,27 @@
     });
   }
 
+  function markActiveEstimateSubmenu() {
+    var path = window.location.pathname.replace(/\/$/, '');
+    var isEstimate = path === '/estimate' || path.endsWith('/estimate');
+    var isTransfer = path === '/lease-transfers' || path.endsWith('/lease-transfers') ||
+      path === '/lease-transfer-detail' || path.endsWith('/lease-transfer-detail');
+    if (!isEstimate && !isTransfer) return;
+
+    var linkKey = isTransfer ? 'transfer' : 'main';
+    document.querySelectorAll('.category-nav-submenu a[data-estimate-link]').forEach(function (a) {
+      a.classList.toggle('active', a.dataset.estimateLink === linkKey);
+    });
+    document.querySelectorAll('[data-estimate-nav]').forEach(function (wrap) {
+      wrap.classList.add('active');
+    });
+  }
+
   function bootCategoryNav() {
-    initCalcNavDropdowns();
+    initNavDropdowns('[data-calc-nav]');
+    initNavDropdowns('[data-estimate-nav]');
     markActiveCalcSubmenu();
+    markActiveEstimateSubmenu();
   }
 
   if (document.readyState === 'loading') {

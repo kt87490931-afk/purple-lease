@@ -797,6 +797,102 @@
     return { soft: false };
   }
 
+  async function listLeaseTransfers() {
+    var res = await db().from('lease_transfers').select('*').eq('is_active', true).order('sort_order', { ascending: true });
+    if (res.error) throw res.error;
+    return (res.data || []).map(function (r) {
+      var f = (window.PurpleUsedCarFilters && window.PurpleUsedCarFilters.normalizeFilterFields)
+        ? window.PurpleUsedCarFilters.normalizeFilterFields(r)
+        : { brand: r.brand || '', fuel: r.fuel || '', segment: r.segment || '', origin: r.origin || 'domestic' };
+      return {
+        id: r.listing_id || r.id,
+        name: r.name,
+        year: r.year,
+        mileage: r.mileage || 0,
+        price: r.price_num || 0,
+        status: r.status || '판매중',
+        thumb: r.thumb_url || '',
+        brand: f.brand,
+        fuel: f.fuel,
+        segment: f.segment,
+        origin: f.origin
+      };
+    });
+  }
+
+  async function findLeaseTransferRow(carId) {
+    if (carId == null || carId === '') return null;
+    var res = await db().from('lease_transfers')
+      .select('id,listing_id,detail_json,detail_slug')
+      .or('listing_id.eq.' + carId + ',id.eq.' + carId)
+      .maybeSingle();
+    if (res.error) throw res.error;
+    return res.data || null;
+  }
+
+  async function saveLeaseTransfer(payload, editingId) {
+    if (!payload.name || isNaN(payload.year) || isNaN(payload.price)) {
+      throw new Error('차량명, 연식, 가격은 필수입니다.');
+    }
+
+    var Filters = window.PurpleUsedCarFilters;
+    var origin = payload.origin || 'domestic';
+    var brand = String(payload.brand || '').trim();
+    var fuel = String(payload.fuel || '').trim();
+    var segment = String(payload.segment || '').trim();
+    if (!brand && Filters) brand = Filters.inferBrandFromName(payload.name);
+
+    var badgeInfo = Filters ? Filters.originBadge(origin) : { badge: '국산차', badge_class: 'badge-grad' };
+    var meta = Filters
+      ? Filters.buildMeta(payload.year, payload.mileage || 0, fuel)
+      : payload.year + '년 · ' + Math.round((payload.mileage || 0) / 10000 * 10) / 10 + '만km';
+
+    var row = {
+      name: payload.name,
+      year: payload.year,
+      mileage: payload.mileage || 0,
+      price_num: payload.price,
+      status: payload.status || '판매중',
+      thumb_url: payload.thumb || '',
+      origin: origin,
+      brand: brand,
+      fuel: fuel,
+      segment: segment,
+      meta: meta,
+      price: payload.price.toLocaleString('ko-KR') + '만원',
+      badge: badgeInfo.badge,
+      badge_class: badgeInfo.badge_class,
+      is_active: true
+    };
+    if (editingId) {
+      var existing = await findLeaseTransferRow(editingId);
+      if (!existing) throw new Error('매물을 찾을 수 없습니다.');
+      row.detail_slug = existing.detail_slug || String(existing.listing_id || existing.id);
+      var upQuery = existing.listing_id != null
+        ? db().from('lease_transfers').update(row).eq('listing_id', existing.listing_id)
+        : db().from('lease_transfers').update(row).eq('id', existing.id);
+      var up = await upQuery.select().single();
+      if (up.error) throw up.error;
+      return up.data;
+    }
+    var maxRes = await db().from('lease_transfers').select('listing_id').order('listing_id', { ascending: false }).limit(1);
+    var nextId = (maxRes.data && maxRes.data[0]) ? maxRes.data[0].listing_id + 1 : 10001;
+    row.listing_id = nextId;
+    row.detail_slug = String(nextId);
+    row.sort_order = nextId;
+    var ins = await db().from('lease_transfers').insert([row]).select().single();
+    if (ins.error) throw ins.error;
+    return ins.data;
+  }
+
+  async function deleteLeaseTransfer(carId) {
+    var row = await findLeaseTransferRow(carId);
+    if (!row) throw new Error('매물을 찾을 수 없습니다.');
+    var res = await db().from('lease_transfers').delete().eq('id', row.id);
+    if (res.error) throw res.error;
+    return { soft: false };
+  }
+
   async function syncSwautopiaUsedCars(onProgress, options) {
     var Sync = window.SwautopiaSync;
     if (!Sync) throw new Error('SwautopiaSync 모듈이 로드되지 않았습니다.');
@@ -1966,6 +2062,9 @@
     listUsedcars: listUsedcars,
     saveUsedcar: saveUsedcar,
     deleteUsedcar: deleteUsedcar,
+    listLeaseTransfers: listLeaseTransfers,
+    saveLeaseTransfer: saveLeaseTransfer,
+    deleteLeaseTransfer: deleteLeaseTransfer,
     syncSwautopiaUsedCars: syncSwautopiaUsedCars,
     listUsedCarSyncLogs: listUsedCarSyncLogs,
     getUsedCarSyncLog: getUsedCarSyncLog,

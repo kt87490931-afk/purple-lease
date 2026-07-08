@@ -11,6 +11,8 @@
   var reviewData = [];
   var partsData = [];
   var usedcarsData = [];
+  var leaseTransfersData = [];
+  var editingLtId = null;
   var inquiryData = [];
   var inquiryUnread = 0;
   var inquiryTotal = 0;
@@ -1386,6 +1388,60 @@
     } catch (err) { showError(err); }
   }
 
+  function renderLeaseTransfersTable() {
+    var body = document.getElementById('leaseTransfersTableBody');
+    if (!body) return;
+    document.getElementById('leaseTransfersCount').textContent = leaseTransfersData.length;
+    if (!leaseTransfersData.length) {
+      body.innerHTML = '<tr><td colspan="7"><div class="empty-row">등록된 매물이 없습니다.</div></td></tr>';
+      return;
+    }
+    body.innerHTML = leaseTransfersData.map(function (c) {
+      return '<tr>' +
+        '<td class="thumb-cell"><img src="' + escapeAttr(adminThumbUrl(c.thumb)) + '" onerror="this.style.opacity=0.15"></td>' +
+        '<td class="title-cell">' + c.name + '</td>' +
+        '<td class="num-cell">' + (c.year != null ? c.year + '년식' : '-') + '</td>' +
+        '<td class="num-cell">' + c.mileage.toLocaleString('ko-KR') + 'km</td>' +
+        '<td class="num-cell">' + c.price.toLocaleString('ko-KR') + '만원</td>' +
+        '<td><span class="chip ' + (c.status === '판매완료' ? 'muted' : 'ok') + '">' + c.status + '</span></td>' +
+        '<td class="row-actions"><button class="btn btn-outline btn-sm" data-edit-lt="' + c.id + '">수정</button>' +
+        '<button class="btn-danger-text" data-del-lt="' + c.id + '">삭제</button></td></tr>';
+    }).join('');
+    body.querySelectorAll('[data-edit-lt]').forEach(function (b) {
+      b.addEventListener('click', function () { editLeaseTransfer(parseInt(b.dataset.editLt, 10)); });
+    });
+    body.querySelectorAll('[data-del-lt]').forEach(function (b) {
+      b.addEventListener('click', function () { deleteLeaseTransfer(parseInt(b.dataset.delLt, 10)); });
+    });
+  }
+
+  function editLeaseTransfer(id) {
+    var c = leaseTransfersData.find(function (x) { return x.id === id; });
+    if (!c) return;
+    editingLtId = id;
+    document.getElementById('modalLeaseTransferTitle').textContent = '일반승계 매물 수정';
+    document.getElementById('ltName').value = c.name;
+    document.getElementById('ltYear').value = c.year || '';
+    document.getElementById('ltMileage').value = c.mileage;
+    document.getElementById('ltPrice').value = c.price;
+    document.getElementById('ltStatus').value = c.status;
+    document.getElementById('ltThumb').value = c.thumb;
+    document.getElementById('ltOrigin').value = c.origin || 'domestic';
+    document.getElementById('ltBrand').value = c.brand || '';
+    document.getElementById('ltSegment').value = c.segment || '';
+    document.getElementById('ltFuel').value = c.fuel || '';
+    openModal('modalLeaseTransfer');
+  }
+
+  async function deleteLeaseTransfer(id) {
+    if (!confirm('이 일반승계 매물을 삭제하시겠습니까?')) return;
+    try {
+      await API.deleteLeaseTransfer(id);
+      leaseTransfersData = await API.listLeaseTransfers();
+      renderLeaseTransfersTable();
+    } catch (err) { showError(err); }
+  }
+
   function leaseBrandTreeHtml(brands) {
     return brands.map(function (b) {
       return '<div class="tree-item' + (b.id === selectedLeaseBrand ? ' active' : '') + '" data-brand="' + b.id + '">' + b.name + '</div>';
@@ -1811,6 +1867,7 @@
     reviewData = await API.listReviews();
     partsData = await API.listParts();
     usedcarsData = await API.listUsedcars();
+    leaseTransfersData = await API.listLeaseTransfers();
     leaseBrands = await API.listLeaseBrands();
     renderYoutubeTable();
     renderBlogTable();
@@ -1818,6 +1875,7 @@
     initAiReviewTopicSelect();
     renderPartsTable();
     renderUsedcarsTable();
+    renderLeaseTransfersTable();
     await renderLeaseBrandList();
     await renderLeaseSyncLogArea();
     await renderUsedCarSyncLogArea();
@@ -2684,6 +2742,37 @@
     });
     document.getElementById('btnUploadUcThumb').addEventListener('click', function () {
       bindUpload('ucThumbFile', 'ucThumb', 'usedcars');
+    });
+
+    document.getElementById('btnAddLeaseTransfer').addEventListener('click', function () {
+      editingLtId = null;
+      document.getElementById('modalLeaseTransferTitle').textContent = '일반승계 매물 등록';
+      ['ltName', 'ltYear', 'ltMileage', 'ltPrice', 'ltThumb', 'ltBrand', 'ltSegment', 'ltFuel'].forEach(function (id) { document.getElementById(id).value = ''; });
+      document.getElementById('ltStatus').value = '판매중';
+      document.getElementById('ltOrigin').value = 'domestic';
+      openModal('modalLeaseTransfer');
+    });
+    document.getElementById('btnSaveLeaseTransfer').addEventListener('click', async function () {
+      try {
+        await API.saveLeaseTransfer({
+          name: document.getElementById('ltName').value.trim(),
+          year: parseInt(document.getElementById('ltYear').value, 10),
+          mileage: parseInt(document.getElementById('ltMileage').value, 10) || 0,
+          price: parseInt(document.getElementById('ltPrice').value, 10),
+          status: document.getElementById('ltStatus').value,
+          thumb: document.getElementById('ltThumb').value.trim(),
+          origin: document.getElementById('ltOrigin').value,
+          brand: document.getElementById('ltBrand').value.trim(),
+          segment: document.getElementById('ltSegment').value.trim(),
+          fuel: document.getElementById('ltFuel').value.trim()
+        }, editingLtId);
+        closeModal('modalLeaseTransfer');
+        leaseTransfersData = await API.listLeaseTransfers();
+        renderLeaseTransfersTable();
+      } catch (err) { showError(err); }
+    });
+    document.getElementById('btnUploadLtThumb').addEventListener('click', function () {
+      bindUpload('ltThumbFile', 'ltThumb', 'lease-transfers');
     });
 
     document.getElementById('btnAddLeaseBrand').addEventListener('click', async function () {

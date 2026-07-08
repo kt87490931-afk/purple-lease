@@ -74,7 +74,16 @@ button { font-family: inherit; cursor: pointer; }
   <nav class="category-nav">
     <div class="wrap category-nav-inner">
       <div class="category-nav-track">
-      <a href="/estimate">신차·리스·장기렌트카</a>
+      <div class="category-nav-dropdown" data-estimate-nav>
+        <button type="button" class="category-nav-trigger" aria-expanded="false" aria-haspopup="true">
+          신차·리스·장기렌트카
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="category-nav-submenu">
+          <a href="/estimate" data-estimate-link="main">신차·리스·장기렌트카</a>
+          <a href="/lease-transfers" data-estimate-link="transfer">리스 · 장기렌트 일반승계</a>
+        </div>
+      </div>
       <a href="/used-cars">중고차</a>
       <a href="/parts-register">수입차부품</a>
       <a href="/partners">제휴업체</a>
@@ -268,8 +277,6 @@ button { font-family: inherit; cursor: pointer; }
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="/js/supabase-data.js?v=20260701b"></script>
 <script src="/js/category-nav.js?v=20260708f"></script>
-<link rel="stylesheet" href="/css/mobile-menu.css?v=20260708h">
-<script src="/js/mobile-menu.js?v=20260708h"></script>
 <script src="/js/lease-rate-calculator.js?v=20260701e"></script>
 <link rel="stylesheet" href="/css/float-consult.css?v=20260708c">
 <script src="/js/float-consult.js?v=20260708c"></script>

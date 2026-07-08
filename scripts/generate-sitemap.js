@@ -35,6 +35,7 @@ async function main() {
   var pageMeta = await sbGet('seo_page_meta', 'select=page_path,sitemap_priority,sitemap_changefreq,noindex&order=sitemap_priority.desc');
   var reviews = await sbGet('customer_reviews', 'select=listing_id,id,updated_at,published_at,created_at&is_active=eq.true&order=listing_id.asc');
   var cars = await sbGet('used_cars', 'select=listing_id,id,updated_at,created_at&is_active=eq.true&order=listing_id.asc');
+  var leaseTransfers = await sbGet('lease_transfers', 'select=listing_id,id,updated_at,created_at&is_active=eq.true&order=listing_id.asc');
   var parts = await sbGet('parts', 'select=listing_id,id,updated_at,created_at&is_active=eq.true&order=listing_id.asc');
   var youtubeVideos = await sbGet('youtube_videos', 'select=id,updated_at,published_at,created_at&is_active=eq.true&order=sort_order.desc');
 
@@ -43,6 +44,7 @@ async function main() {
     pageMeta: pageMeta,
     reviews: reviews,
     usedCars: cars,
+    leaseTransfers: leaseTransfers,
     parts: parts,
     youtubeVideos: youtubeVideos
   });

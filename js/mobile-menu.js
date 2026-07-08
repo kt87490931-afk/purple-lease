@@ -17,7 +17,14 @@
     '<path fill-rule="evenodd" clip-rule="evenodd" d="M12 4.8C7.05 4.8 3 7.94 3 11.8c0 2.49 1.66 4.68 4.16 5.95l-1.06 3.81c-.09.33.27.6.57.42l4.39-2.84c.31.03.62.05.94.05 4.95 0 9-3.14 9-7C21 7.94 16.95 4.8 12 4.8z" fill="currentColor"/></svg>';
 
   var NAV_ITEMS = [
-    { href: '/estimate', label: '신차·리스·장기렌트카', match: /^\/estimate/ },
+    {
+      label: '신차·리스·장기렌트카',
+      match: /^\/(estimate|lease-transfer)/,
+      children: [
+        { href: '/estimate', label: '신차·리스·장기렌트카', match: /^\/estimate/ },
+        { href: '/lease-transfers', label: '리스 · 장기렌트 일반승계', match: /^\/lease-transfer/ }
+      ]
+    },
     { href: '/used-cars', label: '중고차', match: /^\/used-cars/ },
     { href: '/parts-register', label: '수입차부품', match: /^\/parts-/ },
     { href: '/partners', label: '제휴업체', match: /^\/partners/ },
