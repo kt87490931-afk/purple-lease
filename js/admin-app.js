@@ -399,6 +399,7 @@
     }
   }
 
+  function updateInquiryNavBadge(totalUnread) {
     var badge = document.getElementById('inquiryNavBadge');
     if (!badge) return;
     var n = Math.max(0, parseInt(totalUnread, 10) || 0);
