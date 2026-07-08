@@ -44,7 +44,9 @@
 .category-nav-dropdown {
   position: relative;
   flex-shrink: 0;
-  align-self: center;
+  align-self: stretch;
+  display: flex;
+  align-items: stretch;
 }
 
 .category-nav-trigger {
@@ -89,6 +91,42 @@
   border-bottom-color: transparent;
 }
 
+/* 신차·리스·장기렌트카 — 기존 일반 메뉴 링크와 동일(배경 없음) */
+[data-estimate-nav] .category-nav-trigger {
+  padding: 14px 18px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-500, #6B6B7B);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  box-shadow: none;
+  transform: none;
+  touch-action: manipulation;
+}
+
+[data-estimate-nav] .category-nav-trigger:hover {
+  box-shadow: none;
+  transform: none;
+  color: var(--navy-900, #11143A);
+}
+
+[data-estimate-nav] .category-nav-trigger svg {
+  width: 10px;
+  height: 10px;
+  stroke: currentColor;
+}
+
+[data-estimate-nav].active .category-nav-trigger,
+[data-estimate-nav].open .category-nav-trigger {
+  color: var(--navy-900, #11143A);
+  border-bottom-color: var(--purple-600, #8B2FE0);
+  background: none;
+  box-shadow: none;
+}
+
 .category-nav a.active {
   color: var(--navy-900, #11143A);
   border-bottom-color: var(--purple-600, #8B2FE0);
@@ -120,7 +158,7 @@
 .category-nav-submenu.category-nav-submenu--portal {
   display: none;
   position: fixed;
-  z-index: 1100;
+  z-index: 10200;
   min-width: 148px;
   background: #fff;
   border: 1px solid var(--line-soft, #EFEDF6);
