@@ -699,14 +699,14 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 <header class="site-header">
   <div class="wrap header-inner">
     <a href="/" class="logo logo-gate" aria-label="퍼플오토 홈"><img src="/assets/brand-logos/purple-logo.png" alt="퍼플오토" class="logo-img"></a>
-    <div style="display:flex; align-items:center; gap:10px;">
+    <div class="header-actions">
       <a href="tel:1555-6362" class="header-call">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6C3CE0" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
         <span class="label">1555-6362</span>
       </a>
-      <a href="#" class="icon-btn" aria-label="메뉴">
+      <button type="button" class="icon-btn mobile-menu-trigger" data-mobile-menu-open aria-label="전체 메뉴" aria-expanded="false" aria-controls="mobileMenuDrawer">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#15151D" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-      </a>
+      </button>
     </div>
   </div>
   <nav class="category-nav">
@@ -1273,6 +1273,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 <link rel="stylesheet" href="/css/site-page-bg.css?v=20260703e">
 <link rel="stylesheet" href="/css/float-consult.css?v=20260708c">
 <script src="/js/category-nav.js?v=20260708f"></script>
+<link rel="stylesheet" href="/css/mobile-menu.css?v=20260708g">
+<script src="/js/mobile-menu.js?v=20260708g"></script>
 <script src="/js/float-consult.js?v=20260708c"></script>
 <link rel="stylesheet" href="/css/site-footer.css?v=20260708b">
 <script src="/js/site-footer.js?v=20260708b"></script>
