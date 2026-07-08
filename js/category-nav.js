@@ -2,6 +2,11 @@
   'use strict';
 
   var docListenersBound = false;
+  var MOBILE_MQ = window.matchMedia('(max-width: 859px)');
+
+  function isMobileNav() {
+    return MOBILE_MQ.matches;
+  }
 
   function closeAllCalcDropdowns() {
     document.querySelectorAll('.category-nav-dropdown.open').forEach(function (el) {
@@ -17,6 +22,11 @@
     var btn = wrap.querySelector('.category-nav-trigger');
     var menu = wrap.querySelector('.category-nav-submenu');
     if (!btn || !menu) return;
+
+    if (isMobileNav()) {
+      menu.removeAttribute('style');
+      return;
+    }
 
     menu.style.position = 'fixed';
     menu.style.zIndex = '1200';
@@ -52,6 +62,7 @@
     });
 
     window.addEventListener('scroll', function () {
+      if (isMobileNav()) return;
       document.querySelectorAll('.category-nav-dropdown.open').forEach(positionSubmenu);
     }, true);
   }
