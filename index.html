@@ -184,7 +184,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   font-family: var(--font-mono); font-size: 13px; color: var(--ink-900); font-weight: 700;
 }
 .header-call .num { color: var(--purple-600); }
-.icon-btn {
+.icon-btn:not([data-mobile-menu-open]) {
   width: 38px; height: 38px;
   display: flex; align-items: center; justify-content: center;
   border-radius: var(--radius-sm);
@@ -1281,8 +1281,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 <link rel="stylesheet" href="/css/category-nav.css?v=20260708h">
 <link rel="stylesheet" href="/css/site-page-bg.css?v=20260703e">
 <link rel="stylesheet" href="/css/float-consult.css?v=20260708c">
+<link rel="stylesheet" href="/css/mobile-menu.css?v=20260709a">
 <script src="/js/category-nav.js?v=20260708h"></script>
 <script src="/js/float-consult.js?v=20260708c"></script>
+<script src="/js/mobile-menu.js?v=20260709a"></script>
 <link rel="stylesheet" href="/css/site-footer.css?v=20260708b">
 <script src="/js/site-footer.js?v=20260708b"></script>
 <link rel="stylesheet" href="/css/floating-quote-banner.css?v=20260704a">

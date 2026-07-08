@@ -8,7 +8,8 @@
 }
 
 .mobile-menu-trigger,
-.icon-btn[data-mobile-menu-open] {
+.icon-btn[data-mobile-menu-open],
+button[data-mobile-menu-open].mobile-menu-trigger {
   width: 38px;
   height: 38px;
   display: none;
@@ -26,8 +27,17 @@
 
 @media (max-width: 859px) {
   .mobile-menu-trigger,
-  .icon-btn[data-mobile-menu-open] {
+  .icon-btn[data-mobile-menu-open],
+  button[data-mobile-menu-open].mobile-menu-trigger {
     display: flex;
+  }
+}
+
+@media (min-width: 860px) {
+  .site-header .mobile-menu-trigger,
+  .site-header .icon-btn[data-mobile-menu-open],
+  .site-header button[data-mobile-menu-open] {
+    display: none !important;
   }
 }
 
