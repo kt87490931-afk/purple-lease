@@ -4,6 +4,9 @@
 (function () {
   'use strict';
 
+  /** 우측하단 플로팅 상담 FAB — 숨김 (복구 시 false) */
+  var FAB_UI_HIDDEN = true;
+
   var FALLBACK = {
     is_enabled: true,
     phone_number: '1555-6362',
@@ -124,6 +127,7 @@
   }
 
   async function bootstrap() {
+    if (FAB_UI_HIDDEN) return;
     if (document.body.dataset.noFloatConsult === '1') return;
     var settings = await fetchSettings();
     renderFab(settings);
