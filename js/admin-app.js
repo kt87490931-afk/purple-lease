@@ -119,6 +119,22 @@
     alert((err && err.message) ? err.message : String(err));
   }
 
+  function updateLtThumbPreview(url) {
+    var preview = document.getElementById('ltThumbPreview');
+    var status = document.getElementById('ltThumbStatus');
+    if (!preview) return;
+    var u = String(url || '').trim();
+    if (u) {
+      preview.src = u;
+      preview.style.display = 'block';
+      if (status) status.textContent = '이미지가 등록되었습니다.';
+    } else {
+      preview.removeAttribute('src');
+      preview.style.display = 'none';
+      if (status) status.textContent = '이미지를 선택한 뒤 저장하세요.';
+    }
+  }
+
   async function bindUpload(fileInputId, textInputId, folder, opts) {
     opts = opts || {};
     var fileInput = document.getElementById(fileInputId);
@@ -127,6 +143,7 @@
       var url = await API.uploadImage(fileInput.files[0], folder);
       document.getElementById(textInputId).value = url;
       fileInput.value = '';
+      if (textInputId === 'ltThumb') updateLtThumbPreview(url);
       if (!opts.silent) alert('이미지가 업로드되었습니다.');
     } catch (err) {
       showError(err);
@@ -1430,6 +1447,9 @@
     var thumbVal = c.thumb || '';
     if (thumbVal.indexOf('/assets/lease-transfers/') === 0) thumbVal = '';
     document.getElementById('ltThumb').value = thumbVal;
+    updateLtThumbPreview(thumbVal);
+    var ltFile = document.getElementById('ltThumbFile');
+    if (ltFile) ltFile.value = '';
     document.getElementById('ltOrigin').value = c.origin || 'domestic';
     document.getElementById('ltBrand').value = c.brand || '';
     document.getElementById('ltSegment').value = c.segment || '';
@@ -2752,36 +2772,73 @@
       editingLtId = null;
       document.getElementById('modalLeaseTransferTitle').textContent = '일반승계 매물 등록';
       ['ltName', 'ltYear', 'ltMileage', 'ltPrice', 'ltThumb', 'ltBrand', 'ltSegment', 'ltFuel'].forEach(function (id) { document.getElementById(id).value = ''; });
+      updateLtThumbPreview('');
       document.getElementById('ltStatus').value = '판매중';
       document.getElementById('ltOrigin').value = 'domestic';
       openModal('modalLeaseTransfer');
     });
     document.getElementById('btnSaveLeaseTransfer').addEventListener('click', async function () {
       try {
+        var thumbInput = document.getElementById('ltThumb');
         var thumbFile = document.getElementById('ltThumbFile');
+        var thumb = thumbInput.value.trim();
+
         if (thumbFile && thumbFile.files && thumbFile.files[0]) {
-          await bindUpload('ltThumbFile', 'ltThumb', 'lease-transfers', { silent: true });
+          var uploadId = editingLtId;
+          if (!uploadId) uploadId = await API.getNextLeaseTransferListingId();
+          thumb = await API.uploadLeaseTransferThumb(thumbFile.files[0], uploadId);
+          thumbInput.value = thumb;
+          thumbFile.value = '';
+          updateLtThumbPreview(thumb);
         }
+
         await API.saveLeaseTransfer({
           name: document.getElementById('ltName').value.trim(),
           year: parseInt(document.getElementById('ltYear').value, 10),
           mileage: parseInt(document.getElementById('ltMileage').value, 10) || 0,
           price: parseInt(document.getElementById('ltPrice').value, 10),
           status: document.getElementById('ltStatus').value,
-          thumb: document.getElementById('ltThumb').value.trim(),
+          thumb: thumb,
           origin: document.getElementById('ltOrigin').value,
           brand: document.getElementById('ltBrand').value.trim(),
           segment: document.getElementById('ltSegment').value.trim(),
           fuel: document.getElementById('ltFuel').value.trim()
         }, editingLtId);
+        alert('저장되었습니다.');
         closeModal('modalLeaseTransfer');
+        editingLtId = null;
         leaseTransfersData = await API.listLeaseTransfers();
         renderLeaseTransfersTable();
       } catch (err) { showError(err); }
     });
-    document.getElementById('btnUploadLtThumb').addEventListener('click', function () {
-      bindUpload('ltThumbFile', 'ltThumb', 'lease-transfers');
+    document.getElementById('btnUploadLtThumb').addEventListener('click', async function () {
+      try {
+        var thumbFile = document.getElementById('ltThumbFile');
+        if (editingLtId && thumbFile && thumbFile.files && thumbFile.files[0]) {
+          var url = await API.uploadLeaseTransferThumb(thumbFile.files[0], editingLtId);
+          document.getElementById('ltThumb').value = url;
+          thumbFile.value = '';
+          updateLtThumbPreview(url);
+          alert('이미지가 업로드되었습니다.');
+        } else {
+          await bindUpload('ltThumbFile', 'ltThumb', 'lease-transfers');
+        }
+      } catch (err) { showError(err); }
     });
+    var ltThumbFileEl = document.getElementById('ltThumbFile');
+    if (ltThumbFileEl) {
+      ltThumbFileEl.addEventListener('change', function () {
+        var status = document.getElementById('ltThumbStatus');
+        if (this.files && this.files[0]) {
+          if (status) status.textContent = '선택됨: ' + this.files[0].name + ' (저장 시 업로드)';
+          var preview = document.getElementById('ltThumbPreview');
+          if (preview) {
+            preview.src = URL.createObjectURL(this.files[0]);
+            preview.style.display = 'block';
+          }
+        }
+      });
+    }
 
     document.getElementById('btnAddLeaseBrand').addEventListener('click', async function () {
       var name = prompt('브랜드명을 입력하세요');

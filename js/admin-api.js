@@ -43,20 +43,51 @@
     return cfg.url + '/storage/v1/object/public/purple-uploads/' + path.replace(/^\//, '');
   }
 
+  function imageExtAndType(file) {
+    var ext = (String(file.name || '').split('.').pop() || 'jpg').toLowerCase();
+    if (ext === 'jpeg') ext = 'jpg';
+    var allowedExt = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp', gif: 'image/gif' };
+    if (allowedExt[ext]) return { ext: ext, contentType: allowedExt[ext] };
+    var mime = String(file.type || '').toLowerCase();
+    if (mime === 'image/jpg') mime = 'image/jpeg';
+    var mimeToExt = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
+    if (mimeToExt[mime]) return { ext: mimeToExt[mime], contentType: mime };
+    return null;
+  }
+
+  function assertAllowedImage(file) {
+    var info = imageExtAndType(file);
+    if (!info) throw new Error('jpg, png, webp, gif 이미지만 업로드 가능합니다.');
+    return info;
+  }
+
   async function uploadImage(file, folder) {
     if (!file) throw new Error('파일을 선택하세요.');
-    var allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    if (allowed.indexOf(file.type) === -1) throw new Error('jpg, png, webp, gif만 업로드 가능합니다.');
+    var info = assertAllowedImage(file);
     if (file.size > 5 * 1024 * 1024) throw new Error('파일 크기는 5MB 이하여야 합니다.');
 
-    var ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-    var name = folder + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+    var name = folder + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + info.ext;
     var res = await db().storage.from('purple-uploads').upload(name, file, {
       cacheControl: '3600',
-      upsert: false
+      upsert: false,
+      contentType: info.contentType
     });
     if (res.error) throw res.error;
     return storagePublicUrl(name);
+  }
+
+  async function uploadLeaseTransferThumb(file, listingId) {
+    if (listingId == null || listingId === '') throw new Error('매물 번호가 없습니다.');
+    var info = assertAllowedImage(file);
+    if (file.size > 5 * 1024 * 1024) throw new Error('파일 크기는 5MB 이하여야 합니다.');
+    var path = 'lease-transfers/' + listingId + '/thumb.' + info.ext;
+    var res = await db().storage.from('purple-uploads').upload(path, file, {
+      cacheControl: '86400',
+      upsert: true,
+      contentType: info.contentType
+    });
+    if (res.error) throw res.error;
+    return storagePublicUrl(path);
   }
 
   async function uploadBlob(blob, storagePath) {
@@ -818,6 +849,12 @@
         origin: f.origin
       };
     });
+  }
+
+  async function getNextLeaseTransferListingId() {
+    var maxRes = await db().from('lease_transfers').select('listing_id').order('listing_id', { ascending: false }).limit(1);
+    if (maxRes.error) throw maxRes.error;
+    return (maxRes.data && maxRes.data[0]) ? maxRes.data[0].listing_id + 1 : 10001;
   }
 
   async function findLeaseTransferRow(carId) {
@@ -2059,6 +2096,8 @@
     parseDotDate: parseDotDate,
     parseYoutubeVideoId: parseYoutubeVideoId,
     uploadImage: uploadImage,
+    uploadLeaseTransferThumb: uploadLeaseTransferThumb,
+    getNextLeaseTransferListingId: getNextLeaseTransferListingId,
     uploadBlob: uploadBlob,
     storagePublicUrl: storagePublicUrl,
     listYoutube: listYoutube,
