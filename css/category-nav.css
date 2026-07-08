@@ -1,5 +1,4 @@
 /* 상단 카테고리 메뉴 + 계산기 드롭다운 */
-/* 모바일: .category-nav-track 만 좌우 스크롤, 페이지 전체 가로 밀림 방지 */
 .category-nav {
   overflow-x: clip;
   overflow-y: visible;
@@ -14,7 +13,6 @@
   box-sizing: border-box;
 }
 
-/* .wrap 미사용 페이지(youtube-detail 등)용 컨테이너 폭 */
 .category-nav-inner:not(.wrap) {
   max-width: var(--container, 1180px);
   margin-left: auto;
@@ -114,7 +112,24 @@
   z-index: 1210;
 }
 
-.category-nav-dropdown.open .category-nav-submenu {
+.category-nav-dropdown.open .category-nav-submenu:not(.category-nav-submenu--portal) {
+  display: block;
+}
+
+/* body 포털 — backdrop-filter·overflow 클리핑 우회, PC·모바일 공통 드롭다운 */
+.category-nav-submenu.category-nav-submenu--portal {
+  display: none;
+  position: fixed;
+  z-index: 1100;
+  min-width: 148px;
+  background: #fff;
+  border: 1px solid var(--line-soft, #EFEDF6);
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 12px 28px rgba(40, 30, 90, 0.12);
+  overflow: hidden;
+}
+
+.category-nav-submenu.category-nav-submenu--portal.is-open {
   display: block;
 }
 
@@ -136,49 +151,4 @@
 
 .category-nav-submenu a + a {
   border-top: 1px solid var(--line-soft, #EFEDF6);
-}
-
-/* 모바일: 버튼 아래로 하위메뉴 펼침 (overflow·backdrop-filter 클리핑 방지) */
-@media (max-width: 859px) {
-  .category-nav-inner {
-    flex-wrap: wrap;
-    align-items: stretch;
-  }
-
-  .category-nav-track {
-    flex: 1 1 100%;
-    width: 100%;
-  }
-
-  .category-nav-dropdown {
-    flex: 1 1 100%;
-    width: 100%;
-    align-self: stretch;
-  }
-
-  .category-nav-trigger {
-    width: calc(100% - 20px);
-    margin: 6px 10px;
-    justify-content: center;
-  }
-
-  .category-nav-submenu {
-    position: static;
-    display: none;
-    width: 100%;
-    min-width: 0;
-    border: none;
-    border-radius: 0;
-    border-top: 1px solid var(--line-soft, #EFEDF6);
-    box-shadow: none;
-  }
-
-  .category-nav-dropdown.open .category-nav-submenu {
-    display: block;
-  }
-
-  .category-nav-submenu a {
-    padding: 14px 18px;
-    border-bottom: none;
-  }
 }
