@@ -319,7 +319,86 @@
     }
   }
 
-  function updateInquiryNavBadge(totalUnread) {
+  function renderFooterCertPreview(url, mime) {
+    var box = document.getElementById('footerCertPreview');
+    if (!box) return;
+    if (!url) {
+      box.innerHTML = '<span style="font-size:12px;color:var(--ink-400);">등록된 등록증이 없습니다.</span>';
+      return;
+    }
+    if (mime === 'application/pdf' || /\.pdf(\?|$)/i.test(url)) {
+      box.innerHTML =
+        '<a href="' + url.replace(/"/g, '&quot;') + '" target="_blank" rel="noopener noreferrer" style="font-size:12px;">PDF 미리보기 (새 탭)</a>';
+      return;
+    }
+    box.innerHTML =
+      '<img src="' + url.replace(/"/g, '&quot;') + '" alt="등록증 미리보기" style="max-width:280px;max-height:200px;border-radius:8px;border:1px solid var(--line-soft);">';
+  }
+
+  async function loadFooterPanel() {
+    var panel = document.getElementById('panel-footer');
+    if (!panel) return;
+    var statusEl = document.getElementById('footerSaveStatus');
+    try {
+      var s = await API.getFooterSettings();
+      document.getElementById('footerTerms').value = s.terms_of_service || '';
+      document.getElementById('footerPrivacy').value = s.privacy_policy || '';
+      document.getElementById('footerDisclaimer').value = s.disclaimer_text || '';
+      document.getElementById('footerCertUrl').value = s.certificate_url || '';
+      document.getElementById('footerCertMime').value = s.certificate_mime || '';
+      renderFooterCertPreview(s.certificate_url || '', s.certificate_mime || '');
+      var upd = document.getElementById('footerUpdatedAt');
+      if (upd) upd.textContent = s.updated_at ? '마지막 저장: ' + fmtAdminDateTime(s.updated_at) : '';
+      if (statusEl) statusEl.textContent = '';
+    } catch (err) {
+      console.warn('[Admin] footer settings:', err);
+      if (statusEl) statusEl.textContent = '설정 로드 실패 — migration-footer-settings.sql 실행 필요';
+    }
+  }
+
+  async function saveFooterPanel() {
+    var btn = document.getElementById('btnSaveFooter');
+    var statusEl = document.getElementById('footerSaveStatus');
+    var prev = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = '저장 중…'; }
+    if (statusEl) statusEl.textContent = '';
+    try {
+      var certUrl = document.getElementById('footerCertUrl').value.trim();
+      var certMime = document.getElementById('footerCertMime').value.trim();
+      var fileInput = document.getElementById('footerCertFile');
+      if (fileInput && fileInput.files && fileInput.files[0]) {
+        var uploaded = await API.uploadFooterCertificate(fileInput.files[0]);
+        certUrl = uploaded.url;
+        certMime = uploaded.mime;
+        document.getElementById('footerCertUrl').value = certUrl;
+        document.getElementById('footerCertMime').value = certMime;
+        renderFooterCertPreview(certUrl, certMime);
+        fileInput.value = '';
+      }
+      var row = await API.saveFooterSettings({
+        terms_of_service: document.getElementById('footerTerms').value,
+        privacy_policy: document.getElementById('footerPrivacy').value,
+        disclaimer_text: document.getElementById('footerDisclaimer').value,
+        certificate_url: certUrl,
+        certificate_mime: certMime
+      });
+      var upd = document.getElementById('footerUpdatedAt');
+      if (upd) upd.textContent = row.updated_at ? '마지막 저장: ' + fmtAdminDateTime(row.updated_at) : '';
+      if (statusEl) {
+        statusEl.style.color = '#059669';
+        statusEl.textContent = '저장되었습니다. 공개 페이지 새로고침 후 반영됩니다.';
+      }
+    } catch (err) {
+      showError(err);
+      if (statusEl) {
+        statusEl.style.color = '#b91c1c';
+        statusEl.textContent = err.message || String(err);
+      }
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = prev || '저장'; }
+    }
+  }
+
     var badge = document.getElementById('inquiryNavBadge');
     if (!badge) return;
     var n = Math.max(0, parseInt(totalUnread, 10) || 0);
@@ -2218,6 +2297,9 @@
         if (item.dataset.panel === 'seo') {
           await loadSeoPanel();
         }
+        if (item.dataset.panel === 'footer') {
+          await loadFooterPanel();
+        }
         if (item.dataset.panel === 'analytics') {
           await loadAnalyticsPanel();
         }
@@ -2652,6 +2734,7 @@
     if (timeSaleForm) {
       timeSaleForm.addEventListener('submit', saveTimeSaleSettingsForm);
     }
+    bindOptionalClick('btnSaveFooter', saveFooterPanel);
   }
 
   async function init() {

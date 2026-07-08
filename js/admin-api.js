@@ -1405,6 +1405,56 @@
     return row;
   }
 
+  var FOOTER_DEFAULTS = {
+    terms_of_service: '',
+    privacy_policy: '',
+    disclaimer_text:
+      '금융상품 상담은 등록된 금융상품판매대리 · 중개업자가 진행합니다.\n' +
+      '금융상품판매대리 · 중개업자 성명 및 등록번호 소속 법인(또는 제휴 법인)\n' +
+      '계약 체결 권한은 금융회사에 있으며, 당사는 금융상품판매대리 · 중개업자로서 모집 업무',
+    certificate_url: '',
+    certificate_mime: ''
+  };
+
+  async function getFooterSettings() {
+    var res = await db().from('footer_settings').select('*').eq('id', 1).maybeSingle();
+    if (res.error) throw res.error;
+    return Object.assign({}, FOOTER_DEFAULTS, res.data || {});
+  }
+
+  async function saveFooterSettings(payload) {
+    var row = {
+      id: 1,
+      terms_of_service: String(payload.terms_of_service || '').trim(),
+      privacy_policy: String(payload.privacy_policy || '').trim(),
+      disclaimer_text: String(payload.disclaimer_text || FOOTER_DEFAULTS.disclaimer_text).trim(),
+      certificate_url: String(payload.certificate_url || '').trim(),
+      certificate_mime: String(payload.certificate_mime || '').trim(),
+      updated_at: new Date().toISOString()
+    };
+    var res = await db().from('footer_settings').upsert(row, { onConflict: 'id' });
+    if (res.error) throw res.error;
+    return row;
+  }
+
+  async function uploadFooterCertificate(file) {
+    if (!file) throw new Error('파일을 선택하세요.');
+    var allowed = ['image/jpeg', 'image/png', 'application/pdf'];
+    if (allowed.indexOf(file.type) === -1) throw new Error('jpg, png, pdf만 업로드 가능합니다.');
+    if (file.size > 10 * 1024 * 1024) throw new Error('파일 크기는 10MB 이하여야 합니다.');
+
+    var ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    if (ext === 'jpeg') ext = 'jpg';
+    var name = 'footer/certificate-' + Date.now() + '.' + ext;
+    var res = await db().storage.from('purple-uploads').upload(name, file, {
+      cacheControl: '3600',
+      upsert: true,
+      contentType: file.type || 'application/octet-stream'
+    });
+    if (res.error) throw res.error;
+    return { url: storagePublicUrl(name), mime: file.type || '' };
+  }
+
   async function getTimeSaleSettings() {
     var res = await db().from('time_sale_settings').select('*').eq('id', 1).maybeSingle();
     if (res.error) throw res.error;
@@ -1945,6 +1995,9 @@
     saveSeoSettings: saveSeoSettings,
     getFloatConsultSettings: getFloatConsultSettings,
     saveFloatConsultSettings: saveFloatConsultSettings,
+    getFooterSettings: getFooterSettings,
+    saveFooterSettings: saveFooterSettings,
+    uploadFooterCertificate: uploadFooterCertificate,
     getTimeSaleSettings: getTimeSaleSettings,
     saveTimeSaleSettings: saveTimeSaleSettings,
     listSeoPageMeta: listSeoPageMeta,
