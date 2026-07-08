@@ -330,7 +330,7 @@
           .order('sort_order', { ascending: true })
           .range(0, 499);
         if (res.error) throw res.error;
-        if (res.data) return mapLeaseTransfersListRows(res.data);
+        if (res.data && res.data.length) return mapLeaseTransfersListRows(res.data);
       } catch (err) {
         console.warn('[PurpleLease] fetchLeaseTransfersList client failed, REST fallback:', err);
       }
@@ -338,31 +338,41 @@
     return fetchLeaseTransfersListRest();
   }
 
-  async function fetchLeaseTransferDetail(listingId) {
-    var client = getClient();
-    if (!client) return null;
-    var res = await client
-      .from('lease_transfers')
-      .select('*')
-      .eq('listing_id', listingId)
-      .eq('is_active', true)
-      .maybeSingle();
-    if (res.error) throw res.error;
-    if (!res.data) return null;
-    var d = res.data.detail_json || {};
-    var photos = (d.photos && d.photos.length) ? d.photos : (res.data.thumb_url ? [res.data.thumb_url] : []);
+  async function fetchLeaseTransferDetailRest(listingId) {
+    if (!hasSupabaseConfig() || listingId == null) return null;
+    var cfg = window.SUPABASE_CONFIG;
+    var url = cfg.url.replace(/\/$/, '') + '/rest/v1/lease_transfers?select=*' +
+      '&listing_id=eq.' + encodeURIComponent(listingId) +
+      '&is_active=eq.true&limit=1';
+    var res = await fetch(url, {
+      headers: {
+        apikey: cfg.anonKey,
+        Authorization: 'Bearer ' + cfg.anonKey,
+        'Cache-Control': 'no-cache'
+      }
+    });
+    if (!res.ok) throw new Error('lease_transfers detail REST ' + res.status);
+    var rows = await res.json();
+    if (!rows || !rows.length) return null;
+    return rows[0];
+  }
+
+  function mapLeaseTransferDetailRow(resData) {
+    if (!resData) return null;
+    var d = resData.detail_json || {};
+    var photos = (d.photos && d.photos.length) ? d.photos : (resData.thumb_url ? [resData.thumb_url] : []);
     return Object.assign({
-      id: res.data.listing_id,
-      listingId: res.data.listing_id,
-      brand: res.data.brand || '',
-      name: res.data.name,
-      origin: res.data.origin || 'domestic',
-      status: res.data.status || '판매중',
-      year: res.data.year,
-      mileage: res.data.mileage,
-      fuel: res.data.fuel,
-      price: res.data.price_num,
-      tags: res.data.tags || [],
+      id: resData.listing_id,
+      listingId: resData.listing_id,
+      brand: resData.brand || '',
+      name: resData.name,
+      origin: resData.origin || 'domestic',
+      status: resData.status || '판매중',
+      year: resData.year,
+      mileage: resData.mileage,
+      fuel: resData.fuel,
+      price: resData.price_num,
+      tags: resData.tags || [],
       photos: photos,
       plate: d.plate || '',
       color: d.color || '',
@@ -378,6 +388,31 @@
       battery: d.battery || null,
       batteryDocs: d.batteryDocs || []
     }, d, { photos: photos, seller: null });
+  }
+
+  async function fetchLeaseTransferDetail(listingId) {
+    var client = getClient();
+    if (client) {
+      try {
+        var res = await client
+          .from('lease_transfers')
+          .select('*')
+          .eq('listing_id', listingId)
+          .eq('is_active', true)
+          .maybeSingle();
+        if (res.error) throw res.error;
+        if (res.data) return mapLeaseTransferDetailRow(res.data);
+      } catch (err) {
+        console.warn('[PurpleLease] fetchLeaseTransferDetail client failed, REST fallback:', err);
+      }
+    }
+    try {
+      var row = await fetchLeaseTransferDetailRest(listingId);
+      return mapLeaseTransferDetailRow(row);
+    } catch (err2) {
+      console.warn('[PurpleLease] fetchLeaseTransferDetail REST failed:', err2);
+      return null;
+    }
   }
 
   async function fetchParts() {

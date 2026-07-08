@@ -1,5 +1,14 @@
 -- 리스 · 장기렌트 일반승계 매물 (어드민 직접 등록, swautopia 동기화 없음)
--- Supabase SQL Editor 또는 psql 로 실행 (idempotent)
+-- Supabase 대시보드 → SQL Editor 에서 전체 실행 (idempotent)
+
+-- updated_at 함수 (없으면 생성)
+CREATE OR REPLACE FUNCTION set_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
 CREATE TABLE IF NOT EXISTS lease_transfers (
   id            BIGSERIAL PRIMARY KEY,
@@ -35,7 +44,8 @@ ALTER TABLE lease_transfers ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "public_read_lease_transfers" ON lease_transfers;
 CREATE POLICY "public_read_lease_transfers" ON lease_transfers
-  FOR SELECT USING (is_active = true);
+  FOR SELECT TO anon, authenticated
+  USING (is_active = true);
 
 DROP POLICY IF EXISTS "admin_write_lease_transfers" ON lease_transfers;
 CREATE POLICY "admin_write_lease_transfers" ON lease_transfers
@@ -43,9 +53,18 @@ CREATE POLICY "admin_write_lease_transfers" ON lease_transfers
   USING (public.is_purple_admin())
   WITH CHECK (public.is_purple_admin());
 
+-- API(anon/authenticated) 테이블 접근 권한
+GRANT SELECT ON TABLE public.lease_transfers TO anon, authenticated;
+GRANT ALL ON TABLE public.lease_transfers TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE public.lease_transfers_id_seq TO authenticated;
+
 DROP TRIGGER IF EXISTS trg_lease_transfers_updated ON lease_transfers;
 CREATE TRIGGER trg_lease_transfers_updated
   BEFORE UPDATE ON lease_transfers
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
+-- PostgREST(API) 스키마 캐시 갱신
+NOTIFY pgrst, 'reload schema';
+
 SELECT 'lease_transfers migration OK' AS result;
+SELECT COUNT(*) AS lease_transfer_count FROM lease_transfers;
