@@ -5,9 +5,7 @@ CREATE TABLE IF NOT EXISTS footer_settings (
   id SMALLINT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
   terms_of_service TEXT NOT NULL DEFAULT '',
   privacy_policy TEXT NOT NULL DEFAULT '',
-  disclaimer_text TEXT NOT NULL DEFAULT '금융상품 상담은 등록된 금융상품판매대리 · 중개업자가 진행합니다.
-금융상품판매대리 · 중개업자 성명 및 등록번호 소속 법인(또는 제휴 법인)
-계약 체결 권한은 금융회사에 있으며, 당사는 금융상품판매대리 · 중개업자로서 모집 업무',
+  disclaimer_text TEXT NOT NULL DEFAULT '금융상품 상담은 등록된 금융상품판매대리 · 중개업자가 진행합니다. 금융상품판매대리 · 중개업자 성명 및 등록번호 소속 법인(또는 제휴 법인) 계약 체결 권한은 금융회사에 있으며, 당사는 금융상품판매대리 · 중개업자로서 모집 업무',
   certificate_url TEXT NOT NULL DEFAULT '',
   certificate_mime TEXT NOT NULL DEFAULT '',
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()

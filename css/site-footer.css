@@ -31,33 +31,11 @@
   user-select: none;
 }
 
-.footer-bottom {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-  flex-wrap: wrap;
-}
-
-.footer-bottom .footer-meta {
-  flex: 1 1 280px;
-  min-width: 0;
-}
-
-.footer-disclaimer {
-  flex: 0 1 340px;
-  min-width: 0;
+.footer-meta .footer-disclaimer {
+  margin-top: 10px;
   font-size: 10.5px;
-  line-height: 1.65;
+  line-height: 1.55;
   color: var(--ink-400, #9494A3);
-  white-space: pre-line;
-}
-
-@media (max-width: 720px) {
-  .footer-disclaimer {
-    flex: 1 1 100%;
-    margin-top: 4px;
-  }
 }
 
 /* 모달 */

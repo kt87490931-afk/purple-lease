@@ -5,8 +5,8 @@
   'use strict';
 
   var DEFAULT_DISCLAIMER =
-    '금융상품 상담은 등록된 금융상품판매대리 · 중개업자가 진행합니다.\n' +
-    '금융상품판매대리 · 중개업자 성명 및 등록번호 소속 법인(또는 제휴 법인)\n' +
+    '금융상품 상담은 등록된 금융상품판매대리 · 중개업자가 진행합니다. ' +
+    '금융상품판매대리 · 중개업자 성명 및 등록번호 소속 법인(또는 제휴 법인) ' +
     '계약 체결 권한은 금융회사에 있으며, 당사는 금융상품판매대리 · 중개업자로서 모집 업무';
 
   var FALLBACK = {
@@ -28,8 +28,15 @@
       .replace(/"/g, '&quot;');
   }
 
+  function normalizeDisclaimer(text) {
+    var s = String(text || DEFAULT_DISCLAIMER).replace(/\s+/g, ' ').trim();
+    return s || DEFAULT_DISCLAIMER;
+  }
+
   function mergeSettings(row) {
-    return Object.assign({}, FALLBACK, row || {});
+    var merged = Object.assign({}, FALLBACK, row || {});
+    merged.disclaimer_text = normalizeDisclaimer(merged.disclaimer_text);
+    return merged;
   }
 
   async function fetchSettings() {
@@ -58,12 +65,27 @@
     }
   }
 
+  function unwrapLegacyFooterLayout(wrap, meta) {
+    var bottom = wrap.querySelector('.footer-bottom');
+    if (bottom) {
+      if (meta.parentNode === bottom) {
+        bottom.parentNode.insertBefore(meta, bottom);
+      }
+      bottom.remove();
+    }
+    wrap.querySelectorAll('.footer-disclaimer').forEach(function (el) {
+      if (el.parentNode !== meta) el.remove();
+    });
+  }
+
   function ensureFooterStructure(footer) {
     var wrap = footer.querySelector('.wrap');
     if (!wrap) return null;
     var links = wrap.querySelector('.footer-links');
     var meta = wrap.querySelector('.footer-meta');
     if (!links || !meta) return null;
+
+    unwrapLegacyFooterLayout(wrap, meta);
 
     var legal = wrap.querySelector('.footer-legal');
     if (!legal) {
@@ -74,21 +96,17 @@
       links.insertAdjacentElement('afterend', legal);
     }
 
-    var bottom = wrap.querySelector('.footer-bottom');
-    if (!bottom) {
-      bottom = document.createElement('div');
-      bottom.className = 'footer-bottom';
-      meta.parentNode.insertBefore(bottom, meta);
-      bottom.appendChild(meta);
-      var disc = document.createElement('div');
-      disc.className = 'footer-disclaimer';
-      bottom.appendChild(disc);
+    var disclaimer = meta.querySelector('.footer-disclaimer');
+    if (!disclaimer) {
+      disclaimer = document.createElement('div');
+      disclaimer.className = 'footer-disclaimer';
+      meta.appendChild(disclaimer);
     }
 
     return {
       legal: legal,
-      disclaimer: bottom.querySelector('.footer-disclaimer'),
-      wrap: wrap
+      disclaimer: disclaimer,
+      meta: meta
     };
   }
 
@@ -185,8 +203,7 @@
 
   function renderDisclaimer(disclaimer, settings) {
     if (!disclaimer) return;
-    var text = String(settings.disclaimer_text || DEFAULT_DISCLAIMER).trim() || DEFAULT_DISCLAIMER;
-    disclaimer.textContent = text;
+    disclaimer.textContent = normalizeDisclaimer(settings.disclaimer_text);
   }
 
   async function bootstrap() {

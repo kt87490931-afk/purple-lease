@@ -1409,17 +1409,23 @@
     terms_of_service: '',
     privacy_policy: '',
     disclaimer_text:
-      '금융상품 상담은 등록된 금융상품판매대리 · 중개업자가 진행합니다.\n' +
-      '금융상품판매대리 · 중개업자 성명 및 등록번호 소속 법인(또는 제휴 법인)\n' +
+      '금융상품 상담은 등록된 금융상품판매대리 · 중개업자가 진행합니다. ' +
+      '금융상품판매대리 · 중개업자 성명 및 등록번호 소속 법인(또는 제휴 법인) ' +
       '계약 체결 권한은 금융회사에 있으며, 당사는 금융상품판매대리 · 중개업자로서 모집 업무',
     certificate_url: '',
     certificate_mime: ''
   };
 
+  function normalizeFooterDisclaimer(text) {
+    return String(text || FOOTER_DEFAULTS.disclaimer_text).replace(/\s+/g, ' ').trim() || FOOTER_DEFAULTS.disclaimer_text;
+  }
+
   async function getFooterSettings() {
     var res = await db().from('footer_settings').select('*').eq('id', 1).maybeSingle();
     if (res.error) throw res.error;
-    return Object.assign({}, FOOTER_DEFAULTS, res.data || {});
+    var merged = Object.assign({}, FOOTER_DEFAULTS, res.data || {});
+    merged.disclaimer_text = normalizeFooterDisclaimer(merged.disclaimer_text);
+    return merged;
   }
 
   async function saveFooterSettings(payload) {
@@ -1427,7 +1433,7 @@
       id: 1,
       terms_of_service: String(payload.terms_of_service || '').trim(),
       privacy_policy: String(payload.privacy_policy || '').trim(),
-      disclaimer_text: String(payload.disclaimer_text || FOOTER_DEFAULTS.disclaimer_text).trim(),
+      disclaimer_text: normalizeFooterDisclaimer(payload.disclaimer_text),
       certificate_url: String(payload.certificate_url || '').trim(),
       certificate_mime: String(payload.certificate_mime || '').trim(),
       updated_at: new Date().toISOString()
