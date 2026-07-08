@@ -823,7 +823,7 @@
   async function findLeaseTransferRow(carId) {
     if (carId == null || carId === '') return null;
     var res = await db().from('lease_transfers')
-      .select('id,listing_id,detail_json,detail_slug')
+      .select('id,listing_id,detail_json,detail_slug,thumb_url,photo_count')
       .or('listing_id.eq.' + carId + ',id.eq.' + carId)
       .maybeSingle();
     if (res.error) throw res.error;
@@ -852,6 +852,20 @@
       throw new Error('대표 이미지는 파일 선택 후 「업로드」를 누르거나, 저장 시 파일이 선택되어 있어야 합니다. 예시 경로(/assets/...)는 실제 이미지가 아닙니다.');
     }
 
+    var existing = null;
+    if (editingId) {
+      existing = await findLeaseTransferRow(editingId);
+      if (!existing) throw new Error('매물을 찾을 수 없습니다.');
+      if (!thumb && existing.thumb_url) {
+        var prevThumb = String(existing.thumb_url).trim();
+        if (prevThumb.indexOf('/assets/lease-transfers/') !== 0) thumb = prevThumb;
+      }
+    }
+
+    if (!thumb) {
+      throw new Error('대표 이미지를 선택한 뒤 저장해 주세요. (파일 선택 후 저장하면 자동 업로드됩니다)');
+    }
+
     var row = {
       name: payload.name,
       year: payload.year,
@@ -871,8 +885,6 @@
       is_active: true
     };
     if (editingId) {
-      var existing = await findLeaseTransferRow(editingId);
-      if (!existing) throw new Error('매물을 찾을 수 없습니다.');
       row.detail_slug = existing.detail_slug || String(existing.listing_id || existing.id);
       var dj = Object.assign({}, existing.detail_json || {});
       if (thumb) {

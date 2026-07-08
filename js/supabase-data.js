@@ -295,9 +295,14 @@
   }
 
   function mapLeaseTransfersListRows(data) {
-    return mapUsedCarsListRows(data).map(function (r) {
-      r.lastSyncedAt = '';
-      return r;
+    return (data || []).map(function (r) {
+      var row = mapUsedCarsListRows([r])[0];
+      row.lastSyncedAt = '';
+      var dj = r.detail_json || {};
+      var photos = (dj.photos && dj.photos.length) ? dj.photos : [];
+      if (!row.thumb && photos.length) row.thumb = photos[0];
+      if (!row.photoCount && row.thumb) row.photoCount = 1;
+      return row;
     });
   }
 
