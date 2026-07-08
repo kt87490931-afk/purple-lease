@@ -2784,9 +2784,12 @@
         var thumb = thumbInput.value.trim();
 
         if (thumbFile && thumbFile.files && thumbFile.files[0]) {
-          var uploadId = editingLtId;
-          if (!uploadId) uploadId = await API.getNextLeaseTransferListingId();
-          thumb = await API.uploadLeaseTransferThumb(thumbFile.files[0], uploadId);
+          if (editingLtId) {
+            thumb = await API.syncLeaseTransferThumb(editingLtId, thumbFile.files[0]);
+          } else {
+            var uploadId = await API.getNextLeaseTransferListingId();
+            thumb = await API.uploadLeaseTransferThumb(thumbFile.files[0], uploadId);
+          }
           thumbInput.value = thumb;
           thumbFile.value = '';
           updateLtThumbPreview(thumb);
@@ -2814,12 +2817,17 @@
     document.getElementById('btnUploadLtThumb').addEventListener('click', async function () {
       try {
         var thumbFile = document.getElementById('ltThumbFile');
-        if (editingLtId && thumbFile && thumbFile.files && thumbFile.files[0]) {
-          var url = await API.uploadLeaseTransferThumb(thumbFile.files[0], editingLtId);
+        if (!thumbFile || !thumbFile.files || !thumbFile.files[0]) {
+          throw new Error('업로드할 이미지 파일을 먼저 선택하세요.');
+        }
+        if (editingLtId) {
+          var url = await API.syncLeaseTransferThumb(editingLtId, thumbFile.files[0]);
           document.getElementById('ltThumb').value = url;
           thumbFile.value = '';
           updateLtThumbPreview(url);
-          alert('이미지가 업로드되었습니다.');
+          leaseTransfersData = await API.listLeaseTransfers();
+          renderLeaseTransfersTable();
+          alert('썸네일이 저장되었습니다. 공개 페이지에 반영됩니다.');
         } else {
           await bindUpload('ltThumbFile', 'ltThumb', 'lease-transfers');
         }
@@ -2827,15 +2835,31 @@
     });
     var ltThumbFileEl = document.getElementById('ltThumbFile');
     if (ltThumbFileEl) {
-      ltThumbFileEl.addEventListener('change', function () {
+      ltThumbFileEl.addEventListener('change', async function () {
         var status = document.getElementById('ltThumbStatus');
-        if (this.files && this.files[0]) {
-          if (status) status.textContent = '선택됨: ' + this.files[0].name + ' (저장 시 업로드)';
-          var preview = document.getElementById('ltThumbPreview');
-          if (preview) {
-            preview.src = URL.createObjectURL(this.files[0]);
-            preview.style.display = 'block';
-          }
+        var file = this.files && this.files[0];
+        if (!file) return;
+        var preview = document.getElementById('ltThumbPreview');
+        if (preview) {
+          preview.src = URL.createObjectURL(file);
+          preview.style.display = 'block';
+        }
+        if (!editingLtId) {
+          if (status) status.textContent = '선택됨: ' + file.name + ' (등록 저장 시 함께 업로드)';
+          return;
+        }
+        if (status) status.textContent = '업로드 중...';
+        try {
+          var syncedUrl = await API.syncLeaseTransferThumb(editingLtId, file);
+          document.getElementById('ltThumb').value = syncedUrl;
+          updateLtThumbPreview(syncedUrl);
+          this.value = '';
+          if (status) status.textContent = '썸네일 저장 완료 — 공개 페이지에 반영되었습니다.';
+          leaseTransfersData = await API.listLeaseTransfers();
+          renderLeaseTransfersTable();
+        } catch (err) {
+          if (status) status.textContent = '업로드 실패 — 아래 오류를 확인하세요.';
+          showError(err);
         }
       });
     }

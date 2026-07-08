@@ -86,8 +86,32 @@
       upsert: true,
       contentType: info.contentType
     });
-    if (res.error) throw res.error;
+    if (res.error) {
+      var errMsg = (res.error.message || res.error.error || String(res.error));
+      if (/policy|permission|403|401|row-level security/i.test(errMsg)) {
+        throw new Error('이미지 업로드 권한이 없습니다. 어드민에서 로그아웃 후 다시 로그인해 주세요. (' + errMsg + ')');
+      }
+      throw new Error('이미지 업로드 실패: ' + errMsg);
+    }
     return storagePublicUrl(path);
+  }
+
+  async function syncLeaseTransferThumb(listingId, file) {
+    var row = await findLeaseTransferRow(listingId);
+    if (!row) throw new Error('매물을 찾을 수 없습니다.');
+    var targetId = row.listing_id != null ? row.listing_id : listingId;
+    var url = await uploadLeaseTransferThumb(file, targetId);
+    var dj = Object.assign({}, row.detail_json || {}, { photos: [url] });
+    var up = await db().from('lease_transfers').update({
+      thumb_url: url,
+      photo_count: 1,
+      detail_json: dj
+    }).eq('listing_id', targetId).select('listing_id,thumb_url,photo_count').single();
+    if (up.error) {
+      var upMsg = (up.error.message || String(up.error));
+      throw new Error('썸네일 DB 저장 실패: ' + upMsg);
+    }
+    return url;
   }
 
   async function uploadBlob(blob, storagePath) {
@@ -2097,6 +2121,7 @@
     parseYoutubeVideoId: parseYoutubeVideoId,
     uploadImage: uploadImage,
     uploadLeaseTransferThumb: uploadLeaseTransferThumb,
+    syncLeaseTransferThumb: syncLeaseTransferThumb,
     getNextLeaseTransferListingId: getNextLeaseTransferListingId,
     uploadBlob: uploadBlob,
     storagePublicUrl: storagePublicUrl,
