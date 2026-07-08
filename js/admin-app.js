@@ -119,16 +119,18 @@
     alert((err && err.message) ? err.message : String(err));
   }
 
-  async function bindUpload(fileInputId, textInputId, folder) {
+  async function bindUpload(fileInputId, textInputId, folder, opts) {
+    opts = opts || {};
     var fileInput = document.getElementById(fileInputId);
     if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
     try {
       var url = await API.uploadImage(fileInput.files[0], folder);
       document.getElementById(textInputId).value = url;
       fileInput.value = '';
-      alert('이미지가 업로드되었습니다.');
+      if (!opts.silent) alert('이미지가 업로드되었습니다.');
     } catch (err) {
       showError(err);
+      throw err;
     }
   }
 
@@ -1425,7 +1427,9 @@
     document.getElementById('ltMileage').value = c.mileage;
     document.getElementById('ltPrice').value = c.price;
     document.getElementById('ltStatus').value = c.status;
-    document.getElementById('ltThumb').value = c.thumb;
+    var thumbVal = c.thumb || '';
+    if (thumbVal.indexOf('/assets/lease-transfers/') === 0) thumbVal = '';
+    document.getElementById('ltThumb').value = thumbVal;
     document.getElementById('ltOrigin').value = c.origin || 'domestic';
     document.getElementById('ltBrand').value = c.brand || '';
     document.getElementById('ltSegment').value = c.segment || '';
@@ -2754,6 +2758,10 @@
     });
     document.getElementById('btnSaveLeaseTransfer').addEventListener('click', async function () {
       try {
+        var thumbFile = document.getElementById('ltThumbFile');
+        if (thumbFile && thumbFile.files && thumbFile.files[0]) {
+          await bindUpload('ltThumbFile', 'ltThumb', 'lease-transfers', { silent: true });
+        }
         await API.saveLeaseTransfer({
           name: document.getElementById('ltName').value.trim(),
           year: parseInt(document.getElementById('ltYear').value, 10),

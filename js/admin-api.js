@@ -847,13 +847,19 @@
       ? Filters.buildMeta(payload.year, payload.mileage || 0, fuel)
       : payload.year + '년 · ' + Math.round((payload.mileage || 0) / 10000 * 10) / 10 + '만km';
 
+    var thumb = String(payload.thumb || '').trim();
+    if (thumb.indexOf('/assets/lease-transfers/') === 0) {
+      throw new Error('대표 이미지는 파일 선택 후 「업로드」를 누르거나, 저장 시 파일이 선택되어 있어야 합니다. 예시 경로(/assets/...)는 실제 이미지가 아닙니다.');
+    }
+
     var row = {
       name: payload.name,
       year: payload.year,
       mileage: payload.mileage || 0,
       price_num: payload.price,
       status: payload.status || '판매중',
-      thumb_url: payload.thumb || '',
+      thumb_url: thumb,
+      photo_count: thumb ? 1 : 0,
       origin: origin,
       brand: brand,
       fuel: fuel,
@@ -868,6 +874,13 @@
       var existing = await findLeaseTransferRow(editingId);
       if (!existing) throw new Error('매물을 찾을 수 없습니다.');
       row.detail_slug = existing.detail_slug || String(existing.listing_id || existing.id);
+      var dj = Object.assign({}, existing.detail_json || {});
+      if (thumb) {
+        dj.photos = [thumb];
+      } else if (!dj.photos) {
+        dj.photos = [];
+      }
+      row.detail_json = dj;
       var upQuery = existing.listing_id != null
         ? db().from('lease_transfers').update(row).eq('listing_id', existing.listing_id)
         : db().from('lease_transfers').update(row).eq('id', existing.id);
@@ -880,6 +893,7 @@
     row.listing_id = nextId;
     row.detail_slug = String(nextId);
     row.sort_order = nextId;
+    row.detail_json = thumb ? { photos: [thumb] } : { photos: [] };
     var ins = await db().from('lease_transfers').insert([row]).select().single();
     if (ins.error) throw ins.error;
     return ins.data;
