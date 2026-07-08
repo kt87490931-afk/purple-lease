@@ -21,12 +21,23 @@
     { href: '/used-cars', label: '중고차', match: /^\/used-cars/ },
     { href: '/parts-register', label: '수입차부품', match: /^\/parts-/ },
     { href: '/partners', label: '제휴업체', match: /^\/partners/ },
-    { href: '/reviews-customer', label: '퍼플리뷰', match: /^\/reviews-/ }
-  ];
-
-  var CALC_ITEMS = [
-    { href: '/lease-calculator?tab=monthly', label: '월납입금계산', tab: 'monthly' },
-    { href: '/lease-calculator?tab=rate', label: '리스렌트금리계산', tab: 'rate' }
+    {
+      href: '/reviews-customer',
+      label: '퍼플리뷰',
+      match: /^\/(reviews-|review-detail)/,
+      children: [
+        { href: '/reviews-youtube', label: '퍼플오토 유튜브', match: /^\/reviews-youtube/ },
+        { href: '/reviews-blog', label: '퍼플오토 블로그', match: /^\/reviews-blog/ },
+        { href: '/reviews-customer', label: '고객후기', match: /^\/(reviews-customer|review-detail)/ }
+      ]
+    },
+    {
+      label: '내 차 월납입금 계산기',
+      children: [
+        { href: '/lease-calculator?tab=monthly', label: '월납입금계산', tab: 'monthly' },
+        { href: '/lease-calculator?tab=rate', label: '리스렌트금리계산', tab: 'rate' }
+      ]
+    }
   ];
 
   var FALLBACK = {
@@ -88,29 +99,43 @@
     return window.location.pathname.replace(/\/$/, '') || '/';
   }
 
-  function isActiveItem(item) {
+  function isActiveLink(item) {
     var path = currentPath();
-    if (item.match) return item.match.test(path);
-    return path === item.href.replace(/\/$/, '');
-  }
-
-  function isActiveCalc(item) {
-    var path = currentPath();
-    if (path !== '/lease-calculator') return false;
-    var tab = new URLSearchParams(window.location.search).get('tab') || 'rate';
-    return item.tab === tab;
+    if (item.tab) {
+      if (path !== '/lease-calculator') return false;
+      var tab = new URLSearchParams(window.location.search).get('tab') || 'rate';
+      return item.tab === tab;
+    }
+    if (item.match) {
+      if (typeof item.match === 'function') return item.match(path);
+      return item.match.test(path);
+    }
+    return path === String(item.href || '').split('?')[0].replace(/\/$/, '');
   }
 
   function buildMenuHtml() {
     var html = '';
     NAV_ITEMS.forEach(function (item) {
-      html += '<a class="mobile-menu-link' + (isActiveItem(item) ? ' active' : '') + '" href="' + esc(item.href) + '">' + esc(item.label) + '</a>';
-    });
-    html += '<div class="mobile-menu-group-label">내 차 월납입금 계산기</div>';
-    CALC_ITEMS.forEach(function (item) {
-      html += '<a class="mobile-menu-sublink' + (isActiveCalc(item) ? ' active' : '') + '" href="' + esc(item.href) + '">' + esc(item.label) + '</a>';
+      if (item.children && item.children.length) {
+        if (item.href) {
+          html += '<a class="mobile-menu-link' + (isActiveLink(item) ? ' active' : '') + '" href="' + esc(item.href) + '">' + esc(item.label) + '</a>';
+        } else {
+          html += '<div class="mobile-menu-group-label">' + esc(item.label) + '</div>';
+        }
+        item.children.forEach(function (child) {
+          html += '<a class="mobile-menu-sublink' + (isActiveLink(child) ? ' active' : '') + '" href="' + esc(child.href) + '">' + esc(child.label) + '</a>';
+        });
+        return;
+      }
+      html += '<a class="mobile-menu-link' + (isActiveLink(item) ? ' active' : '') + '" href="' + esc(item.href) + '">' + esc(item.label) + '</a>';
     });
     return html;
+  }
+
+  function refreshMenuList() {
+    if (!drawerEl) return;
+    var list = drawerEl.querySelector('.mobile-menu-list');
+    if (list) list.innerHTML = buildMenuHtml();
   }
 
   function updateFooter(settings) {
@@ -141,7 +166,7 @@
           '<span class="mobile-menu-title">전체 메뉴</span>' +
           '<button type="button" class="mobile-menu-close" data-mobile-menu-close aria-label="닫기">&times;</button>' +
         '</div>' +
-        '<nav class="mobile-menu-list" aria-label="사이트 메뉴">' + buildMenuHtml() + '</nav>' +
+        '<nav class="mobile-menu-list" aria-label="사이트 메뉴"></nav>' +
         '<div class="mobile-menu-foot">' +
           '<a class="mobile-menu-tel" href="' + esc(telHref(FALLBACK.phone_number)) + '">' + PHONE_SVG + esc(FALLBACK.tel_label) + '</a>' +
           '<a class="mobile-menu-kakao" href="' + esc(FALLBACK.kakao_url) + '" target="_blank" rel="noopener noreferrer">' + KAKAO_SVG + esc(FALLBACK.kakao_label) + '</a>' +
@@ -153,6 +178,7 @@
       el.addEventListener('click', closeDrawer);
     });
 
+    refreshMenuList();
     fetchConsultSettings().then(updateFooter);
     return drawerEl;
   }
@@ -165,6 +191,7 @@
 
   function openDrawer() {
     var drawer = ensureDrawer();
+    refreshMenuList();
     drawer.hidden = false;
     drawer.setAttribute('aria-hidden', 'false');
     requestAnimationFrame(function () {
