@@ -391,8 +391,15 @@
       underbodyDocs: d.underbodyDocs || [],
       isEV: !!d.isEV,
       battery: d.battery || null,
-      batteryDocs: d.batteryDocs || []
-    }, d, { photos: photos, seller: null });
+      batteryDocs: d.batteryDocs || [],
+      leaseConditions: d.leaseConditions || {},
+      vehicleCoreInfo: d.vehicleCoreInfo || {}
+    }, d, {
+      photos: photos,
+      seller: null,
+      leaseConditions: d.leaseConditions || {},
+      vehicleCoreInfo: d.vehicleCoreInfo || {}
+    });
   }
 
   async function fetchLeaseTransferDetail(listingId) {

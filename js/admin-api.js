@@ -870,7 +870,10 @@
         brand: f.brand,
         fuel: f.fuel,
         segment: f.segment,
-        origin: f.origin
+        origin: f.origin,
+        detailJson: r.detail_json || {},
+        leaseConditions: (r.detail_json && r.detail_json.leaseConditions) || {},
+        vehicleCoreInfo: (r.detail_json && r.detail_json.vehicleCoreInfo) || {}
       };
     });
   }
@@ -889,6 +892,53 @@
       .maybeSingle();
     if (res.error) throw res.error;
     return res.data || null;
+  }
+
+  function formatLeaseTransferDate(d) {
+    var dt = d ? new Date(d) : new Date();
+    if (isNaN(dt.getTime())) return '';
+    var y = dt.getFullYear();
+    var m = String(dt.getMonth() + 1).padStart(2, '0');
+    var day = String(dt.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+  }
+
+  function mergeLeaseTransferDetailJson(existing, payload, thumb) {
+    var dj = Object.assign({}, existing || {});
+    if (thumb) {
+      dj.photos = [thumb];
+    } else if (!dj.photos) {
+      dj.photos = [];
+    }
+
+    var lc = (payload && payload.leaseConditions) || {};
+    dj.leaseConditions = {
+      priceInfo: String(lc.priceInfo || '').trim(),
+      priceNote: String(lc.priceNote || '').trim(),
+      initialCost: String(lc.initialCost || '').trim(),
+      paymentMethod: String(lc.paymentMethod || '').trim(),
+      lastUpdate: String(lc.lastUpdate || '').trim() || formatLeaseTransferDate()
+    };
+
+    var vc = (payload && payload.vehicleCoreInfo) || {};
+    var ownRaw = vc.insuranceOwnCount;
+    var thirdRaw = vc.insuranceThirdCount;
+    var insuranceHistory = String(vc.insuranceHistory || '').trim();
+    if (!insuranceHistory && (ownRaw !== '' && ownRaw != null || thirdRaw !== '' && thirdRaw != null)) {
+      var ownN = ownRaw === '' || ownRaw == null ? 0 : (parseInt(ownRaw, 10) || 0);
+      var thirdN = thirdRaw === '' || thirdRaw == null ? 0 : (parseInt(thirdRaw, 10) || 0);
+      insuranceHistory = '자차수리 : [' + ownN + ']건 / 타차피해 : [' + thirdN + ']건의 보험처리 이력이 있습니다.';
+    }
+    dj.vehicleCoreInfo = {
+      firstRegistration: String(vc.firstRegistration || '').trim(),
+      insuranceOwnCount: ownRaw === '' || ownRaw == null ? null : (parseInt(ownRaw, 10) || 0),
+      insuranceThirdCount: thirdRaw === '' || thirdRaw == null ? null : (parseInt(thirdRaw, 10) || 0),
+      insuranceHistory: insuranceHistory,
+      currentStatus: String(vc.currentStatus || '').trim(),
+      statusDetail: String(vc.statusDetail || '').trim()
+    };
+
+    return dj;
   }
 
   async function saveLeaseTransfer(payload, editingId) {
@@ -947,13 +997,7 @@
     };
     if (editingId) {
       row.detail_slug = existing.detail_slug || String(existing.listing_id || existing.id);
-      var dj = Object.assign({}, existing.detail_json || {});
-      if (thumb) {
-        dj.photos = [thumb];
-      } else if (!dj.photos) {
-        dj.photos = [];
-      }
-      row.detail_json = dj;
+      row.detail_json = mergeLeaseTransferDetailJson(existing.detail_json || {}, payload, thumb);
       var upQuery = existing.listing_id != null
         ? db().from('lease_transfers').update(row).eq('listing_id', existing.listing_id)
         : db().from('lease_transfers').update(row).eq('id', existing.id);
@@ -966,7 +1010,7 @@
     row.listing_id = nextId;
     row.detail_slug = String(nextId);
     row.sort_order = nextId;
-    row.detail_json = thumb ? { photos: [thumb] } : { photos: [] };
+    row.detail_json = mergeLeaseTransferDetailJson({}, payload, thumb);
     var ins = await db().from('lease_transfers').insert([row]).select().single();
     if (ins.error) throw ins.error;
     return ins.data;

@@ -1044,9 +1044,9 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
 </div>
 
 <div class="modal-overlay" id="modalLeaseTransfer">
-  <div class="modal-box">
+  <div class="modal-box" style="max-width:760px;">
     <div class="modal-head"><h3 id="modalLeaseTransferTitle">일반승계 매물 등록</h3><button class="modal-close" data-close="modalLeaseTransfer">✕</button></div>
-    <div class="modal-body">
+    <div class="modal-body" style="max-height:70vh;overflow:auto;">
       <div class="form-row"><label>차량명</label><input type="text" id="ltName" placeholder="예: BMW 520i 리스승계"></div>
       <div class="form-grid-2">
         <div class="form-row"><label>연식</label><input type="number" id="ltYear" placeholder="2022"></div>
@@ -1074,6 +1074,23 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
         <div class="form-row"><label>연료</label><input type="text" id="ltFuel" placeholder="예: 가솔린, 디젤, 전기"></div>
       </div>
       <div class="form-row"><label>대표 이미지 <span style="color:var(--danger-600,#E0395B);">*</span></label><input type="text" id="ltThumb" placeholder="파일 선택 시 자동 업로드·저장" readonly style="background:var(--surface,#FAFAFC);"><div style="display:flex;gap:8px;align-items:center;margin-top:6px;"><input type="file" id="ltThumbFile" accept="image/*,.jpg,.jpeg,.png,.webp,.gif"><button type="button" class="btn btn-outline btn-sm" id="btnUploadLtThumb">업로드</button></div><p id="ltThumbStatus" style="margin:6px 0 0;font-size:12px;color:var(--ink-400);">수정 시: 파일만 선택해도 즉시 공개 페이지에 반영됩니다.</p><img id="ltThumbPreview" alt="썸네일 미리보기" style="display:none;max-width:200px;max-height:140px;margin-top:8px;border-radius:8px;border:1px solid var(--line);object-fit:cover;"></div>
+
+      <p style="margin:20px 0 10px;font-size:13px;font-weight:800;color:var(--ink-900);border-top:1px solid var(--line-soft);padding-top:16px;">리스승계조건</p>
+      <div class="form-row"><label>가격정보</label><input type="text" id="ltLcPriceInfo" placeholder="예: 44,000,000원 · 4.83%"></div>
+      <div class="form-row"><label>가격 안내 문구</label><textarea id="ltLcPriceNote" rows="3" placeholder="리스계약 중인 차량 안내 등"></textarea></div>
+      <div class="form-row"><label>초기비용</label><input type="text" id="ltLcInitialCost" placeholder="예: 4000000 또는 4,000,000원"></div>
+      <div class="form-row"><label>납부방식</label><textarea id="ltLcPaymentMethod" rows="4" placeholder="취득원가·월납·잔존가치 납부 흐름 설명"></textarea></div>
+      <div class="form-row"><label>Last Update</label><input type="text" id="ltLcLastUpdate" placeholder="YYYY-MM-DD (비우면 저장일)"></div>
+
+      <p style="margin:20px 0 10px;font-size:13px;font-weight:800;color:var(--ink-900);border-top:1px solid var(--line-soft);padding-top:16px;">차량핵심정보</p>
+      <div class="form-row"><label>최초차량등록</label><textarea id="ltVcFirstReg" rows="2" placeholder="예: X4 xDrive 20i 2022년 04월 출고 차량"></textarea></div>
+      <div class="form-grid-2">
+        <div class="form-row"><label>자차수리(건)</label><input type="number" id="ltVcInsuranceOwn" min="0" placeholder="0"></div>
+        <div class="form-row"><label>타차피해(건)</label><input type="number" id="ltVcInsuranceThird" min="0" placeholder="0"></div>
+      </div>
+      <div class="form-row"><label>보험처리이력 (직접입력)</label><textarea id="ltVcInsuranceHistory" rows="2" placeholder="비우면 위 건수로 자동 문구 생성"></textarea></div>
+      <div class="form-row"><label>현재 차량상태</label><input type="text" id="ltVcCurrentStatus" placeholder="예: 현재 차량 관리상태 우수합니다."></div>
+      <div class="form-row"><label>상태 상세 설명</label><textarea id="ltVcStatusDetail" rows="4" placeholder="차량 컨디션·수리이력 상세"></textarea></div>
     </div>
     <div class="modal-foot"><button class="btn btn-outline" data-close="modalLeaseTransfer">취소</button><button class="btn btn-primary" id="btnSaveLeaseTransfer">저장</button></div>
   </div>
@@ -1217,11 +1234,11 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
 <script src="/js/seo-static-meta.js?v=20260627e"></script>
 <script src="/js/admin-auth.js?v=20260630d"></script>
 <script src="/js/review-topics.js?v=20260704a"></script>
-<script src="/js/admin-api.js?v=20260709d"></script>
+<script src="/js/admin-api.js?v=20260709e"></script>
 <script src="/js/admin-hero.js?v=20260703a"></script>
 <script src="/js/admin-partners.js?v=20260703a"></script>
 <script src="/js/lease-catalog-map.js"></script>
-<script src="/js/admin-app.js?v=20260709d"></script>
+<script src="/js/admin-app.js?v=20260709e"></script>
 <script>
 /* 퍼플오토 어드민 — 견적서 작성 (부품 / 장기렌트·리스) : #panel-estimate 자체 초기화 */
 (function () {

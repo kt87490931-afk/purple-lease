@@ -135,6 +135,51 @@
     }
   }
 
+  function clearLtDetailFields() {
+    ['ltLcPriceInfo', 'ltLcPriceNote', 'ltLcInitialCost', 'ltLcPaymentMethod', 'ltLcLastUpdate',
+      'ltVcFirstReg', 'ltVcInsuranceOwn', 'ltVcInsuranceThird', 'ltVcInsuranceHistory',
+      'ltVcCurrentStatus', 'ltVcStatusDetail'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+  }
+
+  function fillLtDetailFields(lc, vc) {
+    lc = lc || {};
+    vc = vc || {};
+    document.getElementById('ltLcPriceInfo').value = lc.priceInfo || '';
+    document.getElementById('ltLcPriceNote').value = lc.priceNote || '';
+    document.getElementById('ltLcInitialCost').value = lc.initialCost || '';
+    document.getElementById('ltLcPaymentMethod').value = lc.paymentMethod || '';
+    document.getElementById('ltLcLastUpdate').value = lc.lastUpdate || '';
+    document.getElementById('ltVcFirstReg').value = vc.firstRegistration || '';
+    document.getElementById('ltVcInsuranceOwn').value = vc.insuranceOwnCount != null ? vc.insuranceOwnCount : '';
+    document.getElementById('ltVcInsuranceThird').value = vc.insuranceThirdCount != null ? vc.insuranceThirdCount : '';
+    document.getElementById('ltVcInsuranceHistory').value = vc.insuranceHistory || '';
+    document.getElementById('ltVcCurrentStatus').value = vc.currentStatus || '';
+    document.getElementById('ltVcStatusDetail').value = vc.statusDetail || '';
+  }
+
+  function readLtDetailFields() {
+    return {
+      leaseConditions: {
+        priceInfo: document.getElementById('ltLcPriceInfo').value.trim(),
+        priceNote: document.getElementById('ltLcPriceNote').value.trim(),
+        initialCost: document.getElementById('ltLcInitialCost').value.trim(),
+        paymentMethod: document.getElementById('ltLcPaymentMethod').value.trim(),
+        lastUpdate: document.getElementById('ltLcLastUpdate').value.trim()
+      },
+      vehicleCoreInfo: {
+        firstRegistration: document.getElementById('ltVcFirstReg').value.trim(),
+        insuranceOwnCount: document.getElementById('ltVcInsuranceOwn').value,
+        insuranceThirdCount: document.getElementById('ltVcInsuranceThird').value,
+        insuranceHistory: document.getElementById('ltVcInsuranceHistory').value.trim(),
+        currentStatus: document.getElementById('ltVcCurrentStatus').value.trim(),
+        statusDetail: document.getElementById('ltVcStatusDetail').value.trim()
+      }
+    };
+  }
+
   async function bindUpload(fileInputId, textInputId, folder, opts) {
     opts = opts || {};
     var fileInput = document.getElementById(fileInputId);
@@ -1454,6 +1499,7 @@
     document.getElementById('ltBrand').value = c.brand || '';
     document.getElementById('ltSegment').value = c.segment || '';
     document.getElementById('ltFuel').value = c.fuel || '';
+    fillLtDetailFields(c.leaseConditions, c.vehicleCoreInfo);
     openModal('modalLeaseTransfer');
   }
 
@@ -2773,6 +2819,7 @@
       document.getElementById('modalLeaseTransferTitle').textContent = '일반승계 매물 등록';
       ['ltName', 'ltYear', 'ltMileage', 'ltPrice', 'ltThumb', 'ltBrand', 'ltSegment', 'ltFuel'].forEach(function (id) { document.getElementById(id).value = ''; });
       updateLtThumbPreview('');
+      clearLtDetailFields();
       document.getElementById('ltStatus').value = '판매중';
       document.getElementById('ltOrigin').value = 'domestic';
       openModal('modalLeaseTransfer');
@@ -2795,6 +2842,7 @@
           updateLtThumbPreview(thumb);
         }
 
+        var detailFields = readLtDetailFields();
         await API.saveLeaseTransfer({
           name: document.getElementById('ltName').value.trim(),
           year: parseInt(document.getElementById('ltYear').value, 10),
@@ -2805,7 +2853,9 @@
           origin: document.getElementById('ltOrigin').value,
           brand: document.getElementById('ltBrand').value.trim(),
           segment: document.getElementById('ltSegment').value.trim(),
-          fuel: document.getElementById('ltFuel').value.trim()
+          fuel: document.getElementById('ltFuel').value.trim(),
+          leaseConditions: detailFields.leaseConditions,
+          vehicleCoreInfo: detailFields.vehicleCoreInfo
         }, editingLtId);
         alert('저장되었습니다.');
         closeModal('modalLeaseTransfer');
