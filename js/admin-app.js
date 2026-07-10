@@ -641,7 +641,7 @@
 
   function renderLeaseQuoteDetailHtml(row) {
     var q = row.quote || {};
-    var opts = (q.options || []).map(function (o) {
+    var opts = (q.options || []).filter(function (o) { return o.kind !== 'color'; }).map(function (o) {
       return '<li>' + (o.name || '') + (o.price ? ' (+' + fmtWon(o.price) + ')' : '') + '</li>';
     }).join('') || '<li>없음</li>';
     var cond = q.conditions || {};
@@ -649,7 +649,7 @@
     return '<div style="display:grid;gap:12px;">' +
       '<div><b>고객</b><br>' + row.name + ' · ' + row.phone + '</div>' +
       '<div><b>차량</b><br>' + (q.origin_label || row.originLabel) + ' · ' + (q.brand_name || row.brandName) + ' · ' + (q.model_name || row.modelName) + '</div>' +
-      '<div><b>외장색상</b><br>' + (q.color_name || '-') + (q.color_surcharge ? ' (+' + fmtWon(q.color_surcharge) + ')' : '') + '</div>' +
+      '<div><b>외장색상</b><br>' + (q.color_name || '-') + (q.color_surcharge ? ' (+' + fmtWon(q.color_surcharge) + ')' : (q.color_name ? ' (포함)' : '')) + '</div>' +
       '<div><b>세부모델(트림)</b><br>' + (q.trim_group ? q.trim_group + ' — ' : '') + (q.trim_name || '-') + (q.trim_price ? ' · ' + fmtWon(q.trim_price) : '') + '</div>' +
       '<div><b>추가 옵션</b><ul style="margin:6px 0 0 18px;padding:0;">' + opts + '</ul></div>' +
       '<div><b>이용조건</b><ul style="margin:6px 0 0 18px;padding:0;">' +

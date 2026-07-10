@@ -73,7 +73,7 @@ function formatLeaseQuote(record) {
   var cond = q.conditions || {};
   var labels = cond.labels || {};
   var originLabel = record.origin === 'import' || q.origin === 'import' ? '수입차' : '국산차';
-  var opts = (q.options || []).map(function (o) {
+  var opts = (q.options || []).filter(function (o) { return o.kind !== 'color'; }).map(function (o) {
     return (o.name || '') + (o.price ? ' (+' + Number(o.price).toLocaleString('ko-KR') + '원)' : '');
   }).filter(Boolean).join(', ') || '없음';
 
@@ -82,7 +82,7 @@ function formatLeaseQuote(record) {
     line('구분', originLabel) +
     line('브랜드', q.brand_name || record.brand_name) +
     line('차종', q.model_name || record.model_name) +
-    line('외장색상', (q.color_name || '-') + (q.color_surcharge ? ' (+' + Number(q.color_surcharge).toLocaleString('ko-KR') + '원)' : '')) +
+    line('외장색상', (q.color_name || '-') + (q.color_surcharge ? ' (+' + Number(q.color_surcharge).toLocaleString('ko-KR') + '원)' : (q.color_name ? ' (포함)' : ''))) +
     line('트림', (q.trim_group ? q.trim_group + ' — ' : '') + (q.trim_name || '-')) +
     line('추가옵션', opts) +
     line('이용방법', labels.method || cond.method) +

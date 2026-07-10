@@ -1499,12 +1499,16 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     if (!detail) return [];
     const items = [];
     const color = detail.colors?.[state.colorIdx];
-    if (color && (color.surcharge || 0) > 0) {
-      items.push({ name: '외장색상: ' + (color.name || ''), price: color.surcharge || 0 });
+    if (color) {
+      items.push({
+        kind: 'color',
+        name: '외장색상: ' + (color.name || ''),
+        price: color.surcharge || 0
+      });
     }
     Array.from(state.selectedOptions).sort((a, b) => a - b).forEach(i => {
       const o = detail.options[i];
-      if (o) items.push({ name: o.name || '', price: o.price || 0 });
+      if (o) items.push({ kind: 'option', name: o.name || '', price: o.price || 0 });
     });
     return items;
   }
@@ -1514,13 +1518,14 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     let base = 0, colorPrice = 0, optPrice = 0;
     if (detail) {
       base = detail.trimGroups[state.trimGroupIdx]?.trims[state.trimIdx]?.price || 0;
-      colorPrice = detail.colors[state.colorIdx]?.surcharge || 0;
+      colorPrice = detail.colors?.[state.colorIdx]?.surcharge || 0;
       state.selectedOptions.forEach(i => { optPrice += detail.options[i]?.price || 0; });
     }
     const optTotal = colorPrice + optPrice;
-    const optCount = state.selectedOptions.size + (colorPrice > 0 ? 1 : 0);
+    const hasColor = !!(detail?.colors?.length && detail.colors[state.colorIdx]);
+    const optCount = state.selectedOptions.size + (hasColor ? 1 : 0);
     const vehicleTotal = base + optTotal;
-    return { base, colorPrice, optPrice, optTotal, optCount, vehicleTotal };
+    return { base, colorPrice, optPrice, optTotal, optCount, vehicleTotal, hasColor };
   }
 
   const CAR_TAX_RATE = 0.07;
@@ -1691,6 +1696,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
       },
       pricing: {
         base: fmt(pricing.base) + '원',
+        color: color
+          ? (color.name || '') + (color.surcharge ? ' (+' + fmt(color.surcharge) + '원)' : ' (포함)')
+          : '-',
         options: '+' + fmt(pricing.optTotal) + '원',
         vehicle_total: fmt(pricing.vehicleTotal) + '원',
         car_tax: est.carTaxIncluded ? '+' + fmt(est.carTaxAmount) + '원' : '0원',
