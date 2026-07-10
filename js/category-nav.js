@@ -173,9 +173,10 @@
     var isEstimate = path === '/estimate' || path.endsWith('/estimate');
     var isTransfer = path === '/lease-transfers' || path.endsWith('/lease-transfers') ||
       path === '/lease-transfer-detail' || path.endsWith('/lease-transfer-detail');
-    if (!isEstimate && !isTransfer) return;
+    var isPaidTransfer = path === '/paid-transfer' || path.endsWith('/paid-transfer');
+    if (!isEstimate && !isTransfer && !isPaidTransfer) return;
 
-    var linkKey = isTransfer ? 'transfer' : 'main';
+    var linkKey = isPaidTransfer ? 'paid-transfer' : isTransfer ? 'transfer' : 'main';
     document.querySelectorAll('.category-nav-submenu a[data-estimate-link]').forEach(function (a) {
       a.classList.toggle('active', a.dataset.estimateLink === linkKey);
     });

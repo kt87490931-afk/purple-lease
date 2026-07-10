@@ -422,6 +422,86 @@
     }
   }
 
+  function fillPaidTransferForm(c) {
+    document.getElementById('ptEyebrow').value = c.eyebrow || '';
+    document.getElementById('ptHeadline1').value = c.headline_line1 || '';
+    document.getElementById('ptHeadlineAccent').value = c.headline_accent || '';
+    document.getElementById('ptHeadline3').value = c.headline_line3 || '';
+    document.getElementById('ptSubCopy').value = c.sub_copy || '';
+    var cards = c.cards || [];
+    [1, 2, 3].forEach(function (n) {
+      var card = cards[n - 1] || {};
+      document.getElementById('ptCard' + n + 'Desc').value = card.desc || '';
+      document.getElementById('ptCard' + n + 'Main').value = card.title_main || '';
+      document.getElementById('ptCard' + n + 'Accent').value = card.title_accent || '';
+    });
+    document.getElementById('ptCtaLabel').value = c.cta_label || '';
+    document.getElementById('ptCtaUrl').value = c.cta_url || '';
+    document.getElementById('ptCtaNewTab').checked = !!c.cta_new_tab;
+  }
+
+  function readPaidTransferForm() {
+    return {
+      eyebrow: document.getElementById('ptEyebrow').value.trim(),
+      headline_line1: document.getElementById('ptHeadline1').value.trim(),
+      headline_accent: document.getElementById('ptHeadlineAccent').value.trim(),
+      headline_line3: document.getElementById('ptHeadline3').value.trim(),
+      sub_copy: document.getElementById('ptSubCopy').value.trim(),
+      cards: [1, 2, 3].map(function (n) {
+        return {
+          desc: document.getElementById('ptCard' + n + 'Desc').value.trim(),
+          title_main: document.getElementById('ptCard' + n + 'Main').value.trim(),
+          title_accent: document.getElementById('ptCard' + n + 'Accent').value.trim()
+        };
+      }),
+      cta_label: document.getElementById('ptCtaLabel').value.trim(),
+      cta_url: document.getElementById('ptCtaUrl').value.trim(),
+      cta_new_tab: document.getElementById('ptCtaNewTab').checked
+    };
+  }
+
+  async function loadPaidTransferPanel() {
+    var panel = document.getElementById('panel-paid-transfer');
+    if (!panel) return;
+    var statusEl = document.getElementById('ptSaveStatus');
+    try {
+      var row = await API.getPaidTransferPage();
+      fillPaidTransferForm(row.content_json || {});
+      var upd = document.getElementById('ptUpdatedAt');
+      if (upd) upd.textContent = row.updated_at ? '마지막 저장: ' + fmtAdminDateTime(row.updated_at) : '';
+      if (statusEl) statusEl.textContent = '';
+    } catch (err) {
+      console.warn('[Admin] paid-transfer page:', err);
+      if (statusEl) statusEl.textContent = '설정 로드 실패 — migration-paid-transfer-page.sql 실행 필요';
+    }
+  }
+
+  async function savePaidTransferPanel() {
+    var btn = document.getElementById('btnSavePaidTransfer');
+    var statusEl = document.getElementById('ptSaveStatus');
+    var prev = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = '저장 중…'; }
+    if (statusEl) statusEl.textContent = '';
+    try {
+      var row = await API.savePaidTransferPage(readPaidTransferForm());
+      fillPaidTransferForm(row.content_json || {});
+      var upd = document.getElementById('ptUpdatedAt');
+      if (upd) upd.textContent = row.updated_at ? '마지막 저장: ' + fmtAdminDateTime(row.updated_at) : '';
+      if (statusEl) {
+        statusEl.style.color = '#059669';
+        statusEl.textContent = '저장되었습니다. 공개 페이지 새로고침 후 반영됩니다.';
+      }
+    } catch (err) {
+      showError(err);
+      if (statusEl) {
+        statusEl.style.color = '#b91c1c';
+        statusEl.textContent = err.message || String(err);
+      }
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = prev || '저장'; }
+    }
+  }
+
   async function saveFooterPanel() {
     var btn = document.getElementById('btnSaveFooter');
     var statusEl = document.getElementById('footerSaveStatus');
@@ -2478,6 +2558,9 @@
         if (item.dataset.panel === 'footer') {
           await loadFooterPanel();
         }
+        if (item.dataset.panel === 'paid-transfer') {
+          await loadPaidTransferPanel();
+        }
         if (item.dataset.panel === 'analytics') {
           await loadAnalyticsPanel();
         }
@@ -3013,6 +3096,7 @@
       timeSaleForm.addEventListener('submit', saveTimeSaleSettingsForm);
     }
     bindOptionalClick('btnSaveFooter', saveFooterPanel);
+    bindOptionalClick('btnSavePaidTransfer', savePaidTransferPanel);
   }
 
   async function init() {

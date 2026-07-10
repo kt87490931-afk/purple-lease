@@ -347,6 +347,10 @@ body.admin-nav-open { overflow:hidden; }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M5 17h-2v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2"/><path d="M9 17h6"/></svg>
         일반승계 매물
       </a>
+      <a class="admin-nav-item" data-panel="paid-transfer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10"/><path d="M7 12h6"/><path d="M7 16h8"/></svg>
+        <span class="nav-label">완납승계 페이지</span>
+      </a>
       <a class="admin-nav-item" data-panel="analytics">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
         <span class="nav-label">통계</span>
@@ -861,6 +865,56 @@ body.admin-nav-open { overflow:hidden; }
             </div>
             <p id="seoSitemapStatus" style="margin-top:12px;font-size:12px;color:var(--ink-600);min-height:18px;"></p>
           </div>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-paid-transfer">
+        <div class="seo-basic-panel" style="max-width:860px">
+          <p class="seo-note" style="margin-bottom:16px;">
+            <a href="/paid-transfer" target="_blank" rel="noopener">/paid-transfer</a> 완납승계 인수·판매 소개 페이지 문구와 하단 CTA 버튼 링크를 수정합니다.
+          </p>
+          <div class="form-row"><label for="ptEyebrow">상단 라벨 (eyebrow)</label><input type="text" id="ptEyebrow" class="inline-edit-input" placeholder="About"></div>
+          <div class="form-grid-2">
+            <div class="form-row"><label for="ptHeadline1">헤드라인 1줄</label><input type="text" id="ptHeadline1" class="inline-edit-input"></div>
+            <div class="form-row"><label for="ptHeadlineAccent">헤드라인 강조 (그라데이션)</label><input type="text" id="ptHeadlineAccent" class="inline-edit-input"></div>
+          </div>
+          <div class="form-row"><label for="ptHeadline3">헤드라인 3줄</label><input type="text" id="ptHeadline3" class="inline-edit-input"></div>
+          <div class="form-row"><label for="ptSubCopy">서브 카피</label><textarea id="ptSubCopy" rows="4" placeholder="줄바꿈은 그대로 반영됩니다."></textarea></div>
+
+          <div class="section-label" style="margin-top:20px;">카드 1</div>
+          <div class="form-row"><label for="ptCard1Desc">설명</label><textarea id="ptCard1Desc" rows="2"></textarea></div>
+          <div class="form-grid-2">
+            <div class="form-row"><label for="ptCard1Main">제목</label><input type="text" id="ptCard1Main" class="inline-edit-input"></div>
+            <div class="form-row"><label for="ptCard1Accent">제목 강조</label><input type="text" id="ptCard1Accent" class="inline-edit-input"></div>
+          </div>
+
+          <div class="section-label" style="margin-top:16px;">카드 2</div>
+          <div class="form-row"><label for="ptCard2Desc">설명</label><textarea id="ptCard2Desc" rows="2"></textarea></div>
+          <div class="form-grid-2">
+            <div class="form-row"><label for="ptCard2Main">제목</label><input type="text" id="ptCard2Main" class="inline-edit-input"></div>
+            <div class="form-row"><label for="ptCard2Accent">제목 강조</label><input type="text" id="ptCard2Accent" class="inline-edit-input"></div>
+          </div>
+
+          <div class="section-label" style="margin-top:16px;">카드 3</div>
+          <div class="form-row"><label for="ptCard3Desc">설명</label><textarea id="ptCard3Desc" rows="2"></textarea></div>
+          <div class="form-grid-2">
+            <div class="form-row"><label for="ptCard3Main">제목</label><input type="text" id="ptCard3Main" class="inline-edit-input"></div>
+            <div class="form-row"><label for="ptCard3Accent">제목 강조</label><input type="text" id="ptCard3Accent" class="inline-edit-input"></div>
+          </div>
+
+          <div class="section-label" style="margin-top:20px;">하단 CTA 버튼</div>
+          <div class="form-grid-2">
+            <div class="form-row"><label for="ptCtaLabel">버튼 문구</label><input type="text" id="ptCtaLabel" class="inline-edit-input" placeholder="더 알아보기"></div>
+            <div class="form-row"><label for="ptCtaUrl">링크 URL</label><input type="url" id="ptCtaUrl" class="inline-edit-input" placeholder="https:// 또는 /estimate"></div>
+          </div>
+          <div class="form-row"><label style="display:flex;align-items:center;gap:8px;font-weight:600;"><input type="checkbox" id="ptCtaNewTab"> 새 창에서 열기</label></div>
+
+          <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+            <button class="btn btn-primary" type="button" id="btnSavePaidTransfer">저장</button>
+            <a class="btn btn-outline" href="/paid-transfer" target="_blank" rel="noopener">페이지 미리보기</a>
+            <span id="ptUpdatedAt" style="font-size:12px;color:var(--ink-500);"></span>
+          </div>
+          <p id="ptSaveStatus" style="margin-top:10px;font-size:12px;color:var(--ink-600);min-height:18px;"></p>
         </div>
       </section>
 

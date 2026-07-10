@@ -79,6 +79,8 @@ jobs:
               bash /var/www/purple-lease/deploy/run-migration-footer-settings.sh 2>&1 || echo "[deploy] footer-settings migration skipped"
               chmod +x /var/www/purple-lease/deploy/run-migration-lease-transfers.sh 2>/dev/null || true
               bash /var/www/purple-lease/deploy/run-migration-lease-transfers.sh 2>&1 || echo "[deploy] lease-transfers migration skipped"
+              chmod +x /var/www/purple-lease/deploy/run-migration-paid-transfer-page.sh 2>/dev/null || true
+              bash /var/www/purple-lease/deploy/run-migration-paid-transfer-page.sh 2>&1 || echo "[deploy] paid-transfer-page migration skipped"
             fi
             bash /var/www/purple-lease/deploy/install-nginx-domain.sh 2>&1 || echo "[deploy] nginx domain install skipped"
             bash /var/www/purple-lease/deploy/install-sitemap-cron.sh 2>&1 || echo "[deploy] sitemap cron skipped"

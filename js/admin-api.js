@@ -1670,6 +1670,61 @@
     return row;
   }
 
+  var PAID_TRANSFER_DEFAULTS = {
+    eyebrow: 'About',
+    headline_line1: '불편하고 비합리적인',
+    headline_accent: '리스or장기렌트 매각 서비스',
+    headline_line3: '혁신하기 위해 출발했습니다.',
+    sub_copy: '리스나 렌트 중도해지 위약금이 너무 많다고?\n인증되지 않은 업체의 불합리한 감가가 고민이라면?\n퍼플오토와 함께해요!',
+    cards: [
+      { desc: '오직 고객님만을 위한 1:1 다이렉트 승계담당자 배정 후 모든 업무를 대행해드립니다.', title_main: '승계대행', title_accent: '시스템' },
+      { desc: '중도해지 시 발생되는 위약금(패널티) 때문에 걱정이라면??', title_main: '비교견적', title_accent: '서비스' },
+      { desc: '전국 12개의 제휴업체와 함께 전국 어디서든 편하게 차량검수를 받을 수 있습니다.', title_main: '방문검수', title_accent: '시스템' }
+    ],
+    cta_label: '더 알아보기',
+    cta_url: '',
+    cta_new_tab: false
+  };
+
+  function normalizePaidTransferContent(raw) {
+    var c = Object.assign({}, PAID_TRANSFER_DEFAULTS, raw || {});
+    if (!Array.isArray(c.cards) || !c.cards.length) {
+      c.cards = PAID_TRANSFER_DEFAULTS.cards.map(function (x) { return Object.assign({}, x); });
+    } else {
+      c.cards = c.cards.slice(0, 3).map(function (card, i) {
+        return Object.assign({}, PAID_TRANSFER_DEFAULTS.cards[i] || PAID_TRANSFER_DEFAULTS.cards[0], card || {});
+      });
+      while (c.cards.length < 3) {
+        c.cards.push(Object.assign({}, PAID_TRANSFER_DEFAULTS.cards[c.cards.length] || PAID_TRANSFER_DEFAULTS.cards[0]));
+      }
+    }
+    c.cta_new_tab = !!c.cta_new_tab;
+    return c;
+  }
+
+  async function getPaidTransferPage() {
+    var res = await db().from('paid_transfer_page').select('*').eq('id', 1).maybeSingle();
+    if (res.error) throw res.error;
+    var content = normalizePaidTransferContent(res.data && res.data.content_json ? res.data.content_json : null);
+    return {
+      id: 1,
+      content_json: content,
+      updated_at: (res.data && res.data.updated_at) || null
+    };
+  }
+
+  async function savePaidTransferPage(contentJson) {
+    var content = normalizePaidTransferContent(contentJson);
+    var row = {
+      id: 1,
+      content_json: content,
+      updated_at: new Date().toISOString()
+    };
+    var res = await db().from('paid_transfer_page').upsert(row, { onConflict: 'id' });
+    if (res.error) throw res.error;
+    return row;
+  }
+
   async function uploadFooterCertificate(file) {
     if (!file) throw new Error('파일을 선택하세요.');
     var allowed = ['image/jpeg', 'image/png', 'application/pdf'];
@@ -2236,6 +2291,8 @@
     saveFloatConsultSettings: saveFloatConsultSettings,
     getFooterSettings: getFooterSettings,
     saveFooterSettings: saveFooterSettings,
+    getPaidTransferPage: getPaidTransferPage,
+    savePaidTransferPage: savePaidTransferPage,
     uploadFooterCertificate: uploadFooterCertificate,
     getTimeSaleSettings: getTimeSaleSettings,
     saveTimeSaleSettings: saveTimeSaleSettings,

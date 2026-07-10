@@ -19,10 +19,11 @@
   var NAV_ITEMS = [
     {
       label: '신차·리스·장기렌트카',
-      match: /^\/(estimate|lease-transfer)/,
+      match: /^\/(estimate|lease-transfer|paid-transfer)/,
       children: [
         { href: '/estimate', label: '신차·리스·장기렌트카', match: /^\/estimate/ },
-        { href: '/lease-transfers', label: '리스 · 장기렌트 일반승계', match: /^\/lease-transfer/ }
+        { href: '/lease-transfers', label: '리스 · 장기렌트 일반승계', match: /^\/lease-transfer/ },
+        { href: '/paid-transfer', label: '완납승계 인수 · 판매', match: /^\/paid-transfer/ }
       ]
     },
     { href: '/used-cars', label: '중고차', match: /^\/used-cars/ },

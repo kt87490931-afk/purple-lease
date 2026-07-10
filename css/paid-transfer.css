@@ -1,0 +1,124 @@
+.paid-transfer-section {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 72px 24px 80px;
+  text-align: center;
+}
+
+.paid-transfer-section .pt-eyebrow {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--purple-600);
+  text-transform: uppercase;
+  margin-bottom: 18px;
+}
+
+.paid-transfer-section .pt-headline {
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: -0.5px;
+  margin: 0 0 26px;
+  color: var(--ink-900);
+}
+
+.paid-transfer-section .pt-headline .accent {
+  background: var(--grad-main);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.paid-transfer-section .pt-sub-copy {
+  font-size: 15.5px;
+  color: var(--ink-500);
+  line-height: 1.8;
+  margin-bottom: 56px;
+  white-space: pre-line;
+}
+
+.paid-transfer-section .pt-card-row {
+  display: flex;
+  gap: 20px;
+  text-align: left;
+  margin-bottom: 40px;
+}
+
+.paid-transfer-section .pt-info-card {
+  flex: 1;
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 28px 26px;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.paid-transfer-section .pt-info-card:hover {
+  box-shadow: 0 12px 30px rgba(108, 60, 224, 0.10);
+  transform: translateY(-2px);
+}
+
+.paid-transfer-section .pt-info-card .desc {
+  font-size: 13.5px;
+  color: var(--ink-500);
+  line-height: 1.6;
+  margin-bottom: 22px;
+}
+
+.paid-transfer-section .pt-info-card .title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink-900);
+  letter-spacing: -0.3px;
+  margin-top: auto;
+}
+
+.paid-transfer-section .pt-info-card .title .dot {
+  color: var(--purple-600);
+}
+
+.paid-transfer-section .pt-cta-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.paid-transfer-section .pt-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 44px;
+  border-radius: 999px;
+  background: var(--grad-main);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  letter-spacing: -0.2px;
+  box-shadow: 0 10px 24px rgba(108, 60, 224, 0.25);
+  text-decoration: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.paid-transfer-section .pt-cta-btn:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+}
+
+.paid-transfer-section .pt-cta-btn[disabled],
+.paid-transfer-section .pt-cta-btn.is-disabled {
+  opacity: 0.55;
+  cursor: default;
+  pointer-events: none;
+}
+
+@media (max-width: 760px) {
+  .paid-transfer-section { padding: 48px 18px 64px; }
+  .paid-transfer-section .pt-sub-copy { margin-bottom: 36px; }
+  .paid-transfer-section .pt-card-row { flex-direction: column; }
+}
