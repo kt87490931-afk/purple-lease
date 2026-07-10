@@ -131,6 +131,13 @@ async function sendTelegram(text, chatId) {
   });
   var data = await res.json().catch(function () { return {}; });
   if (!res.ok || !data.ok) {
+    var migrateId = data.parameters && data.parameters.migrate_to_chat_id;
+    if (migrateId != null) {
+      console.warn('[inquiry-telegram] chat migrated:', targetChat, '->', migrateId);
+      lastHealth.last_error = 'chat_migrated:' + migrateId;
+      if (chatId == null) CHAT_ID = String(migrateId);
+      return sendTelegram(text, migrateId);
+    }
     throw new Error((data.description || 'Telegram API error') + ' (http ' + res.status + ')');
   }
   return data;

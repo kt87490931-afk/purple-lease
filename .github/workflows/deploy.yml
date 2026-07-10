@@ -67,6 +67,10 @@ jobs:
             if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
               chmod +x /var/www/purple-lease/deploy/sync-telegram-webhook-secret.sh 2>/dev/null || true
               bash /var/www/purple-lease/deploy/sync-telegram-webhook-secret.sh 2>&1 || echo "[deploy] telegram secret sync skipped"
+              chmod +x /var/www/purple-lease/deploy/register-telegram-bot-webhook.sh 2>/dev/null || true
+              bash /var/www/purple-lease/deploy/register-telegram-bot-webhook.sh 2>&1 || echo "[deploy] telegram bot webhook register skipped"
+              chmod +x /var/www/purple-lease/deploy/fix-telegram-migrate-chat.sh 2>/dev/null || true
+              bash /var/www/purple-lease/deploy/fix-telegram-migrate-chat.sh 2>&1 || echo "[deploy] telegram migrate fix skipped"
             fi
             if [ -n "${SUPABASE_DB_PASSWORD:-}" ]; then
               chmod +x /var/www/purple-lease/deploy/run-migration-estimates.sh 2>/dev/null || true
