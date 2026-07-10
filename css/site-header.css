@@ -1,0 +1,74 @@
+/* 공통 사이트 헤더 — index 및 전 페이지 */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line-soft, #EFEDF6);
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  gap: 16px;
+}
+
+.logo {
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+  flex-shrink: 0;
+  font-family: var(--font-display, 'Sora', 'Noto Sans KR', sans-serif);
+}
+
+.logo .logo-p {
+  font-size: 22px;
+  font-weight: 800;
+  background: var(--grad-main, linear-gradient(135deg, #8B2FE0 0%, #5B2FD6 45%, #1A1E6E 100%));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.logo .logo-rest {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--navy-900, #11143A);
+  letter-spacing: -0.01em;
+}
+
+.logo .logo-img,
+.logo-img {
+  height: 24px;
+  width: auto;
+  display: block;
+}
+
+.header-call {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 13px;
+  color: var(--ink-900, #16161c);
+  font-weight: 700;
+}
+
+.header-call .num {
+  color: var(--purple-600, #8B2FE0);
+}
+
+.icon-btn:not([data-mobile-menu-open]) {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm, 6px);
+  background: var(--surface-alt, #F8F6FC);
+  flex-shrink: 0;
+}

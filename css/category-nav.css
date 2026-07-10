@@ -1,5 +1,7 @@
 /* 상단 카테고리 메뉴 + 계산기 드롭다운 */
 .category-nav {
+  background: var(--white, #FFFFFF);
+  border-bottom: 1px solid var(--line-soft, #EFEDF6);
   overflow-x: clip;
   overflow-y: visible;
 }
@@ -37,8 +39,21 @@
   display: none;
 }
 
-.category-nav-track a {
+.category-nav-track > a {
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-500, #6B6B7B);
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
   flex-shrink: 0;
+}
+
+.category-nav-track > a.active {
+  color: var(--navy-900, #11143A);
+  border-bottom-color: var(--purple-600, #8B2FE0);
 }
 
 .category-nav-dropdown {

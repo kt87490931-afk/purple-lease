@@ -164,47 +164,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .btn-block { width: 100%; }
 .btn-sm { padding: 9px 14px; font-size: 13px; border-radius: var(--radius-sm); }
 
-/* --- Header --- */
-.site-header {
-  position: sticky; top: 0; z-index: 100;
-  background: rgba(255,255,255,0.92);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--line-soft);
-}
-.header-inner {
-  display: flex; align-items: center; justify-content: space-between;
-  height: 64px; gap: 16px;
-}
-.logo { display: flex; align-items: baseline; gap: 1px; flex-shrink: 0; font-family: var(--font-display); }
-.logo .logo-p { font-size: 22px; font-weight: 800; background: var(--grad-main); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.logo .logo-rest { font-size: 18px; font-weight: 700; color: var(--navy-900); letter-spacing: -0.01em; }
-.logo .logo-img { height: 24px; width: auto; display: block; }
-.header-call {
-  display: flex; align-items: center; gap: 8px;
-  font-family: var(--font-mono); font-size: 13px; color: var(--ink-900); font-weight: 700;
-}
-.header-call .num { color: var(--purple-600); }
-.icon-btn:not([data-mobile-menu-open]) {
-  width: 38px; height: 38px;
-  display: flex; align-items: center; justify-content: center;
-  border-radius: var(--radius-sm);
-  background: var(--surface-alt);
-  flex-shrink: 0;
-}
-
-.category-nav {
-  background: var(--white);
-  border-bottom: 1px solid var(--line-soft);
-}
-.category-nav a {
-  display: flex; align-items: center;
-  padding: 14px 18px;
-  font-size: 13px; font-weight: 700; color: var(--ink-500);
-  border-bottom: 2px solid transparent;
-  white-space: nowrap;
-}
-.category-nav a.active { color: var(--navy-900); border-bottom-color: var(--purple-600); }
-
 /* --- Mobile bottom tab bar --- */
 .bottom-tabbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 90;
@@ -1279,13 +1238,14 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 <script src="/js/hero-banner.js"></script>
 <script src="/js/device-type.js"></script>
 <script src="/js/visit-tracker.js"></script>
-<link rel="stylesheet" href="/css/category-nav.css?v=20260708h">
+<link rel="stylesheet" href="/css/site-header.css?v=20260710b">
+<link rel="stylesheet" href="/css/category-nav.css?v=20260710b">
 <link rel="stylesheet" href="/css/site-page-bg.css?v=20260703e">
 <link rel="stylesheet" href="/css/float-consult.css?v=20260708c">
-<link rel="stylesheet" href="/css/mobile-menu.css?v=20260709a">
+<link rel="stylesheet" href="/css/mobile-menu.css?v=20260710b">
 <script src="/js/category-nav.js?v=20260708h"></script>
 <script src="/js/float-consult.js?v=20260708c"></script>
-<script src="/js/mobile-menu.js?v=20260709a"></script>
+<script src="/js/mobile-menu.js?v=20260710b"></script>
 <link rel="stylesheet" href="/css/site-footer.css?v=20260708b">
 <script src="/js/site-footer.js?v=20260708b"></script>
 <link rel="stylesheet" href="/css/floating-quote-banner.css?v=20260704a">
