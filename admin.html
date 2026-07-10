@@ -44,13 +44,7 @@ h1,h2,h3,h4 { margin:0; font-family: var(--font-display); color: var(--ink-900);
 p { margin:0; }
 input, select, textarea { font-family: inherit; font-size: 13.5px; }
 
-.gate-banner {
-  background: var(--navy-900); color:#fff; font-size:12px; text-align:center;
-  padding:9px 14px; line-height:1.6;
-}
-.gate-banner b { color:#C9A8FF; }
-
-.admin-shell { display:flex; min-height:100vh; }
+.admin-shell { display:flex; min-width:0; min-height:100vh; }
 .admin-sidebar {
   width: 220px; flex-shrink:0;
   background: var(--navy-900); color:#fff;
@@ -94,14 +88,15 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
 .admin-topbar .topbar-right { display:flex; align-items:center; gap:10px; font-size:12.5px; color: var(--ink-500); flex-shrink:0; }
 .admin-menu-btn {
   display:none; align-items:center; justify-content:center;
-  width:40px; height:40px; padding:0; border:none; border-radius:var(--radius-sm);
-  background:transparent; color:var(--ink-900); flex-shrink:0;
+  width:44px; height:44px; padding:0; border:1px solid var(--line);
+  border-radius:var(--radius-sm); background:#fff; color:var(--ink-900); flex-shrink:0;
+  box-shadow: var(--shadow-sm);
 }
 .admin-menu-btn:hover { background:var(--surface-alt); }
 .admin-menu-btn svg { width:22px; height:22px; display:block; }
 .admin-sidebar-backdrop {
   display:none; position:fixed; inset:0; background:rgba(15,15,25,.48);
-  z-index:140; -webkit-tap-highlight-color:transparent;
+  z-index:190; -webkit-tap-highlight-color:transparent;
 }
 .admin-sidebar-backdrop.show { display:block; }
 body.admin-nav-open { overflow:hidden; }
@@ -265,25 +260,33 @@ body.admin-nav-open { overflow:hidden; }
 .tree-section-label:not(:first-child) { border-top:1px solid var(--line-soft); }
 
 @media (max-width: 860px) {
+  .admin-shell { display:block; }
   .admin-menu-btn { display:flex; }
-  .admin-sidebar { position:fixed; left:-240px; top:0; width:min(280px, 86vw); transition: left .22s ease; z-index:150; box-shadow: 8px 0 32px rgba(0,0,0,.18); }
-  .admin-sidebar.open { left:0; }
+  .admin-sidebar {
+    position:fixed; top:0; left:0;
+    width:min(280px, 88vw); height:100vh; height:100dvh;
+    transform:translateX(-100%);
+    transition:transform .22s ease;
+    z-index:200;
+    box-shadow:8px 0 32px rgba(0,0,0,.2);
+  }
+  .admin-sidebar.open { transform:translateX(0); }
+  .admin-main { width:100%; min-width:0; }
+  .admin-topbar { padding:0 12px; gap:8px; z-index:180; }
   .admin-nav-item { padding:12px 14px; min-height:44px; font-size:14px; }
-  .admin-topbar { padding:0 12px; gap:8px; }
   .admin-topbar .topbar-right { font-size:11.5px; gap:6px; }
   .admin-topbar .topbar-right .btn-sm { padding:6px 10px; font-size:11.5px; }
-  .admin-content { padding:14px; }
+  .admin-content { padding:14px; max-width:none; }
   .form-grid-2 { grid-template-columns:1fr; }
   .tree-cols { grid-template-columns:1fr; }
+}
+@media (max-width: 420px) {
+  .admin-topbar .topbar-right span { display:none; }
 }
 </style>
 <link rel="stylesheet" href="/css/site-page-bg.css?v=20260703d">
 </head>
 <body>
-
-<div class="gate-banner">
-  <b>운영자 전용</b> — 메인페이지 로고 5회 클릭 후 로그인하여 접속합니다. 데이터는 Supabase에 저장되며 홈페이지에 즉시 반영됩니다.
-</div>
 
 <div class="admin-shell">
   <aside class="admin-sidebar" id="adminSidebar">
@@ -1264,7 +1267,7 @@ body.admin-nav-open { overflow:hidden; }
 <script src="/js/admin-hero.js?v=20260703a"></script>
 <script src="/js/admin-partners.js?v=20260703a"></script>
 <script src="/js/lease-catalog-map.js"></script>
-<script src="/js/admin-app.js?v=20260710a"></script>
+<script src="/js/admin-app.js?v=20260710b"></script>
 <script>
 /* 퍼플오토 어드민 — 견적서 작성 (부품 / 장기렌트·리스) : #panel-estimate 자체 초기화 */
 (function () {
