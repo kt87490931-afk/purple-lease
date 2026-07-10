@@ -1791,52 +1791,141 @@ body.admin-nav-open { overflow:hidden; }
     '</div>';
   }
 
-  function rInfo(label, value, hl) { return '<div class="flex items-baseline border-b border-stone-100 py-2.5 px-1"><span class="text-[10px] font-medium text-purple-600 tracking-wider w-[100px] flex-shrink-0">' + esc(label) + '</span><span class="text-[12px] leading-snug ' + (hl ? 'font-bold text-stone-900' : 'text-stone-700') + '">' + (value === 0 || value ? esc(value) : '-') + '</span></div>'; }
-  function rMobileInfo(label, value, hl) { return '<div class="flex flex-col border-b border-stone-100 py-1.5"><span class="text-[9px] font-medium text-purple-600 tracking-wider">' + esc(label) + '</span><span class="text-[11px] leading-snug ' + (hl ? 'font-bold text-stone-900' : 'text-stone-700') + '">' + (value === 0 || value ? esc(value) : '-') + '</span></div>'; }
+  function estRentalLogo(c) {
+    var url = (c && c.logoUrl) ? String(c.logoUrl).trim() : '';
+    if (url) {
+      return '<img src="' + esc(url) + '" alt="퍼플오토" style="height:34px;width:auto;max-width:150px;display:block;object-fit:contain;">';
+    }
+    return estBrandA(0.82);
+  }
+
+  function estRentalMetaLine() {
+    var d = new Date();
+    var estNo = 'EST-' + d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0') + '-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+    return esc(estNo) + ' · ' + fmtDateKo(todayStr());
+  }
+
+  function estRentalStyles() {
+    return '<style>' +
+      '#estimate-rental-content{--est-purple:#3c24a0;--est-purple-700:#5B2FD6;--est-text:#1a1a1a;--est-mute:#6b6b76;width:794px;margin:0 auto;background:#fff;font-family:\'Noto Sans KR\',-apple-system,sans-serif;color:var(--est-text);}' +
+      '#estimate-rental-content *{box-sizing:border-box;}' +
+      '#estimate-rental-content .est-rt-head{background:var(--est-purple);padding:18px 36px 16px;}' +
+      '#estimate-rental-content .est-rt-logo{margin-bottom:8px;}' +
+      '#estimate-rental-content .est-rt-title{color:#fff;font-size:22px;font-weight:800;letter-spacing:-0.3px;line-height:1.25;}' +
+      '#estimate-rental-content .est-rt-sub{color:rgba(255,255,255,.85);font-size:13px;margin-top:5px;}' +
+      '#estimate-rental-content .est-rt-body{padding:30px 36px 24px;}' +
+      '#estimate-rental-content .est-rt-grid{display:table;width:calc(100% + 40px);table-layout:fixed;border-spacing:20px 0;margin-left:-20px;}' +
+      '#estimate-rental-content .est-rt-col{display:table-cell;width:50%;vertical-align:top;}' +
+      '#estimate-rental-content .est-rt-section{font-size:16px;font-weight:700;color:var(--est-purple-700);margin-bottom:12px;display:flex;align-items:center;gap:8px;}' +
+      '#estimate-rental-content .est-rt-section::before{content:\'\';width:5px;height:16px;background:var(--est-purple);border-radius:2px;}' +
+      '#estimate-rental-content .est-rt-info-block{width:100%;margin-bottom:9px;border-radius:8px;overflow:hidden;border:1px solid #ECE7F5;}' +
+      '#estimate-rental-content .est-rt-info-label{background:var(--est-purple);color:#fff;font-size:13px;font-weight:700;text-align:center;height:28px;display:flex;align-items:center;justify-content:center;padding:0 8px;}' +
+      '#estimate-rental-content .est-rt-note{font-size:10px;font-weight:500;opacity:.85;margin-left:4px;}' +
+      '#estimate-rental-content .est-rt-info-value{background:#fff;font-size:15px;font-weight:700;text-align:center;min-height:50px;display:flex;align-items:center;justify-content:center;line-height:1.35;padding:6px 10px;word-break:keep-all;}' +
+      '#estimate-rental-content .est-rt-info-value .est-rt-small{font-size:13px;font-weight:600;}' +
+      '#estimate-rental-content .est-rt-info-value .est-rt-muted{color:var(--est-mute);font-weight:500;font-size:12.5px;}' +
+      '#estimate-rental-content .est-rt-info-value .est-rt-highlight{color:var(--est-purple-700);font-weight:800;font-size:18px;}' +
+      '#estimate-rental-content .est-rt-unit{font-size:13px;font-weight:600;}' +
+      '#estimate-rental-content .est-rt-compare{margin-top:22px;}' +
+      '#estimate-rental-content .est-rt-table{width:100%;border-collapse:collapse;border:1px solid #ECE7F5;border-radius:8px;overflow:hidden;}' +
+      '#estimate-rental-content .est-rt-table th{background:var(--est-purple);color:#fff;font-size:14px;font-weight:700;padding:10px 14px;text-align:left;}' +
+      '#estimate-rental-content .est-rt-table th:first-child{width:22%;}' +
+      '#estimate-rental-content .est-rt-table th:last-child{width:22%;text-align:right;}' +
+      '#estimate-rental-content .est-rt-table td{padding:12px 14px;font-size:14px;border-top:1px solid #ECE7F5;vertical-align:middle;}' +
+      '#estimate-rental-content .est-rt-table td:first-child{font-weight:700;color:var(--est-purple-700);background:#FAF5FF;}' +
+      '#estimate-rental-content .est-rt-table td:last-child{text-align:right;font-weight:800;font-size:16px;}' +
+      '#estimate-rental-content .est-rt-table .plus{color:#1DAA5C;}' +
+      '#estimate-rental-content .est-rt-table .minus{color:#E0395B;}' +
+      '#estimate-rental-content .est-rt-table .row-remark td{font-size:12.5px;color:var(--est-mute);line-height:1.65;}' +
+      '#estimate-rental-content .est-rt-notice{background:#F5F0FC;border-radius:8px;padding:14px 16px;font-size:12.5px;color:var(--est-purple-700);line-height:1.65;margin-top:18px;}' +
+      '#estimate-rental-content .est-rt-foot{padding:16px 36px 22px;font-size:11.5px;color:var(--est-mute);line-height:1.75;border-top:1px solid #EEE;}' +
+      '#estimate-rental-content .est-rt-foot b{color:var(--est-text);}' +
+      '@media print{#estimate-rental-content{width:100%;}#estimate-rental-content *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}' +
+      '</style>';
+  }
+
+  function rtInfoBlock(label, innerHtml, note) {
+    return '<div class="est-rt-info-block"><div class="est-rt-info-label">' + esc(label) +
+      (note ? '<span class="est-rt-note">' + note + '</span>' : '') +
+      '</div><div class="est-rt-info-value">' + innerHtml + '</div></div>';
+  }
+
+  function rtMoneyCell(n, highlight) {
+    if (!n) return '<span class="est-rt-muted">-</span>';
+    if (highlight) return '<span class="est-rt-highlight">' + fmt(n) + '<span class="est-rt-unit">원</span></span>';
+    return fmt(n) + '<span class="est-rt-unit">원</span>';
+  }
+
+  function rtCompareAmt(n, positiveGreen) {
+    if (!n) return '-';
+    var prefix = (positiveGreen && n > 0) ? '+' : '';
+    var cls = (positiveGreen && n > 0) ? 'plus' : (n > 0 ? 'minus' : '');
+    return '<span class="' + cls + '">' + prefix + fmt(n) + '원</span>';
+  }
 
   function buildRentalContent(d) {
-    var c = d.companyInfo, money = function (n) { return n > 0 ? fmt(n) : '0'; };
-    return '<div id="estimate-rental-content" class="w-full max-w-[800px] mx-auto" style="font-family:\'Noto Sans KR\',sans-serif;">' +
-      '<div class="hidden lg:block bg-white shadow-sm" style="min-height:1120px;">' +
-        estHeadA('오토리스 & 장기렌트 비교분석 견적서') +
-        '<div class="px-10 pt-10 pb-2"><div class="grid grid-cols-2 gap-12">' +
-          '<div><div class="flex items-center gap-2 mb-5"><div class="w-[3px] h-4 bg-purple-500 rounded-full"></div><h3 class="text-[11px] font-bold text-stone-500 tracking-[0.1em]">차 량 정 보</h3></div><div>' + rInfo('차량번호', d.plateNumber) + rInfo('차량명', d.carName) + rInfo('연식', d.year) + rInfo('주행거리', d.mileage) + rInfo('사고유무', d.accident) + '</div></div>' +
-          '<div><div class="flex items-center gap-2 mb-5"><div class="w-[3px] h-4 bg-purple-500 rounded-full"></div><h3 class="text-[11px] font-bold text-stone-500 tracking-[0.1em]">금 액 정 보</h3></div><div>' + rInfo('종류', d.category) + rInfo('(a) 시세산출액', money(d.marketValue), true) + rInfo('(b) 송개수수료', money(d.transferFee)) + rInfo('(b) 실손비용', money(d.actualLoss)) + rInfo('(c) 보증금', money(d.deposit)) + rInfo('(d) 해지금', money(d.terminationFee), true) + '</div></div>' +
-        '</div></div>' +
-        '<div class="px-10 py-6"><div class="h-px bg-stone-200"></div></div>' +
-        '<div class="px-10"><div class="flex items-center gap-2 mb-4"><div class="w-[3px] h-4 bg-purple-500 rounded-full"></div><h3 class="text-[11px] font-bold text-stone-500 tracking-[0.1em]">비 교 견 적</h3></div>' +
-          '<div class="overflow-hidden rounded-lg border border-stone-200"><div class="h-[2px] bg-purple-500"></div><table class="w-full text-[11px] border-collapse"><thead><tr class="bg-stone-50"><th class="py-3 px-5 text-center w-[130px] text-[11px] font-bold text-stone-500 tracking-wider border-b border-stone-100">비교견적</th><th class="py-3 px-5 text-center text-[11px] font-bold text-stone-500 tracking-wider border-b border-stone-100">내용</th><th class="py-3 px-5 text-center w-[160px] text-[11px] font-bold text-stone-500 tracking-wider border-b border-stone-100">금액</th></tr></thead><tbody>' +
-            '<tr class="border-b border-stone-50"><td class="py-4 px-5 text-center font-bold text-stone-800 text-[12px] border-r border-stone-50">퍼플오토 이용시</td><td class="py-4 px-5 text-center text-stone-600 text-[11px] border-r border-stone-50">' + (esc(d.purpleAutoDesc) || '-') + '</td><td class="py-4 px-5 text-right font-bold text-stone-800 text-[13px] font-mono">' + money(d.purpleAutoAmount) + '</td></tr>' +
-            '<tr class="border-b border-stone-50"><td class="py-4 px-5 text-center font-bold text-stone-800 text-[12px] border-r border-stone-50">반납</td><td class="py-4 px-5 text-center text-stone-600 text-[11px] border-r border-stone-50">' + (esc(d.returnDesc) || '-') + '</td><td class="py-4 px-5 text-right font-bold text-red-600 text-[13px] font-mono">' + money(d.returnAmount) + '</td></tr>' +
-            '<tr><td class="py-4 px-5 text-center font-bold text-stone-800 text-[12px] border-r border-stone-50 bg-stone-50/40">비고</td><td colspan="2" class="py-4 px-5 text-left text-stone-600 text-[11px] leading-relaxed whitespace-pre-wrap bg-stone-50/40">' + (esc(d.notes) || '-') + '</td></tr>' +
-          '</tbody></table></div></div>' +
-        '<div class="px-10 pt-8"><div class="border-l-[3px] border-purple-500 bg-stone-50/50 pl-4 py-3 pr-4 rounded-r-md"><p class="text-[11px] text-stone-500 font-light tracking-wide leading-relaxed">※ 진행시 승계확정날짜(인수 날짜)에 재산정하므로 소폭 변동있을 수 있음</p></div></div>' +
-        '<div class="px-10 pt-10 pb-12"><div class="flex justify-between items-end"><div class="text-[10px] text-stone-300 font-light tracking-wider space-y-0.5">' + (c.address ? '<p>' + esc(c.address) + '</p>' : '') + (c.phone ? '<p>TEL. ' + esc(c.phone) + '</p>' : '') + '</div><div class="text-[10px] text-stone-300 font-light tracking-wider">' + (esc(c.name) || '퍼플오토') + (c.ceo ? ' 대표 ' + esc(c.ceo) : '') + '</div></div></div>' +
-      '</div>' +
-      '<div class="lg:hidden bg-white">' +
-        estHeadA('오토리스 견적서', 0.72) +
-        '<div class="px-4 pt-4"><div class="mb-4"><div class="flex items-center gap-1.5 mb-2"><div class="w-[2px] h-3 bg-purple-500 rounded-full"></div><h3 class="text-[10px] font-bold text-stone-400 tracking-[0.1em]">차량정보</h3></div><div class="grid grid-cols-2 gap-x-3">' + rMobileInfo('차량번호', d.plateNumber) + rMobileInfo('차량명', d.carName) + rMobileInfo('연식', d.year) + rMobileInfo('주행거리', d.mileage) + rMobileInfo('사고유무', d.accident) + rMobileInfo('종류', d.category) + '</div></div>' +
-        '<div class="mb-4"><div class="flex items-center gap-1.5 mb-2"><div class="w-[2px] h-3 bg-purple-500 rounded-full"></div><h3 class="text-[10px] font-bold text-stone-400 tracking-[0.1em]">금액정보</h3></div><div class="grid grid-cols-2 gap-x-3">' + rMobileInfo('(a) 시세산출액', money(d.marketValue), true) + rMobileInfo('(b) 송개수수료', money(d.transferFee)) + rMobileInfo('(b) 실손비용', money(d.actualLoss)) + rMobileInfo('(c) 보증금', money(d.deposit)) + rMobileInfo('(d) 해지금', money(d.terminationFee), true) + '</div></div></div>' +
-        '<div class="px-4"><div class="h-px bg-stone-200"></div></div>' +
-        '<div class="px-4 pt-3"><div class="flex items-center gap-1.5 mb-2"><div class="w-[2px] h-3 bg-purple-500 rounded-full"></div><h3 class="text-[10px] font-bold text-stone-400 tracking-[0.1em]">비교견적</h3></div><div class="space-y-2">' +
-          '<div class="rounded-lg border border-stone-200 overflow-hidden"><div class="bg-stone-50 px-3 py-2 flex items-center justify-between border-b border-stone-100"><span class="text-[11px] font-bold text-stone-800">퍼플오토 이용시</span><span class="text-[12px] font-bold text-stone-800 font-mono">' + money(d.purpleAutoAmount) + '</span></div><div class="px-3 py-2"><span class="text-[10px] text-stone-500">' + (esc(d.purpleAutoDesc) || '-') + '</span></div></div>' +
-          '<div class="rounded-lg border border-stone-200 overflow-hidden"><div class="bg-stone-50 px-3 py-2 flex items-center justify-between border-b border-stone-100"><span class="text-[11px] font-bold text-stone-800">반납</span><span class="text-[12px] font-bold text-red-600 font-mono">' + money(d.returnAmount) + '</span></div><div class="px-3 py-2"><span class="text-[10px] text-stone-500">' + (esc(d.returnDesc) || '-') + '</span></div></div>' +
-          (d.notes ? '<div class="rounded-lg border border-stone-200 overflow-hidden"><div class="bg-stone-50 px-3 py-1.5 border-b border-stone-100"><span class="text-[10px] font-bold text-stone-500">비고</span></div><div class="px-3 py-2"><span class="text-[10px] text-stone-500 leading-relaxed whitespace-pre-wrap">' + esc(d.notes) + '</span></div></div>' : '') +
-        '</div></div>' +
-        '<div class="px-4 pt-3"><div class="border-l-[2px] border-purple-400 bg-stone-50/50 pl-3 py-2 pr-3 rounded-r-md"><p class="text-[9px] text-stone-400 font-light leading-relaxed">※ 진행시 승계확정날짜(인수 날짜)에 재산정하므로 소폭 변동있을 수 있음</p></div></div>' +
-        '<div class="px-4 pt-3 pb-5"><div class="flex justify-between items-end"><div class="text-[9px] text-stone-300 font-light space-y-0.5">' + (c.address ? '<p>' + esc(c.address) + '</p>' : '') + (c.phone ? '<p>TEL. ' + esc(c.phone) + '</p>' : '') + '</div><div class="text-[9px] text-stone-300 font-light">' + (esc(c.name) || '퍼플오토') + '</div></div></div>' +
-      '</div></div>';
+    var c = d.companyInfo || {};
+    var footParts = [];
+    if (c.name) footParts.push('<b>' + esc(c.name) + '</b>');
+    if (c.address) footParts.push(esc(c.address));
+    var telFax = [];
+    if (c.phone) telFax.push('TEL. ' + esc(c.phone));
+    if (c.ceo) telFax.push('대표 ' + esc(c.ceo));
+    if (telFax.length) footParts.push(telFax.join(' · '));
+
+    return estRentalStyles() +
+      '<div id="estimate-rental-content">' +
+        '<div class="est-rt-head">' +
+          '<div class="est-rt-logo">' + estRentalLogo(c) + '</div>' +
+          '<div class="est-rt-title">오토리스 &amp; 장기렌트 비교분석 견적서</div>' +
+          '<div class="est-rt-sub">' + estRentalMetaLine() + '</div>' +
+        '</div>' +
+        '<div class="est-rt-body">' +
+          '<div class="est-rt-grid">' +
+            '<div class="est-rt-col">' +
+              '<div class="est-rt-section">차량 정보</div>' +
+              rtInfoBlock('차량번호', esc(d.plateNumber) || '<span class="est-rt-muted">-</span>') +
+              rtInfoBlock('차량명', d.carName ? '<span class="est-rt-small">' + esc(d.carName) + '</span>' : '<span class="est-rt-muted">-</span>') +
+              rtInfoBlock('연식', esc(d.year) || '<span class="est-rt-muted">-</span>') +
+              rtInfoBlock('주행거리', esc(d.mileage) || '<span class="est-rt-muted">-</span>') +
+              rtInfoBlock('사고유무', '<span class="est-rt-muted">' + (esc(d.accident) || '-') + '</span>') +
+            '</div>' +
+            '<div class="est-rt-col">' +
+              '<div class="est-rt-section">금액 정보</div>' +
+              rtInfoBlock('종류', esc(d.category) || '<span class="est-rt-muted">-</span>') +
+              rtInfoBlock('(a) 시세산출', rtMoneyCell(d.marketValue, true)) +
+              rtInfoBlock('(b) 송개수수료', rtMoneyCell(d.transferFee)) +
+              rtInfoBlock('(b) 실손비용', rtMoneyCell(d.actualLoss)) +
+              rtInfoBlock('(c) 보증금', d.deposit > 0 ? rtMoneyCell(d.deposit) : '<span class="est-rt-muted">-</span>') +
+              rtInfoBlock('(d) 해지금', rtMoneyCell(d.terminationFee, true)) +
+            '</div>' +
+          '</div>' +
+          '<div class="est-rt-compare">' +
+            '<div class="est-rt-section">비교 견적</div>' +
+            '<table class="est-rt-table"><tr><th>비교견적</th><th>내용</th><th>금액</th></tr>' +
+              '<tr><td>퍼플오토 이용 시</td><td>' + (esc(d.purpleAutoDesc) || '-') + '</td><td>' + rtCompareAmt(d.purpleAutoAmount, true) + '</td></tr>' +
+              '<tr><td>캐피탈 반납 시</td><td>' + (esc(d.returnDesc) || '-') + '</td><td>' + (d.returnAmount > 0 ? rtCompareAmt(d.returnAmount, false) : '-') + '</td></tr>' +
+              (d.notes ? '<tr class="row-remark"><td>비 고</td><td colspan="2">' + esc(d.notes).replace(/\n/g, '<br>') + '</td></tr>' : '') +
+            '</table>' +
+          '</div>' +
+          '<div class="est-rt-notice">※ 진행 시 승계확정날짜(인수 날짜)에 재산정하므로 소폭 변동될 수 있음</div>' +
+        '</div>' +
+        '<div class="est-rt-foot">' + (footParts.join(' · ') || '<b>퍼플오토</b>') + '</div>' +
+      '</div>';
   }
 
   function downloadDoc(kind, contentHtml) {
     var widthCss = (kind === 'parts')
       ? '#estimate-parts-content{transform:none !important;width:1120px !important;}'
-      : '#estimate-rental-content{max-width:800px !important;width:100% !important;}';
+      : '#estimate-rental-content{width:794px !important;margin:0 auto !important;}';
     var title = (kind === 'parts') ? '부품 견적서 | 퍼플오토' : '장기렌트/리스 견적서 | 퍼플오토';
     var name = (kind === 'parts') ? '부품견적서.html' : '장기렌트리스견적서.html';
+    var headExtra = (kind === 'parts')
+      ? '<scr' + 'ipt src="' + TAILWIND_CDN + '"></scr' + 'ipt><link href="' + REMIXICON_CDN + '" rel="stylesheet">'
+      : '';
     var full = '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>' + title + '</title>' +
-      '<scr' + 'ipt src="' + TAILWIND_CDN + '"></scr' + 'ipt>' +
-      '<link href="' + REMIXICON_CDN + '" rel="stylesheet"><link href="' + FONT_CDN + '" rel="stylesheet">' +
+      headExtra +
+      '<link href="' + FONT_CDN + '" rel="stylesheet">' +
       '<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:\'Noto Sans KR\',sans-serif;background:#e7e5e4;display:flex;justify-content:center;padding:40px 20px;min-height:100vh;}' + widthCss + '</style>' +
       '</head><body>' + contentHtml + '</body></html>';
     var blob = new Blob([full], { type: 'text/html;charset=utf-8' });
@@ -1855,9 +1944,12 @@ body.admin-nav-open { overflow:hidden; }
     var win = window.open('', '_blank', 'width=1200,height=900,scrollbars=yes');
     if (!win) { alert('팝업이 차단되었습니다. 이 사이트의 팝업을 허용해 주세요.'); return; }
 
+    var previewHead = (kind === 'parts')
+      ? '<scr' + 'ipt src="' + TAILWIND_CDN + '"></scr' + 'ipt><link href="' + REMIXICON_CDN + '" rel="stylesheet">'
+      : '';
     var doc = '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>견적서 미리보기 | 퍼플오토</title>' +
-      '<scr' + 'ipt src="' + TAILWIND_CDN + '"></scr' + 'ipt>' +
-      '<link href="' + REMIXICON_CDN + '" rel="stylesheet"><link href="' + FONT_CDN + '" rel="stylesheet">' +
+      previewHead +
+      '<link href="' + FONT_CDN + '" rel="stylesheet">' +
       '<style>body{margin:0;font-family:\'Noto Sans KR\',sans-serif;background:#e7e5e4;}' +
         '.est-bar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.95);backdrop-filter:blur(6px);border-bottom:1px solid #d6d3d1;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 18px;}' +
         '.est-bar .t{font-size:13px;font-weight:700;color:#44403c;}.est-bar .btns{display:flex;gap:8px;}' +
