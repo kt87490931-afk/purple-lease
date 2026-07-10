@@ -1,5 +1,13 @@
 /* 푸터 법적 링크 · 고지문 · 모달 — site-footer.js */
 
+.footer-logo img,
+.footer-logo-img {
+  height: 22px;
+  width: auto;
+  display: block;
+  margin-bottom: 12px;
+}
+
 .footer-legal {
   display: flex;
   align-items: center;

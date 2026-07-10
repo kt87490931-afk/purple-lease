@@ -31,6 +31,8 @@ const RULES_TO_STRIP = [
   /\.logo\s+\.logo-rest\s*\{[^}]*\}\s*/g,
   /\.logo\s+\.logo-img\s*\{[^}]*\}\s*/g,
   /^\.logo-img\s*\{[^}]*\}\s*/gm,
+  /\.footer-logo\s+img,\s*\.footer-logo-img\s*\{[^}]*\}\s*/g,
+  /^\.footer-logo-img\s*\{[^}]*\}\s*/gm,
   /\.header-call\s*\{[^}]*\}\s*/g,
   /\.header-call\s+\.num\s*\{[^}]*\}\s*/g,
   /\.icon-btn:not\(\[data-mobile-menu-open\]\)\s*\{[^}]*\}\s*/g,
