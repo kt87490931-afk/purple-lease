@@ -1,5 +1,5 @@
 #!/bin/bash
-# 그룹→슈퍼그룹 승격 시 chat_id 자동 갱신
+# 그룹→슈퍼그룹 승격 시 chat_id 자동 갱신 (채팅 알림 없음 — 고객 견적문의 INSERT 알림만 Telegram 전송)
 set -euo pipefail
 
 ENV="/var/www/purple-lease/.env.sync"
@@ -23,11 +23,9 @@ fi
 OLD_CHAT="$TELEGRAM_CHAT_ID"
 echo "[fix-migrate] current chat_id=$OLD_CHAT"
 
-RESP=$(curl -sS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-  -H 'Content-Type: application/json' \
-  -d "{\"chat_id\":\"${OLD_CHAT}\",\"text\":\"🔄 chat_id 마이그레이션 확인 중…\"}")
+# sendMessage 대신 getChat — 그룹에 알림 메시지를 보내지 않음
+RESP=$(curl -sS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getChat?chat_id=${OLD_CHAT}")
 
-NEW_CHAT=""
 if echo "$RESP" | grep -q '"ok":true'; then
   echo "[fix-migrate] chat_id still valid — no migration needed"
   exit 0
@@ -69,16 +67,14 @@ if [ -f "$ROOT/deploy/register-telegram-bot-webhook.sh" ]; then
   bash "$ROOT/deploy/register-telegram-bot-webhook.sh" 2>&1 || true
 fi
 
-VERIFY=$(curl -sS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-  -H 'Content-Type: application/json' \
-  -d "{\"chat_id\":\"${NEW_CHAT}\",\"text\":\"✅ 퍼플오토 견적봇 chat_id 갱신 완료\\n이전: ${OLD_CHAT}\\n현재: ${NEW_CHAT}\\n/테스트 로 확인해 주세요.\"}")
+VERIFY=$(curl -sS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getChat?chat_id=${NEW_CHAT}")
 
 if echo "$VERIFY" | grep -q '"ok":true'; then
-  echo "[fix-migrate] OK — chat_id updated and test message sent"
+  echo "[fix-migrate] OK — chat_id updated (no Telegram notification sent)"
   echo "OLD=$OLD_CHAT NEW=$NEW_CHAT"
   exit 0
 fi
 
-echo "[fix-migrate] updated env but verify send failed:"
+echo "[fix-migrate] updated env but getChat verify failed:"
 echo "$VERIFY" | head -c 400
 exit 4
