@@ -89,8 +89,22 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
   display:flex; align-items:center; justify-content:space-between; padding:0 22px;
   position:sticky; top:0; z-index:10;
 }
-.admin-topbar h1 { font-size:16px; }
-.admin-topbar .topbar-right { display:flex; align-items:center; gap:10px; font-size:12.5px; color: var(--ink-500); }
+.admin-topbar .topbar-left { display:flex; align-items:center; gap:10px; min-width:0; flex:1; }
+.admin-topbar h1 { font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.admin-topbar .topbar-right { display:flex; align-items:center; gap:10px; font-size:12.5px; color: var(--ink-500); flex-shrink:0; }
+.admin-menu-btn {
+  display:none; align-items:center; justify-content:center;
+  width:40px; height:40px; padding:0; border:none; border-radius:var(--radius-sm);
+  background:transparent; color:var(--ink-900); flex-shrink:0;
+}
+.admin-menu-btn:hover { background:var(--surface-alt); }
+.admin-menu-btn svg { width:22px; height:22px; display:block; }
+.admin-sidebar-backdrop {
+  display:none; position:fixed; inset:0; background:rgba(15,15,25,.48);
+  z-index:140; -webkit-tap-highlight-color:transparent;
+}
+.admin-sidebar-backdrop.show { display:block; }
+body.admin-nav-open { overflow:hidden; }
 
 .admin-content { padding: 22px; max-width: 1100px; }
 .panel { display:none; }
@@ -251,8 +265,14 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
 .tree-section-label:not(:first-child) { border-top:1px solid var(--line-soft); }
 
 @media (max-width: 860px) {
-  .admin-sidebar { position:fixed; left:-220px; transition: left .2s ease; z-index:150; }
+  .admin-menu-btn { display:flex; }
+  .admin-sidebar { position:fixed; left:-240px; top:0; width:min(280px, 86vw); transition: left .22s ease; z-index:150; box-shadow: 8px 0 32px rgba(0,0,0,.18); }
   .admin-sidebar.open { left:0; }
+  .admin-nav-item { padding:12px 14px; min-height:44px; font-size:14px; }
+  .admin-topbar { padding:0 12px; gap:8px; }
+  .admin-topbar .topbar-right { font-size:11.5px; gap:6px; }
+  .admin-topbar .topbar-right .btn-sm { padding:6px 10px; font-size:11.5px; }
+  .admin-content { padding:14px; }
   .form-grid-2 { grid-template-columns:1fr; }
   .tree-cols { grid-template-columns:1fr; }
 }
@@ -337,10 +357,16 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
     </nav>
     <div class="admin-sidebar-foot">퍼플오토 Admin v1.0<br>Supabase 연동</div>
   </aside>
+  <div class="admin-sidebar-backdrop" id="adminSidebarBackdrop" aria-hidden="true"></div>
 
   <main class="admin-main">
     <div class="admin-topbar">
-      <h1 id="topbarTitle">대시보드</h1>
+      <div class="topbar-left">
+        <button class="admin-menu-btn" id="btnAdminMenu" type="button" aria-label="전체 메뉴 열기" aria-expanded="false" aria-controls="adminSidebar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+        </button>
+        <h1 id="topbarTitle">대시보드</h1>
+      </div>
       <div class="topbar-right">
         <span id="adminUserEmail">운영자</span>
         <button class="btn btn-outline btn-sm" id="btnLogout" type="button">로그아웃</button>
@@ -1238,7 +1264,7 @@ input, select, textarea { font-family: inherit; font-size: 13.5px; }
 <script src="/js/admin-hero.js?v=20260703a"></script>
 <script src="/js/admin-partners.js?v=20260703a"></script>
 <script src="/js/lease-catalog-map.js"></script>
-<script src="/js/admin-app.js?v=20260709e"></script>
+<script src="/js/admin-app.js?v=20260710a"></script>
 <script>
 /* 퍼플오토 어드민 — 견적서 작성 (부품 / 장기렌트·리스) : #panel-estimate 자체 초기화 */
 (function () {

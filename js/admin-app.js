@@ -2409,9 +2409,53 @@
     }
   }
 
+  function closeAdminSidebar() {
+    var sidebar = document.getElementById('adminSidebar');
+    var backdrop = document.getElementById('adminSidebarBackdrop');
+    var menuBtn = document.getElementById('btnAdminMenu');
+    if (sidebar) sidebar.classList.remove('open');
+    if (backdrop) {
+      backdrop.classList.remove('show');
+      backdrop.setAttribute('aria-hidden', 'true');
+    }
+    document.body.classList.remove('admin-nav-open');
+    if (menuBtn) menuBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  function openAdminSidebar() {
+    var sidebar = document.getElementById('adminSidebar');
+    var backdrop = document.getElementById('adminSidebarBackdrop');
+    var menuBtn = document.getElementById('btnAdminMenu');
+    if (sidebar) sidebar.classList.add('open');
+    if (backdrop) {
+      backdrop.classList.add('show');
+      backdrop.setAttribute('aria-hidden', 'false');
+    }
+    document.body.classList.add('admin-nav-open');
+    if (menuBtn) menuBtn.setAttribute('aria-expanded', 'true');
+  }
+
+  function toggleAdminSidebar() {
+    var sidebar = document.getElementById('adminSidebar');
+    if (sidebar && sidebar.classList.contains('open')) closeAdminSidebar();
+    else openAdminSidebar();
+  }
+
   function bindEvents() {
     bindSeoPanelEvents();
     bindAnalyticsEvents();
+
+    var menuBtn = document.getElementById('btnAdminMenu');
+    var backdrop = document.getElementById('adminSidebarBackdrop');
+    if (menuBtn) menuBtn.addEventListener('click', toggleAdminSidebar);
+    if (backdrop) backdrop.addEventListener('click', closeAdminSidebar);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeAdminSidebar();
+    });
+    window.addEventListener('resize', function () {
+      if (window.innerWidth > 860) closeAdminSidebar();
+    });
+
     document.querySelectorAll('.admin-nav-item').forEach(function (item) {
       item.addEventListener('click', async function () {
         document.querySelectorAll('.admin-nav-item').forEach(function (i) { i.classList.remove('active'); });
@@ -2420,6 +2464,7 @@
         document.getElementById('panel-' + item.dataset.panel).classList.add('active');
         var labelEl = item.querySelector('.nav-label');
         document.getElementById('topbarTitle').textContent = labelEl ? labelEl.textContent.trim() : item.textContent.trim();
+        closeAdminSidebar();
         if (item.dataset.panel === 'inquiries') {
           await openInquiriesPanel();
         }
