@@ -351,13 +351,62 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .sticky-next .price-preview .pp-value { font-family: var(--font-mono); font-size: 17px; font-weight: 800; color: var(--navy-900); }
 .sticky-next-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
 
-/* ============ STEP 2: 옵션 및 조건 선택 ============ */
+/* ============ STEP 2: 옵션 및 조건 선택 (2열 카드 레이아웃) ============ */
+.est-row {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+.est-col-main { flex: 1.7; min-width: 0; }
+.est-col-side { flex: 1; min-width: 0; }
+.est-col-price { flex: 1; min-width: 0; }
+@media (max-width: 859px) {
+  .est-row { flex-direction: column; gap: 16px; }
+  .est-col-main, .est-col-side, .est-col-price { flex: none; width: 100%; }
+  .price-box { position: relative; top: auto; }
+}
+.est-card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--white);
+  padding: 22px;
+}
+.est-card-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ink-900);
+  margin: 0 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.est-card-title::before {
+  content: '';
+  width: 5px;
+  height: 17px;
+  background: var(--purple-600);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.est-card-sub {
+  font-size: 12.5px;
+  color: var(--ink-500);
+  margin: -10px 0 16px;
+}
+.color-block { margin-bottom: 16px; }
+.color-block-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-900);
+  margin-bottom: 10px;
+}
 .vehicle-summary {
-  display: flex; gap: 14px; align-items: center;
+  display: flex; gap: 16px; align-items: center;
   background: var(--surface-alt);
-  border-radius: var(--radius-lg);
-  padding: 16px;
-  margin-bottom: 22px;
+  border-radius: 12px;
+  padding: 14px 20px;
+  margin-bottom: 28px;
 }
 .vehicle-summary .vs-thumb {
   width: 96px; height: 72px; flex-shrink: 0;
@@ -405,46 +454,114 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .trim-group.open .trim-list { display: block; }
 .trim-option {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 14px;
-  border-top: 1px solid var(--line-soft);
+  padding: 14px 16px;
+  border-top: 1px solid var(--line);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
 }
 .trim-option:hover { background: var(--purple-50); }
-.trim-option.selected { background: var(--purple-50); color: var(--purple-600); font-weight: 800; }
+.trim-option.selected { background: #F4EEFC; color: var(--purple-600); font-weight: 700; }
 .trim-option .t-price { font-family: var(--font-mono); font-weight: 700; color: var(--ink-900); }
 .trim-option.selected .t-price { color: var(--purple-600); }
 
+.option-item,
 .option-card {
-  display: flex; align-items: flex-start; gap: 10px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
   border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  padding: 13px 14px;
-  margin-bottom: 9px;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
   cursor: pointer;
   transition: all .15s ease;
+  font-size: 13.5px;
 }
+.option-item:hover,
 .option-card:hover { border-color: var(--purple-500); }
+.option-item.checked,
 .option-card.checked { border-color: var(--purple-600); background: var(--purple-50); }
-.option-card input[type="checkbox"] { margin-top: 2px; width: 17px; height: 17px; accent-color: var(--purple-600); flex-shrink: 0; }
-.option-card .opt-body { flex: 1; }
-.option-card .opt-name { font-size: 13px; font-weight: 700; color: var(--ink-900); line-height: 1.4; }
-.option-card .opt-price { font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--navy-900); flex-shrink: 0; }
+.option-item label,
+.option-card label { display: flex; align-items: center; gap: 10px; cursor: pointer; flex: 1; min-width: 0; }
+.option-item input[type="checkbox"],
+.option-card input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--purple-600); flex-shrink: 0; }
+.option-item .opt-body,
+.option-card .opt-body { flex: 1; min-width: 0; }
+.option-item .opt-name,
+.option-card .opt-name { font-size: 13.5px; font-weight: 600; color: var(--ink-900); line-height: 1.4; }
+.option-item .opt-price,
+.option-card .opt-price { font-family: var(--font-mono); font-size: 13.5px; font-weight: 700; color: var(--purple-600); flex-shrink: 0; }
 
-.cond-block { margin-bottom: 20px; }
-.cond-label { font-size: 13px; font-weight: 700; color: var(--ink-900); margin-bottom: 9px; }
+.cond-block { margin-bottom: 22px; }
+.cond-label { font-size: 13.5px; font-weight: 700; color: var(--ink-900); margin-bottom: 10px; }
 .cond-options { display: flex; gap: 8px; flex-wrap: wrap; }
 .cond-pill {
-  flex: 1; min-width: 70px;
+  flex: 0 1 auto;
   text-align: center;
-  padding: 11px 10px;
-  border-radius: var(--radius-sm);
+  padding: 10px 18px;
+  border-radius: 8px;
   border: 1px solid var(--line);
   background: var(--white);
-  font-size: 13px; font-weight: 700; color: var(--ink-500);
+  font-size: 13.5px; font-weight: 600; color: var(--ink-900);
   transition: all .15s ease;
+  cursor: pointer;
 }
-.cond-pill.selected { border-color: var(--purple-600); color: var(--purple-600); background: var(--purple-50); }
+.cond-pill.selected { border-color: var(--purple-600); background: var(--purple-600); color: #fff; }
+
+.price-box {
+  position: sticky;
+  top: 100px;
+  border: 1.5px solid var(--purple-600);
+  border-radius: 14px;
+  padding: 22px;
+  background: var(--white);
+}
+.pb-section { margin-bottom: 4px; }
+.pb-heading {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink-900);
+  margin: 0 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pb-heading::before {
+  content: '';
+  width: 5px;
+  height: 15px;
+  background: var(--purple-600);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.pb-section + .pb-section .pb-heading { margin-top: 14px; }
+.price-box .price-row.pb-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 14px;
+  padding: 8px 0;
+  background: none;
+  border: none;
+  margin: 0;
+}
+.price-box .pb-row .pr-label { color: var(--ink-500); font-weight: 500; flex: 1; min-width: 0; line-height: 1.35; word-break: keep-all; }
+.price-box .pb-row .pr-value { font-family: var(--font-mono); font-weight: 700; color: var(--ink-900); white-space: nowrap; flex-shrink: 0; }
+.price-box .pb-row.pb-total {
+  border-top: 1.5px solid var(--line);
+  margin-top: 6px;
+  padding-top: 14px;
+}
+.price-box .pb-row.pb-total .pr-label { font-size: 15px; font-weight: 800; color: var(--ink-900); }
+.price-box .pb-row.pb-total .pr-value { font-size: 22px; font-weight: 800; color: var(--purple-600); }
+.price-box .pb-extra {
+  border-top: 1px dashed var(--line);
+  margin-top: 12px;
+  padding-top: 4px;
+}
+.price-box .pb-extra .pb-row { font-size: 12.5px; padding: 5px 0; }
+.price-box .pb-row.pb-monthly .pr-label { font-weight: 700; color: var(--ink-700); }
+.price-box .pb-row.pb-monthly .pr-value { font-size: 16px; color: var(--purple-600); }
+.price-box .pb-row.pb-monthly .ref-tag { font-size: 11px; font-weight: 600; color: var(--purple-600); margin-left: 4px; }
 .cond-input {
   margin-top: 8px;
   width: 100%;
@@ -700,119 +817,156 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
       <div class="vehicle-summary" id="vehicleSummary"><!-- JS 렌더 --></div>
 
-      <h2 class="section-title">외장색상 선택</h2>
-      <div class="swatch-row" id="swatchRow"><!-- JS 렌더 --></div>
-      <div class="swatch-note">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        일부 외장색상은 추가요금이 발생할 수 있어 별도 확인이 필요합니다.
-      </div>
-
-      <h2 class="section-title" style="margin-top:26px;">세부모델(트림) 선택</h2>
-      <div id="trimGroups"><!-- JS 렌더 --></div>
-
-      <h2 class="section-title" style="margin-top:26px;">옵션 추가하기</h2>
-      <p class="section-sub">선택사항 · 중복선택 가능 (운영자가 등록한 옵션만 표시됩니다)</p>
-      <div id="optionList"><!-- JS 렌더 --></div>
-
-      <h2 class="section-title" style="margin-top:26px;">이용조건 선택</h2>
-      <p class="section-sub">장기렌트·리스 이용 시 아래 조건은 필수로 선택해주세요.</p>
-
-      <div class="cond-block">
-        <div class="cond-label">이용방법</div>
-        <div class="cond-options" data-cond="method">
-          <div class="cond-pill selected" data-value="장기렌트">장기렌트</div>
-          <div class="cond-pill" data-value="리스">리스</div>
+      <!-- Row 1: 세부모델 + 옵션 -->
+      <div class="est-row">
+        <div class="est-col-main est-card">
+          <h2 class="est-card-title">세부모델(트림) 선택</h2>
+          <div id="trimGroups"><!-- JS 렌더 --></div>
         </div>
-      </div>
 
-      <div class="cond-block">
-        <div class="cond-label">이용기간</div>
-        <div class="cond-options" data-cond="period">
-          <div class="cond-pill" data-value="36">36개월</div>
-          <div class="cond-pill selected" data-value="48">48개월</div>
-          <div class="cond-pill" data-value="60">60개월</div>
-        </div>
-      </div>
-
-      <div class="cond-block">
-        <div class="cond-label">보증금</div>
-        <div class="cond-options" data-cond="deposit">
-          <div class="cond-pill selected" data-value="0">없음</div>
-          <div class="cond-pill" data-value="10">10%</div>
-          <div class="cond-pill" data-value="20">20%</div>
-          <div class="cond-pill" data-value="30">30%</div>
-          <div class="cond-pill" data-value="40">40%</div>
-        </div>
-        <input type="text" class="cond-input" id="depositAmount" placeholder="보증금(원) — 자동 계산되며 직접 수정 가능합니다" inputmode="numeric">
-      </div>
-
-      <div class="cond-block">
-        <div class="cond-label">선납금</div>
-        <div class="cond-options" data-cond="prepay">
-          <div class="cond-pill" data-value="0">없음</div>
-          <div class="cond-pill" data-value="10">10%</div>
-          <div class="cond-pill" data-value="20">20%</div>
-          <div class="cond-pill selected" data-value="30">30%</div>
-          <div class="cond-pill" data-value="40">40%</div>
-        </div>
-        <input type="text" class="cond-input" id="prepayAmount" placeholder="선납금(원) — 자동 계산되며 직접 수정 가능합니다" inputmode="numeric">
-      </div>
-
-      <div class="cond-block">
-        <div class="cond-label">보험연령</div>
-        <div class="cond-options" data-cond="insAge">
-          <div class="cond-pill" data-value="21">만 21세이상</div>
-          <div class="cond-pill selected" data-value="26">만 26세이상</div>
-        </div>
-      </div>
-
-      <div class="cond-block">
-        <div class="cond-label">자동차세</div>
-        <div class="cond-options" data-cond="carTax">
-          <div class="cond-pill selected" data-value="included">포함</div>
-          <div class="cond-pill" data-value="excluded">미포함</div>
-        </div>
-      </div>
-
-      <div class="cond-block">
-        <div class="cond-label">연간 주행거리</div>
-        <div class="cond-options" data-cond="mileage">
-          <div class="cond-pill" data-value="10000">연 1만km</div>
-          <div class="cond-pill selected" data-value="20000">연 2만km</div>
-          <div class="cond-pill" data-value="30000">연 3만km</div>
-          <div class="cond-pill" data-value="unlimited">무제한</div>
-        </div>
-      </div>
-
-      <div class="cond-block">
-        <div class="cond-label">신용도</div>
-        <div class="cond-options" data-cond="credit">
-          <div class="cond-pill" data-value="under700">700점 미만</div>
-          <div class="cond-pill" data-value="over700">700점 이상</div>
-          <div class="cond-pill selected" data-value="unknown">잘 모르겠어요</div>
-        </div>
-      </div>
-
-      <div class="price-summary-card">
-        <div class="price-row"><span class="pr-label">기본가격</span><span class="pr-value" id="sumBase">0원</span></div>
-        <div class="opt-dropdown-wrap" id="sumOptWrap">
-          <div class="opt-dropdown-head">
-            <button type="button" class="opt-dropdown-toggle" id="sumOptToggle" aria-expanded="false" aria-controls="sumOptDetail">
-              <span class="pr-label">추가옵션 (<span id="sumOptCount">0</span>개)</span>
-              <span class="opt-chevron" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></span>
-            </button>
-            <span class="pr-value" id="sumOpt">+0원</span>
+        <div class="est-col-side est-card">
+          <h2 class="est-card-title">옵션 추가하기</h2>
+          <p class="est-card-sub">선택사항 · 중복선택 가능 (운영자가 등록한 옵션만 표시됩니다)</p>
+          <div class="color-block" id="colorBlock">
+            <div class="color-block-label">외장색상</div>
+            <div class="swatch-row" id="swatchRow"><!-- JS 렌더 --></div>
+            <div class="swatch-note">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              일부 외장색상은 추가요금이 발생할 수 있어 별도 확인이 필요합니다.
+            </div>
           </div>
-          <div class="opt-dropdown-detail" id="sumOptDetail">
-            <ul class="opt-detail-list" id="sumOptList"></ul>
+          <div id="optionList"><!-- JS 렌더 --></div>
+        </div>
+      </div>
+
+      <!-- Row 2: 이용조건 + 가격 요약 -->
+      <div class="est-row est-row-2">
+        <div class="est-col-main est-card">
+          <h2 class="est-card-title">이용조건 선택</h2>
+          <p class="est-card-sub">장기렌트·리스 이용 시 아래 조건은 필수로 선택해주세요.</p>
+
+          <div class="cond-block">
+            <div class="cond-label">이용방법</div>
+            <div class="cond-options" data-cond="method">
+              <div class="cond-pill selected" data-value="장기렌트">장기렌트</div>
+              <div class="cond-pill" data-value="리스">리스</div>
+            </div>
+          </div>
+
+          <div class="cond-block">
+            <div class="cond-label">이용기간</div>
+            <div class="cond-options" data-cond="period">
+              <div class="cond-pill" data-value="36">36개월</div>
+              <div class="cond-pill selected" data-value="48">48개월</div>
+              <div class="cond-pill" data-value="60">60개월</div>
+            </div>
+          </div>
+
+          <div class="cond-block">
+            <div class="cond-label">보증금</div>
+            <div class="cond-options" data-cond="deposit">
+              <div class="cond-pill selected" data-value="0">없음</div>
+              <div class="cond-pill" data-value="10">10%</div>
+              <div class="cond-pill" data-value="20">20%</div>
+              <div class="cond-pill" data-value="30">30%</div>
+              <div class="cond-pill" data-value="40">40%</div>
+            </div>
+            <input type="text" class="cond-input" id="depositAmount" placeholder="보증금(원) — 자동 계산되며 직접 수정 가능합니다" inputmode="numeric">
+          </div>
+
+          <div class="cond-block">
+            <div class="cond-label">선납금</div>
+            <div class="cond-options" data-cond="prepay">
+              <div class="cond-pill" data-value="0">없음</div>
+              <div class="cond-pill" data-value="10">10%</div>
+              <div class="cond-pill" data-value="20">20%</div>
+              <div class="cond-pill selected" data-value="30">30%</div>
+              <div class="cond-pill" data-value="40">40%</div>
+            </div>
+            <input type="text" class="cond-input" id="prepayAmount" placeholder="선납금(원) — 자동 계산되며 직접 수정 가능합니다" inputmode="numeric">
+          </div>
+
+          <div class="cond-block">
+            <div class="cond-label">보험연령</div>
+            <div class="cond-options" data-cond="insAge">
+              <div class="cond-pill" data-value="21">만 21세이상</div>
+              <div class="cond-pill selected" data-value="26">만 26세이상</div>
+            </div>
+          </div>
+
+          <div class="cond-block">
+            <div class="cond-label">자동차세</div>
+            <div class="cond-options" data-cond="carTax">
+              <div class="cond-pill selected" data-value="included">포함</div>
+              <div class="cond-pill" data-value="excluded">미포함</div>
+            </div>
+          </div>
+
+          <div class="cond-block">
+            <div class="cond-label">연간 주행거리</div>
+            <div class="cond-options" data-cond="mileage">
+              <div class="cond-pill" data-value="10000">연 1만km</div>
+              <div class="cond-pill selected" data-value="20000">연 2만km</div>
+              <div class="cond-pill" data-value="30000">연 3만km</div>
+              <div class="cond-pill" data-value="unlimited">무제한</div>
+            </div>
+          </div>
+
+          <div class="cond-block">
+            <div class="cond-label">신용도</div>
+            <div class="cond-options" data-cond="credit">
+              <div class="cond-pill" data-value="under700">700점 미만</div>
+              <div class="cond-pill" data-value="over700">700점 이상</div>
+              <div class="cond-pill selected" data-value="unknown">잘 모르겠어요</div>
+            </div>
           </div>
         </div>
-        <div class="price-row subtotal"><span class="pr-label">차량 합계</span><span class="pr-value" id="sumVehicle">0원</span></div>
-        <div class="price-row" id="sumCarTaxRow" style="display:none;"><span class="pr-label">자동차세 (7%)</span><span class="pr-value" id="sumCarTax">+0원</span></div>
-        <div class="price-row"><span class="pr-label">보증금 (<span id="sumDepositPct">0</span>%)</span><span class="pr-value" id="sumDeposit">0원</span></div>
-        <div class="price-row"><span class="pr-label">선납금 (<span id="sumPrepayPct">0</span>%)</span><span class="pr-value" id="sumPrepay">0원</span></div>
-        <div class="price-row"><span class="pr-label">이용기간</span><span class="pr-value" id="sumPeriod">48개월</span></div>
-        <div class="price-row total"><span class="pr-label">월 환산 견적 <span class="ref-tag">(참고용)</span></span><span class="pr-value" id="sumMonthly">0원/월</span></div>
+
+        <div class="est-col-side est-col-price">
+          <div class="price-box" id="priceBox">
+            <div class="pb-section">
+              <div class="pb-heading">기본가격</div>
+              <div class="price-row pb-row">
+                <span class="pr-label" id="sumBaseName">—</span>
+                <span class="pr-value" id="sumBase">0원</span>
+              </div>
+            </div>
+
+            <div class="pb-section" id="pbOptSection" style="display:none;">
+              <div class="pb-heading">옵션가격</div>
+              <div id="sumOptLines"></div>
+            </div>
+
+            <div class="price-row pb-row pb-total">
+              <span class="pr-label">합계</span>
+              <span class="pr-value" id="sumVehicle">0원</span>
+            </div>
+
+            <div class="pb-extra">
+              <div class="price-row pb-row" id="sumCarTaxRow" style="display:none;">
+                <span class="pr-label">자동차세 (7%)</span>
+                <span class="pr-value" id="sumCarTax">+0원</span>
+              </div>
+              <div class="price-row pb-row">
+                <span class="pr-label">보증금 (<span id="sumDepositPct">0</span>%)</span>
+                <span class="pr-value" id="sumDeposit">0원</span>
+              </div>
+              <div class="price-row pb-row">
+                <span class="pr-label">선납금 (<span id="sumPrepayPct">0</span>%)</span>
+                <span class="pr-value" id="sumPrepay">0원</span>
+              </div>
+              <div class="price-row pb-row">
+                <span class="pr-label">이용기간</span>
+                <span class="pr-value" id="sumPeriod">48개월</span>
+              </div>
+              <div class="price-row pb-row pb-monthly">
+                <span class="pr-label">월 환산 견적 <span class="ref-tag">(참고용)</span></span>
+                <span class="pr-value" id="sumMonthly">0원/월</span>
+              </div>
+            </div>
+            <span id="sumOptCount" style="display:none;">0</span>
+          </div>
+        </div>
       </div>
 
       <label class="consent-row">
@@ -1131,6 +1285,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
           <div class="vs-meta">관리자페이지에서 색상·트림·옵션을 등록하면 이곳에 표시됩니다.</div>
         </div>`;
       document.getElementById('swatchRow').innerHTML = '';
+      const colorBlock = document.getElementById('colorBlock');
+      if (colorBlock) colorBlock.style.display = 'none';
       document.getElementById('trimGroups').innerHTML = '';
       document.getElementById('optionList').innerHTML = '';
       updateSummaryPrice();
@@ -1164,10 +1320,13 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
   function renderSwatches(detail) {
     const row = document.getElementById('swatchRow');
+    const colorBlock = document.getElementById('colorBlock');
     if (!detail.colors || !detail.colors.length) {
-      row.innerHTML = '<div class="helper-note" style="margin:0;">등록된 외장색상이 없습니다.</div>';
+      row.innerHTML = '';
+      if (colorBlock) colorBlock.style.display = 'none';
       return;
     }
+    if (colorBlock) colorBlock.style.display = '';
     row.innerHTML = detail.colors.map((c, i) => `
       <div class="swatch${state.colorIdx===i?' selected':''}" style="background:${c.hex};" data-idx="${i}" title="${c.name}${c.surcharge>0?' (+'+fmt(c.surcharge)+'원)':''}"></div>
     `).join('');
@@ -1235,13 +1394,12 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
       return;
     }
     wrap.innerHTML = detail.options.map((o, i) => `
-      <label class="option-card${state.selectedOptions.has(i)?' checked':''}" data-idx="${i}">
-        <input type="checkbox" ${state.selectedOptions.has(i)?'checked':''}>
-        <div class="opt-body"><div class="opt-name">${o.name}</div></div>
-        <div class="opt-price">+${fmt(o.price)}원</div>
+      <label class="option-item${state.selectedOptions.has(i)?' checked':''}" data-idx="${i}">
+        <span class="opt-body"><input type="checkbox" ${state.selectedOptions.has(i)?'checked':''} tabindex="-1"><span class="opt-name">${o.name}</span></span>
+        <span class="opt-price">+${fmt(o.price)}원</span>
       </label>
     `).join('');
-    wrap.querySelectorAll('.option-card').forEach(card => {
+    wrap.querySelectorAll('.option-item').forEach(card => {
       card.addEventListener('click', (e) => {
         e.preventDefault();
         const idx = parseInt(card.dataset.idx, 10);
@@ -1315,30 +1473,28 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
   // ---- 가격 합산 ----
   function updateSummaryPrice() {
+    const detail = getDetail();
     const { base, optTotal, optCount, vehicleTotal } = getVehiclePricing();
     const est = calcEstimateSummary(vehicleTotal, state.cond);
 
+    const trimName = detail?.trimGroups?.[state.trimGroupIdx]?.trims?.[state.trimIdx]?.name || '—';
+    document.getElementById('sumBaseName').textContent = trimName;
     document.getElementById('sumBase').textContent = fmt(base) + '원';
     document.getElementById('sumOptCount').textContent = optCount;
-    document.getElementById('sumOpt').textContent = '+' + fmt(optTotal) + '원';
 
     const optItems = getSelectedOptionItems();
-    const optWrap = document.getElementById('sumOptWrap');
-    const optToggle = document.getElementById('sumOptToggle');
-    const optList = document.getElementById('sumOptList');
+    const pbOptSection = document.getElementById('pbOptSection');
+    const sumOptLines = document.getElementById('sumOptLines');
     const hasOptItems = optItems.length > 0;
-    optToggle.classList.toggle('has-items', hasOptItems);
-    optToggle.disabled = !hasOptItems;
-    if (!hasOptItems) {
-      optWrap.classList.remove('open');
-      optToggle.setAttribute('aria-expanded', 'false');
+    if (pbOptSection) pbOptSection.style.display = hasOptItems ? '' : 'none';
+    if (sumOptLines) {
+      sumOptLines.innerHTML = optItems.map(item => `
+        <div class="price-row pb-row">
+          <span class="pr-label">${item.name}</span>
+          <span class="pr-value">${item.price > 0 ? '+' + fmt(item.price) + '원' : '포함'}</span>
+        </div>
+      `).join('');
     }
-    optList.innerHTML = optItems.map(item => `
-      <li class="opt-detail-item">
-        <span class="od-name">${item.name}</span>
-        <span class="od-price">${item.price > 0 ? '+' + fmt(item.price) + '원' : '포함'}</span>
-      </li>
-    `).join('');
 
     document.getElementById('sumVehicle').textContent = fmt(vehicleTotal) + '원';
 
@@ -1406,14 +1562,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
   document.getElementById('btnGoStep2').addEventListener('click', goToStep2);
   document.getElementById('btnBackStep1').addEventListener('click', goToStep1);
-
-  document.getElementById('sumOptToggle').addEventListener('click', () => {
-    const wrap = document.getElementById('sumOptWrap');
-    const toggle = document.getElementById('sumOptToggle');
-    if (!toggle.classList.contains('has-items')) return;
-    const open = wrap.classList.toggle('open');
-    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-  });
 
   function getConditionLabels() {
     const labels = {};
