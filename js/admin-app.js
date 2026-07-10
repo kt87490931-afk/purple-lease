@@ -2177,24 +2177,28 @@
   }
 
   function renderAnalyticsSummary(data) {
+    var t = data.today || {};
     var s = data.summary || {};
-    document.getElementById('anPv').textContent = fmtAnalyticsNum(s.pv);
-    document.getElementById('anUv').textContent = fmtAnalyticsNum(s.uv);
-    document.getElementById('anPvHuman').textContent = fmtAnalyticsNum(s.pv_human);
-    document.getElementById('anUvHuman').textContent = fmtAnalyticsNum(s.uv_human);
-    document.getElementById('anPvBot').textContent = fmtAnalyticsNum(s.pv_bot);
-    document.getElementById('anUvBot').textContent = fmtAnalyticsNum(s.uv_bot);
-    document.getElementById('anDesktop').textContent = fmtAnalyticsNum(s.pv_desktop) + ' / ' + fmtAnalyticsNum(s.uv_desktop);
-    document.getElementById('anMobile').textContent = fmtAnalyticsNum(s.pv_mobile) + ' / ' + fmtAnalyticsNum(s.uv_mobile);
-    document.getElementById('anTablet').textContent = fmtAnalyticsNum(s.pv_tablet) + ' / ' + fmtAnalyticsNum(s.uv_tablet);
-    var t = data.today;
-    var todayEl = document.getElementById('anToday');
-    if (todayEl) {
-      if (t) {
-        todayEl.textContent = '페이지뷰 ' + fmtAnalyticsNum(t.pv) + ' · 방문자수 ' + fmtAnalyticsNum(t.uv) + ' · 일반 페이지뷰 ' + fmtAnalyticsNum(t.pv_human);
-      } else {
-        todayEl.textContent = '페이지뷰 0 · 방문자수 0 · 일반 페이지뷰 0';
-      }
+    document.getElementById('anPv').textContent = fmtAnalyticsNum(t.pv);
+    document.getElementById('anUv').textContent = fmtAnalyticsNum(t.uv);
+    document.getElementById('anPvHuman').textContent = fmtAnalyticsNum(t.pv_human);
+    document.getElementById('anUvHuman').textContent = fmtAnalyticsNum(t.uv_human);
+    document.getElementById('anPvBot').textContent = fmtAnalyticsNum(t.pv_bot);
+    document.getElementById('anUvBot').textContent = fmtAnalyticsNum(t.uv_bot);
+    document.getElementById('anDesktop').textContent = fmtAnalyticsNum(t.pv_desktop) + ' / ' + fmtAnalyticsNum(t.uv_desktop);
+    document.getElementById('anMobile').textContent = fmtAnalyticsNum(t.pv_mobile) + ' / ' + fmtAnalyticsNum(t.uv_mobile);
+    document.getElementById('anTablet').textContent = fmtAnalyticsNum(t.pv_tablet) + ' / ' + fmtAnalyticsNum(t.uv_tablet);
+    var periodEl = document.getElementById('anPeriod');
+    if (periodEl) {
+      periodEl.textContent =
+        '페이지뷰 ' + fmtAnalyticsNum(s.pv) +
+        ' · 방문자수 ' + fmtAnalyticsNum(s.uv) +
+        ' · 일반 페이지뷰 ' + fmtAnalyticsNum(s.pv_human) +
+        ' · 일반 방문자수 ' + fmtAnalyticsNum(s.uv_human);
+    }
+    var todayLabel = document.getElementById('anTodayLabel');
+    if (todayLabel) {
+      todayLabel.textContent = '오늘 (' + kstTodayStr() + ', KST)';
     }
     var rangeEl = document.getElementById('analyticsRangeLabel');
     if (rangeEl && data.range) {
