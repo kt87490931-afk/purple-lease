@@ -1214,9 +1214,13 @@ html { scroll-behavior: smooth; }
     // 사이드 패널
     document.getElementById('statusPill').textContent = v.status;
     document.getElementById('originPill').textContent =
-      v.origin === 'import' ? '수입차' : (v.origin === 'export' ? '수출차량' : (v.origin === 'other' ? '기타' : '국산차'));
+      (v.contractType === 'rent' ? '렌트차량' : '리스차량') + ' · ' +
+      (v.origin === 'import' ? '수입차' : (v.origin === 'export' ? '수출차량' : (v.origin === 'other' ? '기타' : '국산차')));
     document.getElementById('vehicleTitle').textContent = formatProductTitle(v);
-    document.getElementById('vehicleMeta').textContent = `${v.origin==='domestic'?'국산차':'수입차'} · ${v.name} · ${v.year}년식`;
+    document.getElementById('vehicleMeta').textContent =
+      (v.contractType === 'rent' ? '렌트차량' : '리스차량') + ' · ' +
+      (v.origin === 'domestic' ? '국산차' : (v.origin === 'import' ? '수입차' : (v.origin === 'export' ? '수출차량' : '기타'))) +
+      ' · ' + v.name + ' · ' + v.year + '년식';
     document.getElementById('vehiclePrice').textContent = priceFmt(v.price);
     document.getElementById('vehicleTags').innerHTML = (v.tags || []).map(t => `<span class="utag">${t}</span>`).join('');
     document.getElementById('mobilePrice').textContent = priceFmt(v.price);

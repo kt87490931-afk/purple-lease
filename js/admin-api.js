@@ -873,7 +873,11 @@
         origin: f.origin,
         detailJson: r.detail_json || {},
         leaseConditions: (r.detail_json && r.detail_json.leaseConditions) || {},
-        vehicleCoreInfo: (r.detail_json && r.detail_json.vehicleCoreInfo) || {}
+        vehicleCoreInfo: (r.detail_json && r.detail_json.vehicleCoreInfo) || {},
+        contractType: (function () {
+          var ct = String((r.detail_json && (r.detail_json.contractType || r.detail_json.contract_type)) || '').toLowerCase().trim();
+          return (ct === 'rent' || ct === '렌트' || ct === '렌트차량') ? 'rent' : 'lease';
+        })()
       };
     });
   }
@@ -917,6 +921,10 @@
       if (payload.description != null) dj.description = String(payload.description || '').trim();
       if (payload.options != null) {
         dj.options = payload.options && typeof payload.options === 'object' ? payload.options : {};
+      }
+      if (payload.contractType != null) {
+        var ct = String(payload.contractType || '').toLowerCase().trim();
+        dj.contractType = (ct === 'rent') ? 'rent' : 'lease';
       }
     }
 

@@ -302,6 +302,8 @@
       var photos = (dj.photos && dj.photos.length) ? dj.photos : [];
       if (!row.thumb && photos.length) row.thumb = photos[0];
       if (!row.photoCount && row.thumb) row.photoCount = 1;
+      var ct = String(dj.contractType || dj.contract_type || '').toLowerCase().trim();
+      row.contractType = (ct === 'rent' || ct === '렌트' || ct === '렌트차량') ? 'rent' : 'lease';
       return row;
     });
   }
@@ -393,12 +395,20 @@
       battery: d.battery || null,
       batteryDocs: d.batteryDocs || [],
       leaseConditions: d.leaseConditions || {},
-      vehicleCoreInfo: d.vehicleCoreInfo || {}
+      vehicleCoreInfo: d.vehicleCoreInfo || {},
+      contractType: (function () {
+        var ct = String(d.contractType || d.contract_type || '').toLowerCase().trim();
+        return (ct === 'rent' || ct === '렌트' || ct === '렌트차량') ? 'rent' : 'lease';
+      })()
     }, d, {
       photos: photos,
       seller: null,
       leaseConditions: d.leaseConditions || {},
-      vehicleCoreInfo: d.vehicleCoreInfo || {}
+      vehicleCoreInfo: d.vehicleCoreInfo || {},
+      contractType: (function () {
+        var ct = String(d.contractType || d.contract_type || '').toLowerCase().trim();
+        return (ct === 'rent' || ct === '렌트' || ct === '렌트차량') ? 'rent' : 'lease';
+      })()
     });
   }
 

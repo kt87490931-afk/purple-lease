@@ -1133,6 +1133,17 @@ body.admin-nav-open { overflow:hidden; }
   <div class="modal-box" style="max-width:760px;">
     <div class="modal-head"><h3 id="modalLeaseTransferTitle">일반승계 매물 등록</h3><button class="modal-close" data-close="modalLeaseTransfer">✕</button></div>
     <div class="modal-body" style="max-height:70vh;overflow:auto;">
+      <div class="form-row">
+        <label>차량 구분 <span style="color:var(--danger-600,#E0395B);">*</span></label>
+        <div id="ltContractTypeGroup" style="display:flex;gap:10px;flex-wrap:wrap;">
+          <label style="display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border:1.5px solid var(--line);border-radius:10px;cursor:pointer;font-weight:700;font-size:13px;">
+            <input type="radio" name="ltContractType" value="lease" checked> 리스차량
+          </label>
+          <label style="display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border:1.5px solid var(--line);border-radius:10px;cursor:pointer;font-weight:700;font-size:13px;">
+            <input type="radio" name="ltContractType" value="rent"> 렌트차량
+          </label>
+        </div>
+      </div>
       <div class="form-row"><label>차량명</label><input type="text" id="ltName" placeholder="예: BMW 520i 리스승계"></div>
       <div class="form-grid-2">
         <div class="form-row"><label>연식</label><input type="number" id="ltYear" placeholder="2022"></div>
@@ -1329,11 +1340,11 @@ body.admin-nav-open { overflow:hidden; }
 <script src="/js/seo-static-meta.js?v=20260627e"></script>
 <script src="/js/admin-auth.js?v=20260630d"></script>
 <script src="/js/review-topics.js?v=20260704a"></script>
-<script src="/js/admin-api.js?v=20260712a"></script>
+<script src="/js/admin-api.js?v=20260712b"></script>
 <script src="/js/admin-hero.js?v=20260703a"></script>
 <script src="/js/admin-partners.js?v=20260703a"></script>
 <script src="/js/lease-catalog-map.js"></script>
-<script src="/js/admin-app.js?v=20260712a"></script>
+<script src="/js/admin-app.js?v=20260712b"></script>
 <script>
 /* 퍼플오토 어드민 — 견적서 작성 (부품 / 장기렌트·리스) : #panel-estimate 자체 초기화 */
 (function () {

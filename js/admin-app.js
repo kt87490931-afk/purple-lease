@@ -135,6 +135,18 @@
     }
   }
 
+  function setLtContractType(value) {
+    var v = (value === 'rent') ? 'rent' : 'lease';
+    document.querySelectorAll('input[name="ltContractType"]').forEach(function (el) {
+      el.checked = el.value === v;
+    });
+  }
+
+  function getLtContractType() {
+    var checked = document.querySelector('input[name="ltContractType"]:checked');
+    return (checked && checked.value === 'rent') ? 'rent' : 'lease';
+  }
+
   function clearLtDetailFields() {
     ['ltLcPriceInfo', 'ltLcPriceNote', 'ltLcInitialCost', 'ltLcPaymentMethod', 'ltLcTotalCost', 'ltLcLastUpdate',
       'ltVcFirstReg', 'ltVcInsuranceOwn', 'ltVcInsuranceThird', 'ltVcInsuranceHistory',
@@ -1570,9 +1582,10 @@
       return;
     }
     body.innerHTML = leaseTransfersData.map(function (c) {
+      var ctLabel = c.contractType === 'rent' ? '렌트' : '리스';
       return '<tr>' +
         '<td class="thumb-cell"><img src="' + escapeAttr(adminThumbUrl(c.thumb)) + '" onerror="this.style.opacity=0.15"></td>' +
-        '<td class="title-cell">' + c.name + '</td>' +
+        '<td class="title-cell">' + c.name + ' <span class="chip" style="margin-left:6px;">' + ctLabel + '</span></td>' +
         '<td class="num-cell">' + (c.year != null ? c.year + '년식' : '-') + '</td>' +
         '<td class="num-cell">' + c.mileage.toLocaleString('ko-KR') + 'km</td>' +
         '<td class="num-cell">' + c.price.toLocaleString('ko-KR') + '만원</td>' +
@@ -1608,6 +1621,7 @@
     document.getElementById('ltBrand').value = c.brand || '';
     document.getElementById('ltSegment').value = c.segment || '';
     document.getElementById('ltFuel').value = c.fuel || '';
+    setLtContractType(c.contractType || (c.detailJson && c.detailJson.contractType) || 'lease');
     var dj = c.detailJson || {};
     fillLtDetailFields(c.leaseConditions, c.vehicleCoreInfo, {
       plate: dj.plate || '',
@@ -2987,6 +3001,7 @@
       ['ltName', 'ltYear', 'ltMileage', 'ltPrice', 'ltThumb', 'ltBrand', 'ltSegment', 'ltFuel'].forEach(function (id) { document.getElementById(id).value = ''; });
       updateLtThumbPreview('');
       clearLtDetailFields();
+      setLtContractType('lease');
       document.getElementById('ltStatus').value = '판매중';
       document.getElementById('ltOrigin').value = 'domestic';
       openModal('modalLeaseTransfer');
@@ -3021,6 +3036,7 @@
           brand: document.getElementById('ltBrand').value.trim(),
           segment: document.getElementById('ltSegment').value.trim(),
           fuel: document.getElementById('ltFuel').value.trim(),
+          contractType: getLtContractType(),
           plate: detailFields.plate,
           color: detailFields.color,
           description: detailFields.description,
