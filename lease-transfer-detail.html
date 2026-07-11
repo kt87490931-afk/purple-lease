@@ -67,6 +67,23 @@ p { margin:0; }
 
 .wrap { max-width: var(--container); margin: 0 auto; padding: 0 18px; }
 
+/* --- Header --- */
+.site-header { position: sticky; top:0; z-index:100; background: rgba(255,255,255,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line-soft); }
+.header-inner { display:flex; align-items:center; justify-content:space-between; height:64px; gap:16px; }
+.logo { display:flex; align-items:baseline; gap:1px; flex-shrink:0; font-family: var(--font-display); }
+.logo .logo-p { font-size:22px; font-weight:800; background: var(--grad-main); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.logo .logo-rest { font-size:18px; font-weight:700; color: var(--navy-900); letter-spacing:-0.01em; }
+.logo .logo-img { height: 24px; width: auto; display: block; }
+.header-call { display:flex; align-items:center; gap:8px; font-family: var(--font-mono); font-size:13px; color: var(--ink-900); font-weight:700; }
+.category-nav { background: var(--white); border-bottom: 1px solid var(--line-soft); }
+.category-nav a { display:flex; align-items:center; padding:14px 18px; font-size:13px; font-weight:700; color: var(--ink-500); border-bottom:2px solid transparent; white-space:nowrap; }
+.category-nav a.active { color: var(--navy-900); border-bottom-color: var(--purple-600); }
+
+.crumb { font-size:12px; color: var(--ink-400); padding: 12px 0; display:flex; align-items:center; gap:6px; }
+.crumb a { color: var(--ink-400); }
+.crumb .sep { opacity:.6; }
+.crumb .cur { color: var(--ink-700); font-weight:600; }
+
 .btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:13px 18px; border-radius: var(--radius-md); font-weight:700; font-size:14px; border:1px solid transparent; transition: all .15s ease; white-space:nowrap; }
 .btn-primary { background: var(--grad-main); color:#fff; box-shadow: var(--shadow-md); }
 .btn-primary:hover { opacity:.92; }
@@ -88,11 +105,12 @@ p { margin:0; }
 .gallery { position: relative; border-radius: var(--radius-lg); overflow:hidden; background: var(--surface-alt); width:100%; max-width:100%; }
 .gallery-main {
   position: relative;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 16 / 10;
   width: 100%;
   max-width: 100%;
   overflow: hidden;
   background: var(--surface-alt);
+  border-radius: 12px;
 }
 .gallery-main #mainPhoto {
   position: absolute;
@@ -115,77 +133,90 @@ p { margin:0; }
 .gallery-thumbs .gthumb.active { border-color: var(--purple-600); }
 .gallery-thumbs .gthumb img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; display:block; }
 
-/* ============ 섹션 공통 (선/박스 최소화하되, 섹션 전환은 여백으로 충분히 구분) ============ */
-.info-section { padding: 30px 0; border-bottom: 1px solid var(--line-soft); }
-.info-section:first-of-type { padding-top: 26px; }
-.info-section:last-child { border-bottom: none; }
-.info-section-title { display:flex; align-items:center; gap:8px; font-size:15px; font-weight:800; color: var(--ink-900); margin-bottom: 18px; }
-.info-section-title .bar { width:3px; height:13px; background: var(--purple-600); border-radius:2px; }
-.info-section-sub { font-size:12px; color: var(--ink-400); margin-top:-12px; margin-bottom:16px; }
+/* ============ 섹션 공통 (목업 info-row + 앵커) ============ */
+html { scroll-behavior: smooth; }
+.info-section { margin-top: 30px; padding: 0 0 8px; scroll-margin-top: 88px; }
+.info-section-title {
+  font-size: 15px; font-weight: 800; color: var(--ink-900);
+  margin-bottom: 12px; padding-left: 10px; border-left: 3px solid var(--purple-600);
+}
+.info-section-title .bar { display: none; }
+.info-section-sub { font-size:12px; color: var(--ink-400); margin-top:-6px; margin-bottom:12px; }
 
-/* 정보 표(테두리 없이 행 구분선만) */
-.info-table { display:grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
-.info-table .it { display:flex; flex-direction:column; gap:3px; }
-.info-table .it .it-label { font-size:11.5px; color: var(--ink-400); }
-.info-table .it .it-value { font-size:13.5px; font-weight:700; color: var(--ink-900); }
+.info-row {
+  display: flex; padding: 12px 0;
+  border-bottom: 1px solid var(--line-soft); font-size: 13.5px;
+}
+.info-row .label { flex: 0 0 130px; font-weight: 700; color: var(--ink-900); }
+.info-row .value { flex: 1; color: var(--ink-900); line-height: 1.6; white-space: pre-line; }
+.info-row .value.mute { color: var(--ink-500); }
+.info-row .value.total { font-weight: 800; color: var(--purple-600); font-size: 15px; }
+.info-row .value strong { color: var(--purple-600); font-weight: 800; }
+.grid-2col { display: grid; grid-template-columns: 1fr 1fr; }
+@media (max-width: 640px) {
+  .grid-2col { grid-template-columns: 1fr; }
+  .info-row .label { flex: 0 0 100px; }
+}
 
-/* 총 구입비용 */
 .cost-table { width:100%; }
-.cost-table .row { display:flex; align-items:center; justify-content:space-between; padding: 10px 0; border-bottom: 1px solid var(--line-soft); font-size: 13.5px; }
-.cost-table .row .c-label { color: var(--ink-500); }
-.cost-table .row .c-value { font-family: var(--font-mono); font-weight:700; color: var(--ink-900); }
-.cost-table .row.total { border-bottom:none; padding-top:13px; }
-.cost-table .row.total .c-label { font-size:14px; font-weight:800; color: var(--ink-900); }
-.cost-table .row.total .c-value { font-size:19px; font-weight:800; background: var(--grad-text); -webkit-background-clip:text; background-clip:text; color:transparent; }
-.cost-note { font-size:11px; color: var(--ink-400); line-height:1.7; margin-top:10px; }
+.cost-table .row, .cost-table .info-row {
+  display: flex; padding: 12px 0;
+  border-bottom: 1px solid var(--line-soft); font-size: 13.5px;
+}
+.cost-table .c-label, .cost-table .label { flex: 0 0 130px; font-weight: 700; color: var(--ink-900); }
+.cost-table .c-value, .cost-table .value { flex: 1; font-family: var(--font-mono); font-weight: 700; color: var(--ink-900); }
+.cost-table .row.total .c-value, .cost-table .info-row.total .value {
+  font-size: 15px; font-weight: 800; color: var(--purple-600); font-family: inherit;
+}
+.notice-box, .cost-note {
+  font-size: 12px; color: var(--ink-500); line-height: 1.7;
+  background: var(--surface-alt); border-radius: 8px; padding: 12px 14px; margin-top: 10px;
+}
 
-/* 차량 설명 */
-.desc-text { font-size: 13.5px; color: var(--ink-700); line-height:1.85; white-space: pre-line; }
+.desc-text, .free-text { font-size: 13.5px; color: var(--ink-900); line-height:1.8; white-space: pre-line; }
 
-/* 옵션 그룹 (칩 — 컬러 절제) */
+.option-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+@media (max-width: 860px) { .option-grid { grid-template-columns: 1fr 1fr; } }
+.option-tag {
+  font-size: 12.5px; font-weight: 600; color: var(--ink-900);
+  background: var(--surface-alt); border: 1px solid var(--line-soft);
+  border-radius: 8px; padding: 10px 12px; text-align: center;
+}
 .opt-group { margin-bottom: 14px; }
-.opt-group:last-child { margin-bottom:0; }
 .opt-group-label { font-size:12px; font-weight:700; color: var(--ink-500); margin-bottom:8px; }
 .opt-chips { display:flex; flex-wrap:wrap; gap:7px; }
 .opt-chip { font-size:12px; font-weight:600; color: var(--ink-700); background: var(--surface); border:1px solid var(--line); padding:6px 11px; border-radius:100px; }
 
-/* 성능점검/하체사진/배터리 — 단순 카드 */
+.perf-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 18px; border-radius: 8px;
+  border: 1.5px solid var(--purple-600); color: var(--purple-600);
+  font-size: 13px; font-weight: 700; text-decoration: none; background: #fff; cursor: pointer;
+  font-family: inherit;
+}
+.perf-btn:hover { background: var(--purple-50); }
 .simple-doc-card { display:flex; align-items:center; gap:12px; padding: 16px; background: var(--surface); border-radius: var(--radius-md); cursor:pointer; }
 .simple-doc-card svg { width:26px; height:26px; color: var(--ink-500); flex-shrink:0; }
 .simple-doc-card .sd-title { font-size:13.5px; font-weight:700; color: var(--ink-900); }
 .simple-doc-card .sd-sub { font-size:11.5px; color: var(--ink-400); margin-top:1px; }
 .simple-doc-card .sd-arrow { margin-left:auto; color: var(--ink-400); }
-
 .empty-mini { text-align:center; padding: 28px 0; color: var(--ink-400); font-size:12.5px; }
 
-/* 리스승계 탭 */
-.lt-tabs-section { padding: 26px 0 10px; border-bottom: 1px solid var(--line-soft); }
-.lt-tab-bar { display:flex; gap:0; border-bottom: 1px solid var(--line); margin-bottom: 0; overflow-x:auto; scrollbar-width:none; }
-.lt-tab-bar::-webkit-scrollbar { display:none; }
-.lt-tab {
-  flex-shrink:0; padding: 12px 18px; font-size: 13px; font-weight: 700; color: var(--ink-500);
-  background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-family: inherit;
+/* 바로가기 앵커 내비게이션 (탭 대체) */
+.quick-nav {
+  display: flex; gap: 4px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--line-soft);
+  margin: 28px 0 8px;
 }
-.lt-tab.active { color: var(--ink-900); border-bottom-color: var(--purple-600); }
-.lt-tab-panel { display:none; padding: 22px 0 8px; }
-.lt-tab-panel.active { display:block; }
-.lc-panel-head { display:flex; align-items:center; justify-content:space-between; margin-bottom: 18px; }
-.lc-panel-head h3 { font-size: 15px; font-weight: 800; margin: 0; }
-.lc-panel-head .lc-updated { font-size: 11.5px; color: var(--ink-400); }
-.lc-block { padding: 18px 0; border-bottom: 1px solid var(--line-soft); }
-.lc-block:last-child { border-bottom: none; }
-.lc-block-label { font-size: 13px; font-weight: 800; color: var(--ink-900); margin-bottom: 8px; }
-.lc-block-value { font-size: 13.5px; color: var(--ink-700); line-height: 1.75; white-space: pre-line; }
-.lc-block-value strong { font-size: 15px; color: var(--ink-900); }
-.lc-kv-row { display:grid; grid-template-columns: 130px 1fr; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--line-soft); align-items:start; }
-.lc-kv-row:last-child { border-bottom: none; }
-.lc-kv-label { font-size: 13px; font-weight: 800; color: var(--ink-900); }
-.lc-kv-value { font-size: 13.5px; color: var(--ink-700); line-height: 1.75; white-space: pre-line; }
-.lc-core-sub { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line-soft); font-size: 13.5px; color: var(--ink-700); line-height: 1.85; white-space: pre-line; }
-.lc-core-intro { font-size: 12px; color: var(--ink-400); margin: -8px 0 14px; }
-@media (max-width: 640px) {
-  .lc-kv-row { grid-template-columns: 1fr; gap: 6px; }
+.quick-nav a {
+  padding: 12px 18px; font-size: 13px; font-weight: 700;
+  color: var(--ink-500); text-decoration: none;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
 }
+.quick-nav a:hover { color: var(--ink-900); border-bottom-color: var(--purple-600); }
+.quick-nav[hidden], .quick-nav.is-empty { display: none; }
+
+.lc-updated { font-size: 11.5px; color: var(--ink-400); margin-left: 8px; font-weight: 600; }
 
 /* ============ 사이드 — 가격/판매자/액션 ============ */
 .price-box { padding: 4px 0 18px; border-bottom: 1px solid var(--line-soft); margin-bottom: 18px; }
@@ -193,14 +224,21 @@ p { margin:0; }
 .status-pill { font-size:11px; font-weight:700; padding:3px 9px; border-radius:5px; }
 .status-pill.selling { background: var(--purple-100); color: var(--purple-600); }
 .status-pill.origin { background: var(--surface-alt); color: var(--ink-700); }
-.price-box h1 { font-size: 19px; line-height:1.4; margin-bottom: 6px; }
-.price-box .p-meta { font-size:12.5px; color: var(--ink-500); margin-bottom: 14px; }
-.price-box .p-amount { font-family: var(--font-mono); font-size: 28px; font-weight: 800; color: var(--navy-900); }
-.tag-row { display:flex; gap:6px; flex-wrap:wrap; margin-top:12px; }
-.tag-row .utag { font-size:11px; font-weight:700; color: var(--ink-500); background: var(--surface); padding:4px 9px; border-radius:5px; }
+.price-box h1 { font-size: 20px; line-height:1.4; margin-bottom: 4px; font-weight: 800; }
+.price-box .p-meta { font-size:13px; color: var(--ink-500); margin-bottom: 14px; }
+.price-box .p-amount { font-family: var(--font-mono); font-size: 26px; font-weight: 800; color: var(--navy-900); margin-bottom: 10px; }
+.tag-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom: 18px; }
+.tag-row .utag {
+  font-size:11.5px; font-weight:700; color: var(--purple-600);
+  background: #F4EEFC; padding:4px 9px; border-radius:6px;
+}
 
 .seller-box { display:flex; align-items:center; gap:11px; padding: 14px 0; margin-bottom: 16px; }
-.seller-avatar { width:42px; height:42px; border-radius:50%; background: var(--surface-alt); display:flex; align-items:center; justify-content:center; font-weight:800; color: var(--ink-400); flex-shrink:0; }
+.seller-avatar {
+  width:34px; height:34px; border-radius:50%;
+  background: var(--grad-main); color:#fff;
+  display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; flex-shrink:0;
+}
 .seller-info .s-name { font-size:13.5px; font-weight:700; color: var(--ink-900); }
 .seller-info .s-phone { font-size:12px; color: var(--ink-500); font-family: var(--font-mono); }
 
@@ -339,7 +377,6 @@ p { margin:0; }
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#15151D" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
     </div>
-
   </div>
   <nav class="category-nav">
     <div class="wrap category-nav-inner">
@@ -405,62 +442,68 @@ p { margin:0; }
         <div class="gallery-thumbs" id="galleryThumbs"></div>
         </div>
 
-        <!-- 리스승계 탭 (리스승계조건 / 차량핵심정보 / 옵션정보) -->
-        <section class="lt-tabs-section" id="ltTabsSection" style="display:none;">
-          <div class="lt-tab-bar" id="ltTabBar">
-            <button type="button" class="lt-tab active" data-lt-tab="conditions">리스승계조건</button>
-            <button type="button" class="lt-tab" data-lt-tab="core">차량핵심정보</button>
-            <button type="button" class="lt-tab" data-lt-tab="options" id="ltTabOptions" style="display:none;">옵션정보</button>
-          </div>
-          <div class="lt-tab-panel active" id="ltPanelConditions"></div>
-          <div class="lt-tab-panel" id="ltPanelCore"></div>
-          <div class="lt-tab-panel" id="ltPanelOptions"></div>
-        </section>
+        <!-- 바로가기 앵커 (탭 대체) -->
+        <nav class="quick-nav" id="quickNav" hidden>
+          <a href="#lease-condition" data-qn="lease">리스승계조건</a>
+          <a href="#core-info" data-qn="core">차량핵심정보</a>
+          <a href="#option-info" data-qn="options">옵션정보</a>
+        </nav>
 
         <!-- 차량 정보 -->
-        <section class="info-section">
-          <div class="info-section-title"><span class="bar"></span>차량 정보</div>
-          <div class="info-table" id="infoTable"></div>
+        <section class="info-section" id="vehicleInfoSection">
+          <div class="info-section-title">차량 정보</div>
+          <div class="grid-2col" id="infoTable"></div>
         </section>
 
-        <!-- 총 구입비용 -->
-        <section class="info-section">
-          <div class="info-section-title"><span class="bar"></span>총 구입비용</div>
-          <div class="cost-table" id="costTable"></div>
-          <div class="cost-note">
+        <!-- 리스승계조건 -->
+        <section class="info-section" id="lease-condition" style="display:none;">
+          <div class="info-section-title">리스승계조건 <span class="lc-updated" id="lcLastUpdate" style="display:none;"></span></div>
+          <div id="leaseConditionBody"></div>
+          <div class="notice-box">
             취득세는 차량금액 기준 7.5%로 자동 계산되며, 전기차는 1,400,000원 감면이 자동 반영됩니다.<br>
             취득세와 자동차보험료를 제외한 모든 비용은 현금영수증 또는 세금계산서로 발행됩니다.<br>
             취득세는 영수증을 발급하며 남는 금액은 매수인에게 돌려드립니다.
           </div>
         </section>
 
+        <!-- 총 구입비용 (cost[] 있을 때만 — 리스승계조건과 별도) -->
+        <section class="info-section" id="costSection" style="display:none;">
+          <div class="info-section-title">총 구입비용</div>
+          <div class="cost-table" id="costTable"></div>
+        </section>
+
+        <!-- 차량핵심정보 -->
+        <section class="info-section" id="core-info" style="display:none;">
+          <div class="info-section-title">차량핵심정보</div>
+          <div id="coreInfoBody"></div>
+        </section>
+
         <!-- 차량 설명 -->
-        <section class="info-section">
-          <div class="info-section-title"><span class="bar"></span>차량 설명</div>
-          <div class="desc-text" id="descText"></div>
+        <section class="info-section" id="descSection" style="display:none;">
+          <div class="info-section-title">차량 설명</div>
+          <div class="desc-text free-text" id="descText"></div>
         </section>
 
-        <!-- 옵션 (탭 미사용 시 폴백) -->
-        <section class="info-section" id="optionSectionStandalone">
-          <div class="info-section-title"><span class="bar"></span>옵션</div>
-          <div id="optionGroups"></div>
+        <!-- 옵션 -->
+        <section class="info-section" id="option-info" style="display:none;">
+          <div class="info-section-title">옵션</div>
+          <div class="option-grid" id="optionGroups"></div>
         </section>
 
-        <!-- 성능점검기록부 / 하체사진 — 등록된 자료가 없으면 섹션 전체를 숨깁니다 -->
+        <!-- 성능점검기록부 / 하체사진 -->
         <section class="info-section" id="perfDocSection">
-          <div class="info-section-title"><span class="bar"></span>성능점검기록부</div>
+          <div class="info-section-title">성능점검기록부</div>
           <div id="perfDocSlot"></div>
         </section>
 
         <section class="info-section" id="underbodySection">
-          <div class="info-section-title"><span class="bar"></span>하체 사진</div>
+          <div class="info-section-title">하체 사진</div>
           <div id="underbodySlot"></div>
         </section>
 
-        <!-- 배터리 정보 (전기/하이브리드 차량에서만 표시) -->
         <section class="info-section" id="batterySection" style="display:none;">
-          <div class="info-section-title"><span class="bar"></span>배터리 정보</div>
-          <div class="info-table" id="batteryTable" style="margin-bottom:14px;"></div>
+          <div class="info-section-title">배터리 정보</div>
+          <div class="grid-2col" id="batteryTable" style="margin-bottom:14px;"></div>
           <div id="batteryDocSlot"></div>
         </section>
 
@@ -860,26 +903,21 @@ p { margin:0; }
     if (section) section.style.display = hasAny ? 'block' : 'none';
     if (!hasAny) { slot.innerHTML = ''; return; }
 
-    var html = docs.map(function (docUrl, idx) {
-      return '<div class="simple-doc-card" data-docs=\'' + JSON.stringify([docUrl]) + '\' data-title="성능점검기록부">' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1z"/><rect x="5" y="5" width="14" height="16" rx="2"/></svg>' +
-        '<div><div class="sd-title">성능보기</div><div class="sd-sub">성능점검기록부 (' + (idx + 1) + ')</div></div>' +
-        '<svg class="sd-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>';
-    }).join('');
-
+    var html = '';
+    if (docs.length) {
+      html += '<button type="button" class="perf-btn" id="btnPerfView">성능보기 →</button>';
+    }
     html += links.map(function (url) {
-      return '<a class="simple-doc-card" href="' + url + '" target="_blank" rel="noopener noreferrer" style="text-decoration:none;color:inherit;">' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1z"/><rect x="5" y="5" width="14" height="16" rx="2"/></svg>' +
-        '<div><div class="sd-title">성능보기</div><div class="sd-sub">성능점검기록부 (외부)</div></div>' +
-        '<svg class="sd-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></a>';
+      return '<a class="perf-btn" href="' + url + '" target="_blank" rel="noopener noreferrer" style="margin-left:8px;">성능보기 →</a>';
     }).join('');
 
     slot.innerHTML = html;
-    slot.querySelectorAll('.simple-doc-card[data-docs]').forEach(function (card) {
-      card.addEventListener('click', function () {
-        openDocModal(JSON.parse(card.dataset.docs), card.dataset.title);
+    var btn = document.getElementById('btnPerfView');
+    if (btn && docs.length) {
+      btn.addEventListener('click', function () {
+        openDocModal(docs, '성능점검기록부');
       });
-    });
+    }
   }
 
   /* ---- 모달 컨트롤 ---- */
@@ -933,7 +971,7 @@ p { margin:0; }
 
   function hasLeaseConditions(lc) {
     if (!lc) return false;
-    return !!(lc.priceInfo || lc.priceNote || lc.initialCost || lc.paymentMethod);
+    return !!(lc.priceInfo || lc.priceNote || lc.initialCost || lc.paymentMethod || lc.totalCost);
   }
 
   function hasVehicleCoreInfo(vc) {
@@ -953,119 +991,126 @@ p { margin:0; }
     return '';
   }
 
-  function renderOptionGroupsHtml(optEntries) {
-    if (!optEntries.length) return '<div class="empty-mini">등록된 옵션 정보가 없습니다.</div>';
-    return optEntries.map(function (entry) {
-      var group = entry[0];
-      var items = entry[1];
-      return '<div class="opt-group"><div class="opt-group-label">' + escapeHtml(group) + '</div><div class="opt-chips">' +
-        items.map(function (i) { return '<span class="opt-chip">' + escapeHtml(i) + '</span>'; }).join('') +
-        '</div></div>';
-    }).join('');
+  function flattenOptions(options) {
+    var flat = [];
+    if (!options) return flat;
+    Object.keys(options).forEach(function (group) {
+      var items = options[group];
+      if (items && items.length) flat = flat.concat(items);
+    });
+    return flat;
   }
 
-  function renderLeaseTabs(car) {
+  function formatTotalCostDisplay(car) {
+    var lc = car.leaseConditions || {};
+    if (lc.totalCost && String(lc.totalCost).trim()) return String(lc.totalCost).trim();
+    if (car.price != null && car.price !== '') {
+      var n = parseInt(car.price, 10);
+      if (!isNaN(n)) return (n * 10000).toLocaleString('ko-KR') + '원';
+    }
+    return '';
+  }
+
+  function renderLeaseSections(car) {
     var lc = car.leaseConditions || {};
     var vc = car.vehicleCoreInfo || {};
-    var optEntries = car.options ? Object.entries(car.options).filter(function (e) { return e[1] && e[1].length; }) : [];
-    var showLc = hasLeaseConditions(lc);
+    var flatOpts = flattenOptions(car.options);
+    var showLc = hasLeaseConditions(lc) || !!formatTotalCostDisplay(car);
     var showVc = hasVehicleCoreInfo(vc);
-    var showOpt = optEntries.length > 0;
-    var section = document.getElementById('ltTabsSection');
-    var optStandalone = document.getElementById('optionSectionStandalone');
+    var showOpt = flatOpts.length > 0;
 
-    if (!showLc && !showVc && !showOpt) {
-      section.style.display = 'none';
-      return false;
+    var qn = document.getElementById('quickNav');
+    var qnLease = qn.querySelector('[data-qn="lease"]');
+    var qnCore = qn.querySelector('[data-qn="core"]');
+    var qnOpt = qn.querySelector('[data-qn="options"]');
+    qnLease.style.display = showLc ? '' : 'none';
+    qnCore.style.display = showVc ? '' : 'none';
+    qnOpt.style.display = showOpt ? '' : 'none';
+    if (showLc || showVc || showOpt) {
+      qn.hidden = false;
+      qn.classList.remove('is-empty');
+    } else {
+      qn.hidden = true;
+      qn.classList.add('is-empty');
     }
 
-    section.style.display = 'block';
-
-    // 리스승계조건 패널
-    var condHtml = '';
+    // 리스승계조건
+    var lcSec = document.getElementById('lease-condition');
+    var lcBody = document.getElementById('leaseConditionBody');
+    var lcUpd = document.getElementById('lcLastUpdate');
     if (showLc) {
-      condHtml += '<div class="lc-panel-head"><h3>리스승계조건</h3>';
-      if (lc.lastUpdate) condHtml += '<span class="lc-updated">Last Update ' + escapeHtml(lc.lastUpdate) + '</span>';
-      condHtml += '</div>';
+      lcSec.style.display = 'block';
+      var rows = '';
       if (lc.priceInfo || lc.priceNote) {
-        condHtml += '<div class="lc-block"><div class="lc-block-label">가격정보</div><div class="lc-block-value">';
-        if (lc.priceInfo) condHtml += '<strong>' + escapeHtml(lc.priceInfo) + '</strong>';
-        if (lc.priceNote) condHtml += (lc.priceInfo ? '<br><br>' : '') + escapeHtml(lc.priceNote);
-        condHtml += '</div></div>';
+        var priceVal = '';
+        if (lc.priceInfo) priceVal += '<strong>' + escapeHtml(lc.priceInfo) + '</strong>';
+        if (lc.priceNote) priceVal += (lc.priceInfo ? '\n' : '') + escapeHtml(lc.priceNote);
+        rows += '<div class="info-row"><div class="label">가격정보</div><div class="value">' + priceVal + '</div></div>';
       }
       if (lc.initialCost) {
-        condHtml += '<div class="lc-block"><div class="lc-block-label">초기비용</div><div class="lc-block-value">' + escapeHtml(lc.initialCost) + '</div></div>';
+        rows += '<div class="info-row"><div class="label">초기비용</div><div class="value"><strong>' + escapeHtml(lc.initialCost) + '</strong></div></div>';
       }
       if (lc.paymentMethod) {
-        condHtml += '<div class="lc-block"><div class="lc-block-label">납부방식</div><div class="lc-block-value">' + escapeHtml(lc.paymentMethod) + '</div></div>';
+        rows += '<div class="info-row"><div class="label">납부방식</div><div class="value">' + escapeHtml(lc.paymentMethod) + '</div></div>';
+      }
+      var totalDisp = formatTotalCostDisplay(car);
+      if (totalDisp) {
+        rows += '<div class="info-row"><div class="label">총 구입비용</div><div class="value">' + escapeHtml(totalDisp) + '</div></div>';
+      }
+      lcBody.innerHTML = rows || '<div class="empty-mini">등록된 리스승계조건이 없습니다.</div>';
+      if (lc.lastUpdate) {
+        lcUpd.style.display = 'inline';
+        lcUpd.textContent = 'Last Update ' + lc.lastUpdate;
+      } else {
+        lcUpd.style.display = 'none';
       }
     } else {
-      condHtml = '<div class="empty-mini">등록된 리스승계조건이 없습니다.</div>';
+      lcSec.style.display = 'none';
     }
-    document.getElementById('ltPanelConditions').innerHTML = condHtml;
 
-    // 차량핵심정보 패널
-    var coreHtml = '';
+    // 차량핵심정보
+    var coreSec = document.getElementById('core-info');
+    var coreBody = document.getElementById('coreInfoBody');
     if (showVc) {
-      coreHtml += '<div class="lc-panel-head"><h3>차량핵심정보</h3></div>';
-      coreHtml += '<p class="lc-core-intro">현재 보고계신 차량에 대해 꼭 알아둬야 할 정보입니다.</p>';
+      coreSec.style.display = 'block';
+      var coreRows = '';
       if (vc.firstRegistration) {
-        coreHtml += '<div class="lc-kv-row"><div class="lc-kv-label">최초차량등록</div><div class="lc-kv-value">' + escapeHtml(vc.firstRegistration) + '</div></div>';
+        coreRows += '<div class="info-row"><div class="label">최초차량등록</div><div class="value">' + escapeHtml(vc.firstRegistration) + '</div></div>';
       }
       var insText = insuranceHistoryText(vc);
       if (insText) {
-        coreHtml += '<div class="lc-kv-row"><div class="lc-kv-label">보험처리이력</div><div class="lc-kv-value">' + escapeHtml(insText) + '</div></div>';
+        coreRows += '<div class="info-row"><div class="label">보험처리이력</div><div class="value mute">' + escapeHtml(insText) + '</div></div>';
       }
       if (vc.currentStatus) {
-        coreHtml += '<div class="lc-kv-row"><div class="lc-kv-label">현재 차량상태</div><div class="lc-kv-value">' + escapeHtml(vc.currentStatus) + '</div></div>';
+        coreRows += '<div class="info-row"><div class="label">현재 차량상태</div><div class="value mute">' + escapeHtml(vc.currentStatus) + '</div></div>';
       }
       if (vc.statusDetail) {
-        coreHtml += '<div class="lc-core-sub">' + escapeHtml(vc.statusDetail) + '</div>';
+        coreRows += '<div class="info-row"><div class="label">상태 상세</div><div class="value">' + escapeHtml(vc.statusDetail) + '</div></div>';
       }
+      coreBody.innerHTML = coreRows;
     } else {
-      coreHtml = '<div class="empty-mini">등록된 차량핵심정보가 없습니다.</div>';
+      coreSec.style.display = 'none';
     }
-    document.getElementById('ltPanelCore').innerHTML = coreHtml;
 
-    // 옵션 패널
-    document.getElementById('ltPanelOptions').innerHTML = renderOptionGroupsHtml(optEntries);
+    // 옵션
+    var optSec = document.getElementById('option-info');
+    if (showOpt) {
+      optSec.style.display = 'block';
+      document.getElementById('optionGroups').innerHTML = flatOpts.map(function (i) {
+        return '<div class="option-tag">' + escapeHtml(i) + '</div>';
+      }).join('');
+    } else {
+      optSec.style.display = 'none';
+    }
 
-    // 탭 버튼 표시/숨김
-    var tabCond = document.querySelector('[data-lt-tab="conditions"]');
-    var tabCore = document.querySelector('[data-lt-tab="core"]');
-    var tabOpt = document.getElementById('ltTabOptions');
-    tabCond.style.display = showLc ? '' : 'none';
-    tabCore.style.display = showVc ? '' : 'none';
-    tabOpt.style.display = showOpt ? '' : 'none';
-
-    // 첫 활성 탭 선택
-    var firstTab = showLc ? 'conditions' : (showVc ? 'core' : 'options');
-    document.querySelectorAll('.lt-tab').forEach(function (btn) {
-      btn.classList.toggle('active', btn.dataset.ltTab === firstTab);
-    });
-    document.querySelectorAll('.lt-tab-panel').forEach(function (panel) {
-      panel.classList.remove('active');
-    });
-    if (firstTab === 'conditions') document.getElementById('ltPanelConditions').classList.add('active');
-    else if (firstTab === 'core') document.getElementById('ltPanelCore').classList.add('active');
-    else document.getElementById('ltPanelOptions').classList.add('active');
-
-    // 옵션 standalone 섹션 숨김 (탭에서 표시)
-    if (optStandalone) optStandalone.style.display = showOpt ? 'none' : 'none';
-
-    return true;
+    return showLc || showVc || showOpt;
   }
 
-  function initLtTabHandlers() {
-    document.querySelectorAll('.lt-tab').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var tab = btn.dataset.ltTab;
-        document.querySelectorAll('.lt-tab').forEach(function (b) { b.classList.toggle('active', b === btn); });
-        document.getElementById('ltPanelConditions').classList.toggle('active', tab === 'conditions');
-        document.getElementById('ltPanelCore').classList.toggle('active', tab === 'core');
-        document.getElementById('ltPanelOptions').classList.toggle('active', tab === 'options');
-      });
-    });
+  function renderOptionGroupsHtml(optEntries) {
+    var flat = [];
+    optEntries.forEach(function (e) { if (e[1] && e[1].length) flat = flat.concat(e[1]); });
+    if (!flat.length) return '<div class="empty-mini">등록된 옵션 정보가 없습니다.</div>';
+    return flat.map(function (i) { return '<div class="option-tag">' + escapeHtml(i) + '</div>'; }).join('');
   }
 
   function render() {
@@ -1100,51 +1145,43 @@ p { margin:0; }
       document.getElementById('photoCounter').style.display = 'none';
     }
 
-    // 리스승계 탭 (조건 / 핵심정보 / 옵션)
-    var tabsUsed = renderLeaseTabs(v);
+    // 리스승계 앵커 섹션
+    renderLeaseSections(v);
 
-    // 차량 정보 표
+    // 차량 정보
     var brandName = v.brand || (v.name ? v.name.split(' ')[0] : '');
-    document.getElementById('infoTable').innerHTML = `
-      <div class="it"><span class="it-label">브랜드</span><span class="it-value">${brandName}</span></div>
-      <div class="it"><span class="it-label">모델</span><span class="it-value">${formatProductTitle(v)}</span></div>
-      <div class="it"><span class="it-label">차량번호</span><span class="it-value">${v.plate || '-'}</span></div>
-      <div class="it"><span class="it-label">연식</span><span class="it-value">${v.year}년식</span></div>
-      <div class="it"><span class="it-label">주행거리</span><span class="it-value">${kmFmt(v.mileage)}</span></div>
-      <div class="it"><span class="it-label">연료</span><span class="it-value">${v.fuel}</span></div>
-      <div class="it"><span class="it-label">색상</span><span class="it-value">${v.color || '-'}</span></div>
-      <div class="it"><span class="it-label">주차위치</span><span class="it-value">${v.parkLocation || '-'}</span></div>
-      <div class="it"><span class="it-label">등록일</span><span class="it-value">${v.registeredDate || '-'}</span></div>
-      <div class="it"><span class="it-label">상태</span><span class="it-value">${v.status}</span></div>
-    `;
+    var infoRows = [
+      ['차량번호', v.plate || '-'],
+      ['연식', v.year ? (String(v.year).indexOf('년') >= 0 ? v.year : v.year + '년식') : '-'],
+      ['주행거리', kmFmt(v.mileage)],
+      ['연료', v.fuel || '-']
+    ];
+    if (v.color) infoRows.push(['색상', v.color]);
+    if (brandName) infoRows.unshift(['브랜드', brandName]);
+    if (v.status) infoRows.push(['상태', v.status]);
+    document.getElementById('infoTable').innerHTML = infoRows.map(function (r) {
+      return '<div class="info-row"><div class="label">' + r[0] + '</div><div class="value">' + r[1] + '</div></div>';
+    }).join('');
 
-    // 총 구입비용
+    // 총 구입비용 (cost[] 배열이 있을 때만 — 리스승계조건의 총구입비용과 별도)
+    var costSec = document.getElementById('costSection');
     if (v.cost && v.cost.length) {
+      costSec.style.display = 'block';
       const total = v.cost.reduce((s,c) => s + c.value, 0);
       document.getElementById('costTable').innerHTML =
-        v.cost.map(c => `<div class="row"><span class="c-label">${c.label}</span><span class="c-value">${wonFmt(c.value)}</span></div>`).join('') +
-        `<div class="row total"><span class="c-label">총 합계</span><span class="c-value">${wonFmt(total)}</span></div>`;
+        v.cost.map(c => '<div class="info-row"><div class="label">' + c.label + '</div><div class="value">' + wonFmt(c.value) + '</div></div>').join('') +
+        '<div class="info-row total"><div class="label">총 합계</div><div class="value total">' + wonFmt(total) + '</div></div>';
     } else {
-      document.getElementById('costTable').innerHTML = '<div class="row"><span class="c-label">차량가</span><span class="c-value">' + priceFmt(v.price) + '</span></div>';
+      costSec.style.display = 'none';
     }
 
     // 차량 설명
-    var descSec = document.getElementById('descText').closest('.info-section');
+    var descSec = document.getElementById('descSection');
     if (v.description && v.description.trim()) {
       descSec.style.display = 'block';
       document.getElementById('descText').textContent = v.description;
     } else {
       descSec.style.display = 'none';
-    }
-
-    // 옵션
-    var optSec = document.getElementById('optionSectionStandalone');
-    var optEntries = v.options ? Object.entries(v.options).filter(function (e) { return e[1] && e[1].length; }) : [];
-    if (optEntries.length && !tabsUsed) {
-      optSec.style.display = 'block';
-      document.getElementById('optionGroups').innerHTML = renderOptionGroupsHtml(optEntries);
-    } else {
-      optSec.style.display = 'none';
     }
 
     renderPerfSection(v);
@@ -1161,8 +1198,8 @@ p { margin:0; }
     if (v.isEV && v.battery) {
       document.getElementById('batterySection').style.display = 'block';
       document.getElementById('batteryTable').innerHTML = `
-        <div class="it"><span class="it-label">배터리 SOH 측정값</span><span class="it-value">${v.battery.soh}%</span></div>
-        <div class="it"><span class="it-label">배터리 용량</span><span class="it-value">${v.battery.capacity}</span></div>
+        <div class="info-row"><div class="label">배터리 SOH</div><div class="value">${v.battery.soh}%</div></div>
+        <div class="info-row"><div class="label">배터리 용량</div><div class="value">${v.battery.capacity}</div></div>
       `;
       renderDocSection(null, 'batteryDocSlot', v.batteryDocs, {
         icon: '<rect x="2" y="7" width="18" height="10" rx="2"/><line x1="22" y1="11" x2="22" y2="13"/>',
@@ -1181,7 +1218,7 @@ p { margin:0; }
     document.getElementById('vehicleTitle').textContent = formatProductTitle(v);
     document.getElementById('vehicleMeta').textContent = `${v.origin==='domestic'?'국산차':'수입차'} · ${v.name} · ${v.year}년식`;
     document.getElementById('vehiclePrice').textContent = priceFmt(v.price);
-    document.getElementById('vehicleTags').innerHTML = v.tags.map(t => `<span class="utag">${t}</span>`).join('');
+    document.getElementById('vehicleTags').innerHTML = (v.tags || []).map(t => `<span class="utag">${t}</span>`).join('');
     document.getElementById('mobilePrice').textContent = priceFmt(v.price);
 
     // 판매자 정보(오토피아)는 표시하지 않음 — 퍼플리스 고정 연락만
@@ -1224,7 +1261,6 @@ p { margin:0; }
     render();
   }
 
-  initLtTabHandlers();
   bootstrap();
 
   function openQuoteModal() {
@@ -1333,14 +1369,14 @@ p { margin:0; }
 <script src="/js/device-type.js"></script>
 <script src="/js/visit-tracker.js"></script>
 <link rel="stylesheet" href="/css/site-header.css?v=20260710b">
-<link rel="stylesheet" href="/css/category-nav.css?v=20260710b">
+<link rel="stylesheet" href="/css/category-nav.css?v=20260712a">
 <link rel="stylesheet" href="/css/site-page-bg.css?v=20260703d">
 <link rel="stylesheet" href="/css/float-consult.css?v=20260708c">
-<script src="/js/category-nav.js?v=20260708h"></script>
+<script src="/js/category-nav.js?v=20260712a"></script>
 <link rel="stylesheet" href="/css/mobile-menu.css?v=20260710b">
 <script src="/js/mobile-menu.js?v=20260710b"></script>
 <script src="/js/float-consult.js?v=20260708c"></script>
-<link rel="stylesheet" href="/css/site-footer.css?v=20260710c">
+<link rel="stylesheet" href="/css/site-footer.css?v=20260708b">
 <script src="/js/site-footer.js?v=20260708b"></script>
 <link rel="stylesheet" href="/css/floating-quote-banner.css?v=20260704a">
 <script src="/js/floating-quote-banner.js?v=20260704a"></script>

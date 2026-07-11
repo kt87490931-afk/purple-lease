@@ -911,12 +911,22 @@
       dj.photos = [];
     }
 
+    if (payload) {
+      if (payload.plate != null) dj.plate = String(payload.plate || '').trim();
+      if (payload.color != null) dj.color = String(payload.color || '').trim();
+      if (payload.description != null) dj.description = String(payload.description || '').trim();
+      if (payload.options != null) {
+        dj.options = payload.options && typeof payload.options === 'object' ? payload.options : {};
+      }
+    }
+
     var lc = (payload && payload.leaseConditions) || {};
     dj.leaseConditions = {
       priceInfo: String(lc.priceInfo || '').trim(),
       priceNote: String(lc.priceNote || '').trim(),
       initialCost: String(lc.initialCost || '').trim(),
       paymentMethod: String(lc.paymentMethod || '').trim(),
+      totalCost: String(lc.totalCost || '').trim(),
       lastUpdate: String(lc.lastUpdate || '').trim() || formatLeaseTransferDate()
     };
 

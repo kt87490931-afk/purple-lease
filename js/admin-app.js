@@ -136,21 +136,41 @@
   }
 
   function clearLtDetailFields() {
-    ['ltLcPriceInfo', 'ltLcPriceNote', 'ltLcInitialCost', 'ltLcPaymentMethod', 'ltLcLastUpdate',
+    ['ltLcPriceInfo', 'ltLcPriceNote', 'ltLcInitialCost', 'ltLcPaymentMethod', 'ltLcTotalCost', 'ltLcLastUpdate',
       'ltVcFirstReg', 'ltVcInsuranceOwn', 'ltVcInsuranceThird', 'ltVcInsuranceHistory',
-      'ltVcCurrentStatus', 'ltVcStatusDetail'].forEach(function (id) {
+      'ltVcCurrentStatus', 'ltVcStatusDetail', 'ltPlate', 'ltColor', 'ltDescription', 'ltOptions'].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.value = '';
     });
   }
 
-  function fillLtDetailFields(lc, vc) {
+  function optionsToTextarea(options) {
+    if (!options) return '';
+    var flat = [];
+    Object.keys(options).forEach(function (g) {
+      var items = options[g];
+      if (items && items.length) flat = flat.concat(items);
+    });
+    return flat.join('\n');
+  }
+
+  function parseOptionsTextarea(text) {
+    var raw = String(text || '').trim();
+    if (!raw) return {};
+    var items = raw.split(/[\n,]+/).map(function (s) { return s.trim(); }).filter(Boolean);
+    if (!items.length) return {};
+    return { '옵션': items };
+  }
+
+  function fillLtDetailFields(lc, vc, extra) {
     lc = lc || {};
     vc = vc || {};
+    extra = extra || {};
     document.getElementById('ltLcPriceInfo').value = lc.priceInfo || '';
     document.getElementById('ltLcPriceNote').value = lc.priceNote || '';
     document.getElementById('ltLcInitialCost').value = lc.initialCost || '';
     document.getElementById('ltLcPaymentMethod').value = lc.paymentMethod || '';
+    document.getElementById('ltLcTotalCost').value = lc.totalCost || '';
     document.getElementById('ltLcLastUpdate').value = lc.lastUpdate || '';
     document.getElementById('ltVcFirstReg').value = vc.firstRegistration || '';
     document.getElementById('ltVcInsuranceOwn').value = vc.insuranceOwnCount != null ? vc.insuranceOwnCount : '';
@@ -158,15 +178,24 @@
     document.getElementById('ltVcInsuranceHistory').value = vc.insuranceHistory || '';
     document.getElementById('ltVcCurrentStatus').value = vc.currentStatus || '';
     document.getElementById('ltVcStatusDetail').value = vc.statusDetail || '';
+    document.getElementById('ltPlate').value = extra.plate || '';
+    document.getElementById('ltColor').value = extra.color || '';
+    document.getElementById('ltDescription').value = extra.description || '';
+    document.getElementById('ltOptions').value = optionsToTextarea(extra.options);
   }
 
   function readLtDetailFields() {
     return {
+      plate: document.getElementById('ltPlate').value.trim(),
+      color: document.getElementById('ltColor').value.trim(),
+      description: document.getElementById('ltDescription').value.trim(),
+      options: parseOptionsTextarea(document.getElementById('ltOptions').value),
       leaseConditions: {
         priceInfo: document.getElementById('ltLcPriceInfo').value.trim(),
         priceNote: document.getElementById('ltLcPriceNote').value.trim(),
         initialCost: document.getElementById('ltLcInitialCost').value.trim(),
         paymentMethod: document.getElementById('ltLcPaymentMethod').value.trim(),
+        totalCost: document.getElementById('ltLcTotalCost').value.trim(),
         lastUpdate: document.getElementById('ltLcLastUpdate').value.trim()
       },
       vehicleCoreInfo: {
@@ -1579,7 +1608,13 @@
     document.getElementById('ltBrand').value = c.brand || '';
     document.getElementById('ltSegment').value = c.segment || '';
     document.getElementById('ltFuel').value = c.fuel || '';
-    fillLtDetailFields(c.leaseConditions, c.vehicleCoreInfo);
+    var dj = c.detailJson || {};
+    fillLtDetailFields(c.leaseConditions, c.vehicleCoreInfo, {
+      plate: dj.plate || '',
+      color: dj.color || '',
+      description: dj.description || '',
+      options: dj.options || {}
+    });
     openModal('modalLeaseTransfer');
   }
 
@@ -2986,6 +3021,10 @@
           brand: document.getElementById('ltBrand').value.trim(),
           segment: document.getElementById('ltSegment').value.trim(),
           fuel: document.getElementById('ltFuel').value.trim(),
+          plate: detailFields.plate,
+          color: detailFields.color,
+          description: detailFields.description,
+          options: detailFields.options,
           leaseConditions: detailFields.leaseConditions,
           vehicleCoreInfo: detailFields.vehicleCoreInfo
         }, editingLtId);

@@ -88,11 +88,12 @@ p { margin:0; }
 .gallery { position: relative; border-radius: var(--radius-lg); overflow:hidden; background: var(--surface-alt); width:100%; max-width:100%; }
 .gallery-main {
   position: relative;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 16 / 10;
   width: 100%;
   max-width: 100%;
   overflow: hidden;
   background: var(--surface-alt);
+  border-radius: 12px;
 }
 .gallery-main #mainPhoto {
   position: absolute;
@@ -115,47 +116,77 @@ p { margin:0; }
 .gallery-thumbs .gthumb.active { border-color: var(--purple-600); }
 .gallery-thumbs .gthumb img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; display:block; }
 
-/* ============ 섹션 공통 (선/박스 최소화하되, 섹션 전환은 여백으로 충분히 구분) ============ */
-.info-section { padding: 30px 0; border-bottom: 1px solid var(--line-soft); }
-.info-section:first-of-type { padding-top: 26px; }
-.info-section:last-child { border-bottom: none; }
-.info-section-title { display:flex; align-items:center; gap:8px; font-size:15px; font-weight:800; color: var(--ink-900); margin-bottom: 18px; }
-.info-section-title .bar { width:3px; height:13px; background: var(--purple-600); border-radius:2px; }
-.info-section-sub { font-size:12px; color: var(--ink-400); margin-top:-12px; margin-bottom:16px; }
+/* ============ 섹션 공통 (목업 info-row 양식) ============ */
+.info-section { margin-top: 30px; padding: 0 0 8px; scroll-margin-top: 88px; }
+.info-section-title {
+  font-size: 15px; font-weight: 800; color: var(--ink-900);
+  margin-bottom: 12px; padding-left: 10px; border-left: 3px solid var(--purple-600);
+}
+.info-section-title .bar { display: none; }
+.info-section-sub { font-size:12px; color: var(--ink-400); margin-top:-6px; margin-bottom:12px; }
 
-/* 정보 표(테두리 없이 행 구분선만) */
-.info-table { display:grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
-.info-table .it { display:flex; flex-direction:column; gap:3px; }
-.info-table .it .it-label { font-size:11.5px; color: var(--ink-400); }
-.info-table .it .it-value { font-size:13.5px; font-weight:700; color: var(--ink-900); }
+.info-row {
+  display: flex; padding: 12px 0;
+  border-bottom: 1px solid var(--line-soft); font-size: 13.5px;
+}
+.info-row .label { flex: 0 0 130px; font-weight: 700; color: var(--ink-900); }
+.info-row .value { flex: 1; color: var(--ink-900); line-height: 1.6; }
+.info-row .value.mute { color: var(--ink-500); }
+.info-row .value.total { font-weight: 800; color: var(--purple-600); font-size: 15px; }
+.info-row .value strong { color: var(--purple-600); font-weight: 800; }
+.grid-2col { display: grid; grid-template-columns: 1fr 1fr; }
+@media (max-width: 640px) {
+  .grid-2col { grid-template-columns: 1fr; }
+  .info-row .label { flex: 0 0 100px; }
+}
 
-/* 총 구입비용 */
+/* 총 구입비용 — info-row 호환 */
 .cost-table { width:100%; }
-.cost-table .row { display:flex; align-items:center; justify-content:space-between; padding: 10px 0; border-bottom: 1px solid var(--line-soft); font-size: 13.5px; }
-.cost-table .row .c-label { color: var(--ink-500); }
-.cost-table .row .c-value { font-family: var(--font-mono); font-weight:700; color: var(--ink-900); }
-.cost-table .row.total { border-bottom:none; padding-top:13px; }
-.cost-table .row.total .c-label { font-size:14px; font-weight:800; color: var(--ink-900); }
-.cost-table .row.total .c-value { font-size:19px; font-weight:800; background: var(--grad-text); -webkit-background-clip:text; background-clip:text; color:transparent; }
-.cost-note { font-size:11px; color: var(--ink-400); line-height:1.7; margin-top:10px; }
+.cost-table .row, .cost-table .info-row {
+  display: flex; padding: 12px 0;
+  border-bottom: 1px solid var(--line-soft); font-size: 13.5px;
+}
+.cost-table .c-label, .cost-table .label { flex: 0 0 130px; font-weight: 700; color: var(--ink-900); }
+.cost-table .c-value, .cost-table .value { flex: 1; font-family: var(--font-mono); font-weight: 700; color: var(--ink-900); }
+.cost-table .row.total .c-label, .cost-table .info-row.total .label { font-weight: 800; }
+.cost-table .row.total .c-value, .cost-table .info-row.total .value {
+  font-size: 15px; font-weight: 800; color: var(--purple-600); font-family: inherit;
+}
+.notice-box, .cost-note {
+  font-size: 12px; color: var(--ink-500); line-height: 1.7;
+  background: var(--surface-alt); border-radius: 8px; padding: 12px 14px; margin-top: 10px;
+}
 
 /* 차량 설명 */
-.desc-text { font-size: 13.5px; color: var(--ink-700); line-height:1.85; white-space: pre-line; }
+.desc-text, .free-text { font-size: 13.5px; color: var(--ink-900); line-height:1.8; white-space: pre-line; }
 
-/* 옵션 그룹 (칩 — 컬러 절제) */
+/* 옵션 태그 그리드 */
+.option-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+@media (max-width: 860px) { .option-grid { grid-template-columns: 1fr 1fr; } }
+.option-tag {
+  font-size: 12.5px; font-weight: 600; color: var(--ink-900);
+  background: var(--surface-alt); border: 1px solid var(--line-soft);
+  border-radius: 8px; padding: 10px 12px; text-align: center;
+}
 .opt-group { margin-bottom: 14px; }
-.opt-group:last-child { margin-bottom:0; }
 .opt-group-label { font-size:12px; font-weight:700; color: var(--ink-500); margin-bottom:8px; }
 .opt-chips { display:flex; flex-wrap:wrap; gap:7px; }
 .opt-chip { font-size:12px; font-weight:600; color: var(--ink-700); background: var(--surface); border:1px solid var(--line); padding:6px 11px; border-radius:100px; }
 
-/* 성능점검/하체사진/배터리 — 단순 카드 */
+/* 성능점검/하체사진/배터리 */
+.perf-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 18px; border-radius: 8px;
+  border: 1.5px solid var(--purple-600); color: var(--purple-600);
+  font-size: 13px; font-weight: 700; text-decoration: none; background: #fff; cursor: pointer;
+  font-family: inherit;
+}
+.perf-btn:hover { background: var(--purple-50); }
 .simple-doc-card { display:flex; align-items:center; gap:12px; padding: 16px; background: var(--surface); border-radius: var(--radius-md); cursor:pointer; }
 .simple-doc-card svg { width:26px; height:26px; color: var(--ink-500); flex-shrink:0; }
 .simple-doc-card .sd-title { font-size:13.5px; font-weight:700; color: var(--ink-900); }
 .simple-doc-card .sd-sub { font-size:11.5px; color: var(--ink-400); margin-top:1px; }
 .simple-doc-card .sd-arrow { margin-left:auto; color: var(--ink-400); }
-
 .empty-mini { text-align:center; padding: 28px 0; color: var(--ink-400); font-size:12.5px; }
 
 /* ============ 사이드 — 가격/판매자/액션 ============ */
@@ -164,14 +195,21 @@ p { margin:0; }
 .status-pill { font-size:11px; font-weight:700; padding:3px 9px; border-radius:5px; }
 .status-pill.selling { background: var(--purple-100); color: var(--purple-600); }
 .status-pill.origin { background: var(--surface-alt); color: var(--ink-700); }
-.price-box h1 { font-size: 19px; line-height:1.4; margin-bottom: 6px; }
-.price-box .p-meta { font-size:12.5px; color: var(--ink-500); margin-bottom: 14px; }
-.price-box .p-amount { font-family: var(--font-mono); font-size: 28px; font-weight: 800; color: var(--navy-900); }
-.tag-row { display:flex; gap:6px; flex-wrap:wrap; margin-top:12px; }
-.tag-row .utag { font-size:11px; font-weight:700; color: var(--ink-500); background: var(--surface); padding:4px 9px; border-radius:5px; }
+.price-box h1 { font-size: 20px; line-height:1.4; margin-bottom: 4px; font-weight: 800; }
+.price-box .p-meta { font-size:13px; color: var(--ink-500); margin-bottom: 14px; }
+.price-box .p-amount { font-family: var(--font-mono); font-size: 26px; font-weight: 800; color: var(--navy-900); margin-bottom: 10px; }
+.tag-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom: 18px; }
+.tag-row .utag {
+  font-size:11.5px; font-weight:700; color: var(--purple-600);
+  background: #F4EEFC; padding:4px 9px; border-radius:6px;
+}
 
 .seller-box { display:flex; align-items:center; gap:11px; padding: 14px 0; margin-bottom: 16px; }
-.seller-avatar { width:42px; height:42px; border-radius:50%; background: var(--surface-alt); display:flex; align-items:center; justify-content:center; font-weight:800; color: var(--ink-400); flex-shrink:0; }
+.seller-avatar {
+  width:34px; height:34px; border-radius:50%;
+  background: var(--grad-main); color:#fff;
+  display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; flex-shrink:0;
+}
 .seller-info .s-name { font-size:13.5px; font-weight:700; color: var(--ink-900); }
 .seller-info .s-phone { font-size:12px; color: var(--ink-500); font-family: var(--font-mono); }
 
@@ -378,15 +416,15 @@ p { margin:0; }
 
         <!-- 차량 정보 -->
         <section class="info-section">
-          <div class="info-section-title"><span class="bar"></span>차량 정보</div>
-          <div class="info-table" id="infoTable"></div>
+          <div class="info-section-title">차량 정보</div>
+          <div class="grid-2col" id="infoTable"></div>
         </section>
 
         <!-- 총 구입비용 -->
         <section class="info-section">
-          <div class="info-section-title"><span class="bar"></span>총 구입비용</div>
+          <div class="info-section-title">총 구입비용</div>
           <div class="cost-table" id="costTable"></div>
-          <div class="cost-note">
+          <div class="notice-box cost-note">
             취득세는 차량금액 기준 7.5%로 자동 계산되며, 전기차는 1,400,000원 감면이 자동 반영됩니다.<br>
             취득세와 자동차보험료를 제외한 모든 비용은 현금영수증 또는 세금계산서로 발행됩니다.<br>
             취득세는 영수증을 발급하며 남는 금액은 매수인에게 돌려드립니다.
@@ -395,31 +433,31 @@ p { margin:0; }
 
         <!-- 차량 설명 -->
         <section class="info-section">
-          <div class="info-section-title"><span class="bar"></span>차량 설명</div>
-          <div class="desc-text" id="descText"></div>
+          <div class="info-section-title">차량 설명</div>
+          <div class="desc-text free-text" id="descText"></div>
         </section>
 
         <!-- 옵션 -->
         <section class="info-section">
-          <div class="info-section-title"><span class="bar"></span>옵션</div>
-          <div id="optionGroups"></div>
+          <div class="info-section-title">옵션</div>
+          <div class="option-grid" id="optionGroups"></div>
         </section>
 
         <!-- 성능점검기록부 / 하체사진 — 등록된 자료가 없으면 섹션 전체를 숨깁니다 -->
         <section class="info-section" id="perfDocSection">
-          <div class="info-section-title"><span class="bar"></span>성능점검기록부</div>
+          <div class="info-section-title">성능점검기록부</div>
           <div id="perfDocSlot"></div>
         </section>
 
         <section class="info-section" id="underbodySection">
-          <div class="info-section-title"><span class="bar"></span>하체 사진</div>
+          <div class="info-section-title">하체 사진</div>
           <div id="underbodySlot"></div>
         </section>
 
         <!-- 배터리 정보 (전기/하이브리드 차량에서만 표시) -->
         <section class="info-section" id="batterySection" style="display:none;">
-          <div class="info-section-title"><span class="bar"></span>배터리 정보</div>
-          <div class="info-table" id="batteryTable" style="margin-bottom:14px;"></div>
+          <div class="info-section-title">배터리 정보</div>
+          <div class="grid-2col" id="batteryTable" style="margin-bottom:14px;"></div>
           <div id="batteryDocSlot"></div>
         </section>
 
@@ -819,26 +857,21 @@ p { margin:0; }
     if (section) section.style.display = hasAny ? 'block' : 'none';
     if (!hasAny) { slot.innerHTML = ''; return; }
 
-    var html = docs.map(function (docUrl, idx) {
-      return '<div class="simple-doc-card" data-docs=\'' + JSON.stringify([docUrl]) + '\' data-title="성능점검기록부">' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1z"/><rect x="5" y="5" width="14" height="16" rx="2"/></svg>' +
-        '<div><div class="sd-title">성능보기</div><div class="sd-sub">성능점검기록부 (' + (idx + 1) + ')</div></div>' +
-        '<svg class="sd-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>';
-    }).join('');
-
+    var html = '';
+    if (docs.length) {
+      html += '<button type="button" class="perf-btn" id="btnPerfView">성능보기 →</button>';
+    }
     html += links.map(function (url) {
-      return '<a class="simple-doc-card" href="' + url + '" target="_blank" rel="noopener noreferrer" style="text-decoration:none;color:inherit;">' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1z"/><rect x="5" y="5" width="14" height="16" rx="2"/></svg>' +
-        '<div><div class="sd-title">성능보기</div><div class="sd-sub">성능점검기록부 (외부)</div></div>' +
-        '<svg class="sd-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></a>';
+      return '<a class="perf-btn" href="' + url + '" target="_blank" rel="noopener noreferrer" style="margin-left:8px;">성능보기 →</a>';
     }).join('');
 
     slot.innerHTML = html;
-    slot.querySelectorAll('.simple-doc-card[data-docs]').forEach(function (card) {
-      card.addEventListener('click', function () {
-        openDocModal(JSON.parse(card.dataset.docs), card.dataset.title);
+    var btn = document.getElementById('btnPerfView');
+    if (btn && docs.length) {
+      btn.addEventListener('click', function () {
+        openDocModal(docs, '성능점검기록부');
       });
-    });
+    }
   }
 
   /* ---- 모달 컨트롤 ---- */
@@ -917,29 +950,31 @@ p { margin:0; }
       document.getElementById('photoCounter').style.display = 'none';
     }
 
-    // 차량 정보 표
+    // 차량 정보 (목업 info-row 2열)
     var brandName = v.brand || (v.name ? v.name.split(' ')[0] : '');
-    document.getElementById('infoTable').innerHTML = `
-      <div class="it"><span class="it-label">브랜드</span><span class="it-value">${brandName}</span></div>
-      <div class="it"><span class="it-label">모델</span><span class="it-value">${formatProductTitle(v)}</span></div>
-      <div class="it"><span class="it-label">차량번호</span><span class="it-value">${v.plate || '-'}</span></div>
-      <div class="it"><span class="it-label">연식</span><span class="it-value">${v.year}년식</span></div>
-      <div class="it"><span class="it-label">주행거리</span><span class="it-value">${kmFmt(v.mileage)}</span></div>
-      <div class="it"><span class="it-label">연료</span><span class="it-value">${v.fuel}</span></div>
-      <div class="it"><span class="it-label">색상</span><span class="it-value">${v.color || '-'}</span></div>
-      <div class="it"><span class="it-label">주차위치</span><span class="it-value">${v.parkLocation || '-'}</span></div>
-      <div class="it"><span class="it-label">등록일</span><span class="it-value">${v.registeredDate || '-'}</span></div>
-      <div class="it"><span class="it-label">상태</span><span class="it-value">${v.status}</span></div>
-    `;
+    var infoRows = [
+      ['브랜드', brandName || '-'],
+      ['차량번호', v.plate || '-'],
+      ['연식', (v.year ? v.year + '년식' : '-')],
+      ['주행거리', kmFmt(v.mileage)],
+      ['연료', v.fuel || '-'],
+      ['색상', v.color || '-'],
+      ['주차위치', v.parkLocation || '-', true],
+      ['상태', v.status || '-']
+    ];
+    if (v.registeredDate) infoRows.splice(6, 0, ['등록일', v.registeredDate]);
+    document.getElementById('infoTable').innerHTML = infoRows.map(function (r) {
+      return '<div class="info-row"><div class="label">' + r[0] + '</div><div class="value' + (r[2] ? ' mute' : '') + '">' + r[1] + '</div></div>';
+    }).join('');
 
     // 총 구입비용
     if (v.cost && v.cost.length) {
       const total = v.cost.reduce((s,c) => s + c.value, 0);
       document.getElementById('costTable').innerHTML =
-        v.cost.map(c => `<div class="row"><span class="c-label">${c.label}</span><span class="c-value">${wonFmt(c.value)}</span></div>`).join('') +
-        `<div class="row total"><span class="c-label">총 합계</span><span class="c-value">${wonFmt(total)}</span></div>`;
+        v.cost.map(c => '<div class="info-row"><div class="label">' + c.label + '</div><div class="value">' + wonFmt(c.value) + '</div></div>').join('') +
+        '<div class="info-row total"><div class="label">총 합계</div><div class="value total">' + wonFmt(total) + '</div></div>';
     } else {
-      document.getElementById('costTable').innerHTML = '<div class="row"><span class="c-label">차량가</span><span class="c-value">' + priceFmt(v.price) + '</span></div>';
+      document.getElementById('costTable').innerHTML = '<div class="info-row"><div class="label">차량금액</div><div class="value">' + priceFmt(v.price) + '</div></div>';
     }
 
     // 차량 설명
@@ -951,17 +986,20 @@ p { margin:0; }
       descSec.style.display = 'none';
     }
 
-    // 옵션
+    // 옵션 — flat 태그 그리드
     var optSec = document.getElementById('optionGroups').closest('.info-section');
-    var optEntries = v.options ? Object.entries(v.options).filter(function (e) { return e[1] && e[1].length; }) : [];
-    if (optEntries.length) {
+    var flatOpts = [];
+    if (v.options) {
+      Object.keys(v.options).forEach(function (group) {
+        var items = v.options[group];
+        if (items && items.length) flatOpts = flatOpts.concat(items);
+      });
+    }
+    if (flatOpts.length) {
       optSec.style.display = 'block';
-      document.getElementById('optionGroups').innerHTML = optEntries.map(([group, items]) => `
-        <div class="opt-group">
-          <div class="opt-group-label">${group}</div>
-          <div class="opt-chips">${items.map(i => `<span class="opt-chip">${i}</span>`).join('')}</div>
-        </div>
-      `).join('');
+      document.getElementById('optionGroups').innerHTML = flatOpts.map(function (i) {
+        return '<div class="option-tag">' + i + '</div>';
+      }).join('');
     } else {
       optSec.style.display = 'none';
     }
@@ -980,8 +1018,8 @@ p { margin:0; }
     if (v.isEV && v.battery) {
       document.getElementById('batterySection').style.display = 'block';
       document.getElementById('batteryTable').innerHTML = `
-        <div class="it"><span class="it-label">배터리 SOH 측정값</span><span class="it-value">${v.battery.soh}%</span></div>
-        <div class="it"><span class="it-label">배터리 용량</span><span class="it-value">${v.battery.capacity}</span></div>
+        <div class="info-row"><div class="label">배터리 SOH</div><div class="value">${v.battery.soh}%</div></div>
+        <div class="info-row"><div class="label">배터리 용량</div><div class="value">${v.battery.capacity}</div></div>
       `;
       renderDocSection(null, 'batteryDocSlot', v.batteryDocs, {
         icon: '<rect x="2" y="7" width="18" height="10" rx="2"/><line x1="22" y1="11" x2="22" y2="13"/>',
@@ -1000,7 +1038,7 @@ p { margin:0; }
     document.getElementById('vehicleTitle').textContent = formatProductTitle(v);
     document.getElementById('vehicleMeta').textContent = `${v.origin==='domestic'?'국산차':'수입차'} · ${v.name} · ${v.year}년식`;
     document.getElementById('vehiclePrice').textContent = priceFmt(v.price);
-    document.getElementById('vehicleTags').innerHTML = v.tags.map(t => `<span class="utag">${t}</span>`).join('');
+    document.getElementById('vehicleTags').innerHTML = (v.tags || []).map(t => `<span class="utag">${t}</span>`).join('');
     document.getElementById('mobilePrice').textContent = priceFmt(v.price);
 
     // 판매자 정보(오토피아)는 표시하지 않음 — 퍼플리스 고정 연락만
