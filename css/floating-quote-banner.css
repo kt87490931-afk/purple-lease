@@ -186,8 +186,9 @@
   text-align: center;
   border: 1.4px solid var(--pa-line);
   border-radius: 8px;
-  padding: 7px 0;
-  font-size: 12px;
+  padding: 7px 2px;
+  font-size: 11.5px;
+  line-height: 1.25;
   color: var(--pa-sub);
   font-weight: 500;
   cursor: pointer;

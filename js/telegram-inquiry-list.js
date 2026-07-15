@@ -81,7 +81,12 @@ async function sbCountUnread(table) {
 }
 
 function summarizeGeneral(row) {
+  var ct = String(row.consult_type || '').trim();
+  var consultLabel = '리스·렌트';
+  if (ct === 'paid_transfer') consultLabel = '완납승계';
+  else if (ct === 'used_car') consultLabel = '중고차';
   return [
+    esc(consultLabel),
     esc(row.brand || row.car_type || '-'),
     esc(row.usage_method || row.message || '-'),
     esc(Formatter.formatSourcePage(row.source_page))

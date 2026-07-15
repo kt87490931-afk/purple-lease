@@ -662,7 +662,7 @@
     if (checkAll) checkAll.checked = false;
 
     if (!inquiryData.length) {
-      body.innerHTML = '<tr><td colspan="7"><div class="empty-row">접수된 견적문의가 없습니다.</div></td></tr>';
+      body.innerHTML = '<tr><td colspan="8"><div class="empty-row">접수된 견적문의가 없습니다.</div></td></tr>';
       return;
     }
 
@@ -671,6 +671,7 @@
         '<td style="text-align:center;"><input type="checkbox" class="inquiry-check" value="' + row.id + '" aria-label="선택"></td>' +
         '<td class="num-cell">' + row.date + '</td>' +
         '<td class="num-cell">' + row.time + '</td>' +
+        '<td><span class="chip">' + (row.consultTypeLabel || '리스·렌트') + '</span></td>' +
         '<td>' + row.brand + '</td>' +
         '<td>' + row.usageMethod + '</td>' +
         '<td class="title-cell">' + row.name + '</td>' +

@@ -42,6 +42,12 @@
           '<input class="pa-field" id="paName" type="text" placeholder="성함 *" autocomplete="name">' +
           '<input class="pa-field" id="paCar" type="text" placeholder="차종">' +
           '<input class="pa-field" id="paPhone" type="tel" placeholder="연락처 * ex) 01012341234" autocomplete="tel">' +
+          '<div class="pa-label-row">상담유형</div>' +
+          '<div class="pa-radio-group" id="paConsultTypeGroup">' +
+            '<label class="pa-radio checked"><input type="radio" name="paConsultType" value="lease_rent" checked>리스·렌트</label>' +
+            '<label class="pa-radio"><input type="radio" name="paConsultType" value="paid_transfer">완납승계</label>' +
+            '<label class="pa-radio"><input type="radio" name="paConsultType" value="used_car">중고차</label>' +
+          '</div>' +
           '<div class="pa-label-row">견적안내방법</div>' +
           '<div class="pa-radio-group" id="paContactGroup">' +
             '<label class="pa-radio checked"><input type="radio" name="paContact" value="전화" checked>전화</label>' +
@@ -142,8 +148,17 @@
   }
 
   function getSelectedContactMethod(floatEl) {
-    var checked = floatEl.querySelector('.pa-radio.checked input[name="paContact"]');
+    var checked = floatEl.querySelector('#paContactGroup .pa-radio.checked input[name="paContact"]')
+      || floatEl.querySelector('input[name="paContact"]:checked');
     return checked ? checked.value : '전화';
+  }
+
+  function getSelectedConsultType(floatEl) {
+    var checked = floatEl.querySelector('#paConsultTypeGroup .pa-radio.checked input[name="paConsultType"]')
+      || floatEl.querySelector('input[name="paConsultType"]:checked');
+    var v = checked ? checked.value : 'lease_rent';
+    if (v === 'paid_transfer' || v === 'used_car' || v === 'lease_rent') return v;
+    return 'lease_rent';
   }
 
   function applyQuickLinks(settings) {
@@ -183,12 +198,14 @@
       floatEl.style.display = 'none';
     });
 
-    floatEl.querySelectorAll('.pa-radio').forEach(function (label) {
-      label.addEventListener('click', function () {
-        floatEl.querySelectorAll('.pa-radio').forEach(function (l) { l.classList.remove('checked'); });
-        label.classList.add('checked');
-        var input = label.querySelector('input');
-        if (input) input.checked = true;
+    floatEl.querySelectorAll('.pa-radio-group').forEach(function (group) {
+      group.querySelectorAll('.pa-radio').forEach(function (label) {
+        label.addEventListener('click', function () {
+          group.querySelectorAll('.pa-radio').forEach(function (l) { l.classList.remove('checked'); });
+          label.classList.add('checked');
+          var input = label.querySelector('input');
+          if (input) input.checked = true;
+        });
       });
     });
 
@@ -203,6 +220,7 @@
     var phone = (document.getElementById('paPhone').value || '').trim();
     var consent = document.getElementById('paConsent').checked;
     var contactMethod = getSelectedContactMethod(floatEl);
+    var consultType = getSelectedConsultType(floatEl);
 
     if (!name) {
       alert('성함을 입력해 주세요.');
@@ -233,6 +251,7 @@
         phone: phone,
         brand: car,
         usage_method: contactMethod,
+        consult_type: consultType,
         source_page: 'float-banner:' + getSourcePage()
       });
       alert('무료 견적 신청이 접수되었습니다.\n담당 플래너가 곧 연락드리겠습니다.');
@@ -240,6 +259,15 @@
       document.getElementById('paCar').value = '';
       document.getElementById('paPhone').value = '';
       document.getElementById('paConsent').checked = true;
+      var typeGroup = floatEl.querySelector('#paConsultTypeGroup');
+      if (typeGroup) {
+        typeGroup.querySelectorAll('.pa-radio').forEach(function (l) {
+          var on = l.querySelector('input') && l.querySelector('input').value === 'lease_rent';
+          l.classList.toggle('checked', on);
+          var inp = l.querySelector('input');
+          if (inp) inp.checked = on;
+        });
+      }
     } catch (err) {
       console.warn('[floating-quote-banner] submit failed:', err);
       alert('접수 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');

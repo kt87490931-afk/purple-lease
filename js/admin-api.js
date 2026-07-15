@@ -1421,11 +1421,18 @@
   }
 
   function mapInquiryRow(r) {
+    var ct = String(r.consult_type || '').trim();
+    var consultTypeLabel = '리스·렌트';
+    if (ct === 'paid_transfer') consultTypeLabel = '완납승계';
+    else if (ct === 'used_car') consultTypeLabel = '중고차';
+    else if (ct && ct !== 'lease_rent') consultTypeLabel = ct;
     return {
       id: r.id,
       date: fmtDate(r.created_at),
       time: fmtTime(r.created_at),
       brand: r.brand || r.car_type || '',
+      consultType: ct || 'lease_rent',
+      consultTypeLabel: consultTypeLabel,
       usageMethod: r.usage_method || r.message || '',
       name: r.name,
       phone: r.phone,

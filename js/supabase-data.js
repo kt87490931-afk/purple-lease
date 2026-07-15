@@ -668,11 +668,14 @@
   async function submitInquiry(payload) {
     var client = getClient();
     if (!client) throw new Error('Supabase not configured');
+    var consultType = String(payload.consult_type || payload.consultType || 'lease_rent').trim();
+    if (consultType !== 'paid_transfer' && consultType !== 'used_car') consultType = 'lease_rent';
     var row = {
       name: payload.name,
       phone: payload.phone,
       brand: payload.brand || '',
       usage_method: payload.usage_method || '',
+      consult_type: consultType,
       car_type: payload.brand || payload.car_type || '',
       message: payload.usage_method || payload.message || '',
       source_page: payload.source_page || 'index',

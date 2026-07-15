@@ -59,8 +59,14 @@ function line(label, value) {
 function formatGeneralInquiry(record) {
   var brand = record.brand || record.car_type || '';
   var usage = record.usage_method || record.message || '';
+  var ct = String(record.consult_type || '').trim();
+  var consultLabel = '리스·렌트';
+  if (ct === 'paid_transfer') consultLabel = '완납승계';
+  else if (ct === 'used_car') consultLabel = '중고차';
+  else if (ct && ct !== 'lease_rent') consultLabel = ct;
   return (
     line('접수경로', formatSourcePage(record.source_page)) +
+    line('상담유형', consultLabel) +
     line('브랜드', brand) +
     line('이용방식', usage) +
     line('성함', record.name) +
