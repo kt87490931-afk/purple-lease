@@ -130,7 +130,8 @@
       var upMsg = (up.error.message || String(up.error));
       throw new Error('사진 DB 저장 실패: ' + upMsg);
     }
-    return { url: urls[0] || thumb, photos: photos, thumb: thumb };
+    // 구버전 어드민 호환: 문자열 URL 반환
+    return urls[0] || thumb;
   }
 
   async function uploadBlob(blob, storagePath) {
@@ -820,12 +821,24 @@
 
   async function findUsedCarRow(carId) {
     if (carId == null || carId === '') return null;
-    var res = await db().from('used_cars')
+    var key = String(carId).trim();
+    if (!key) return null;
+
+    if (/^\d+$/.test(key)) {
+      var byListing = await db().from('used_cars')
+        .select('id,listing_id,sync_source,detail_json,detail_slug,thumb_url,photo_count')
+        .eq('listing_id', parseInt(key, 10))
+        .maybeSingle();
+      if (byListing.error) throw byListing.error;
+      if (byListing.data) return byListing.data;
+    }
+
+    var byId = await db().from('used_cars')
       .select('id,listing_id,sync_source,detail_json,detail_slug,thumb_url,photo_count')
-      .or('listing_id.eq.' + carId + ',id.eq.' + carId)
+      .eq('id', key)
       .maybeSingle();
-    if (res.error) throw res.error;
-    return res.data || null;
+    if (byId.error) throw byId.error;
+    return byId.data || null;
   }
 
   async function saveUsedcar(payload, editingId) {
@@ -973,12 +986,25 @@
 
   async function findLeaseTransferRow(carId) {
     if (carId == null || carId === '') return null;
-    var res = await db().from('lease_transfers')
+    var key = String(carId).trim();
+    if (!key) return null;
+
+    // listing_id 우선 (숫자). id(UUID)와 or로 섞으면 PostgREST 타입 오류로 조회가 실패할 수 있음.
+    if (/^\d+$/.test(key)) {
+      var byListing = await db().from('lease_transfers')
+        .select('id,listing_id,detail_json,detail_slug,thumb_url,photo_count')
+        .eq('listing_id', parseInt(key, 10))
+        .maybeSingle();
+      if (byListing.error) throw byListing.error;
+      if (byListing.data) return byListing.data;
+    }
+
+    var byId = await db().from('lease_transfers')
       .select('id,listing_id,detail_json,detail_slug,thumb_url,photo_count')
-      .or('listing_id.eq.' + carId + ',id.eq.' + carId)
+      .eq('id', key)
       .maybeSingle();
-    if (res.error) throw res.error;
-    return res.data || null;
+    if (byId.error) throw byId.error;
+    return byId.data || null;
   }
 
   function formatLeaseTransferDate(d) {

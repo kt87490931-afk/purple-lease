@@ -252,7 +252,13 @@
   }
 
   function openModal(id) { document.getElementById(id).classList.add('open'); }
-  function closeModal(id) { document.getElementById(id).classList.remove('open'); editingId = null; }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+    editingId = null;
+    if (id === 'modalLeaseTransfer') {
+      editingLtId = null;
+    }
+  }
 
   function updateKpis() {
     var kpiInquiry = document.getElementById('kpiInquiry');
@@ -3025,7 +3031,7 @@
         renderUsedcarsTable();
       } catch (err) { showError(err); }
     });
-    document.getElementById('btnUploadUcPhotos').addEventListener('click', async function () {
+    document.getElementById('btnUploadUcPhotos') && document.getElementById('btnUploadUcPhotos').addEventListener('click', async function () {
       var fileInput = document.getElementById('ucPhotosFiles');
       if (!fileInput.files || !fileInput.files.length) {
         alert('업로드할 사진을 선택해 주세요.');
@@ -3096,7 +3102,7 @@
         renderLeaseTransfersTable();
       } catch (err) { showError(err); }
     });
-    document.getElementById('btnUploadLtPhotos').addEventListener('click', async function () {
+    document.getElementById('btnUploadLtPhotos') && document.getElementById('btnUploadLtPhotos').addEventListener('click', async function () {
       var fileInput = document.getElementById('ltPhotosFiles');
       if (!fileInput || !fileInput.files || !fileInput.files.length) {
         alert('업로드할 사진을 선택해 주세요.');
