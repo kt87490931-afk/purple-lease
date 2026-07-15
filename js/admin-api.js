@@ -1858,6 +1858,10 @@
       }
     }
     c.cta_new_tab = !!c.cta_new_tab;
+    // paid-transfer-page.js 미로드 시에도 bottom 이미지가 저장/로드에서 빠지지 않게 유지
+    if (raw && raw.bottom && typeof raw.bottom === 'object') {
+      c.bottom = raw.bottom;
+    }
     return c;
   }
 

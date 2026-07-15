@@ -920,7 +920,7 @@ body.admin-nav-open { overflow:hidden; }
       <section class="panel" id="panel-paid-transfer">
         <div class="seo-basic-panel" style="max-width:860px">
           <p class="seo-note" style="margin-bottom:16px;">
-            <a href="/paid-transfer" target="_blank" rel="noopener">/paid-transfer</a> 완납승계 랜딩(상단 ABOUT + 하단 섹션)의 텍스트·이미지를 한 화면에서 수정합니다. 하단은 기존 페이지 아래에 추가됩니다.
+            <a href="/paid-transfer" target="_blank" rel="noopener">/paid-transfer</a> 완납승계 랜딩(상단 ABOUT + 하단 섹션)의 텍스트·이미지를 한 화면에서 수정합니다. 이미지는 업로드 후 자동 저장되며, 공개 페이지에 바로 반영됩니다.
           </p>
           <div class="form-row"><label for="ptEyebrow">상단 라벨 (eyebrow)</label><input type="text" id="ptEyebrow" class="inline-edit-input" placeholder="About"></div>
           <div class="form-grid-2">
@@ -965,17 +965,17 @@ body.admin-nav-open { overflow:hidden; }
           <div class="form-row"><label>좌측 eyebrow</label><input type="text" id="ptSvcSideEyebrow" class="inline-edit-input"></div>
           <div class="form-row"><label>좌측 제목</label><textarea id="ptSvcSideHeading" rows="2"></textarea></div>
           <div class="form-row"><label>좌측 본문 (**굵게** 가능)</label><textarea id="ptSvcSideCopy" rows="5"></textarea></div>
-          <div class="form-row"><label>이미지 URL</label><input type="text" id="ptSvcImg" class="inline-edit-input" placeholder="https://..."><div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;"><input type="file" id="ptSvcImgFile" accept="image/*"><button type="button" class="btn btn-outline btn-sm" data-pt-upload="ptSvcImg">업로드</button></div></div>
+          <div class="form-row"><label>이미지 URL</label><input type="text" id="ptSvcImg" class="inline-edit-input" placeholder="https://..."><div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;"><input type="file" id="ptSvcImgFile" accept="image/*"><button type="button" class="btn btn-outline btn-sm" data-pt-upload="ptSvcImg">업로드</button></div><img id="ptSvcImgPreview" class="seo-og-preview pt-admin-img-preview" alt="미리보기" hidden></div>
           <div class="form-row"><label>이미지 대체텍스트</label><input type="text" id="ptSvcImgAlt" class="inline-edit-input"></div>
 
           <div class="section-label" style="margin-top:24px;">하단 섹션 2 · 수수료 ZERO · 신뢰</div>
-          <div class="form-row"><label>이미지 URL</label><input type="text" id="ptZeroImg" class="inline-edit-input"><div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;"><input type="file" id="ptZeroImgFile" accept="image/*"><button type="button" class="btn btn-outline btn-sm" data-pt-upload="ptZeroImg">업로드</button></div></div>
+          <div class="form-row"><label>이미지 URL</label><input type="text" id="ptZeroImg" class="inline-edit-input"><div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;"><input type="file" id="ptZeroImgFile" accept="image/*"><button type="button" class="btn btn-outline btn-sm" data-pt-upload="ptZeroImg">업로드</button></div><img id="ptZeroImgPreview" class="seo-og-preview pt-admin-img-preview" alt="미리보기" hidden></div>
           <div class="form-row"><label>이미지 대체텍스트</label><input type="text" id="ptZeroImgAlt" class="inline-edit-input"></div>
           <div class="form-row"><label>eyebrow</label><input type="text" id="ptZeroEyebrow" class="inline-edit-input"></div>
           <div class="form-row"><label>강조 타이틀 (예: ZERO!)</label><input type="text" id="ptZeroTitle" class="inline-edit-input"></div>
           <div class="form-row"><label>본문 (**굵게** 가능)</label><textarea id="ptZeroCopy" rows="4"></textarea></div>
           <div class="form-row"><label>신뢰 eyebrow</label><input type="text" id="ptTrustEyebrow" class="inline-edit-input"></div>
-          <div class="form-row"><label>신뢰 이미지 URL</label><input type="text" id="ptTrustImg" class="inline-edit-input"><div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;"><input type="file" id="ptTrustImgFile" accept="image/*"><button type="button" class="btn btn-outline btn-sm" data-pt-upload="ptTrustImg">업로드</button></div></div>
+          <div class="form-row"><label>신뢰 이미지 URL</label><input type="text" id="ptTrustImg" class="inline-edit-input"><div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;"><input type="file" id="ptTrustImgFile" accept="image/*"><button type="button" class="btn btn-outline btn-sm" data-pt-upload="ptTrustImg">업로드</button></div><img id="ptTrustImgPreview" class="seo-og-preview pt-admin-img-preview" alt="미리보기" hidden></div>
           <div class="form-row"><label>신뢰 이미지 대체텍스트</label><input type="text" id="ptTrustImgAlt" class="inline-edit-input"></div>
           <div class="form-grid-2">
             <div class="form-row"><label>신뢰1 설명</label><input type="text" id="ptTrust1Desc" class="inline-edit-input"></div>
@@ -1007,21 +1007,21 @@ body.admin-nav-open { overflow:hidden; }
 
           <div class="section-label" style="margin-top:24px;">하단 섹션 4 · 비교 3카드</div>
           <div class="form-row"><label>카드1 제목</label><input type="text" id="ptCmp1Title" class="inline-edit-input"></div>
-          <div class="form-row"><label>카드1 이미지</label><input type="text" id="ptCmp1Img" class="inline-edit-input"><div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;"><input type="file" id="ptCmp1ImgFile" accept="image/*"><button type="button" class="btn btn-outline btn-sm" data-pt-upload="ptCmp1Img">업로드</button></div></div>
+          <div class="form-row"><label>카드1 이미지</label><input type="text" id="ptCmp1Img" class="inline-edit-input"><div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;"><input type="file" id="ptCmp1ImgFile" accept="image/*"><button type="button" class="btn btn-outline btn-sm" data-pt-upload="ptCmp1Img">업로드</button></div><img id="ptCmp1ImgPreview" class="seo-og-preview pt-admin-img-preview" alt="미리보기" hidden></div>
           <div class="form-row"><label>카드1 alt</label><input type="text" id="ptCmp1ImgAlt" class="inline-edit-input"></div>
           <div class="form-row"><label>카드1 설명</label><textarea id="ptCmp1Desc" rows="3"></textarea></div>
           <div class="form-row"><label>카드1 결과</label><textarea id="ptCmp1Result" rows="2"></textarea></div>
           <div class="form-row"><label>카드1 톤</label><select id="ptCmp1Tone"><option value="negative">부정(빨간 결과)</option><option value="positive">긍정(보라 결과)</option></select></div>
 
           <div class="form-row"><label>카드2 제목</label><input type="text" id="ptCmp2Title" class="inline-edit-input"></div>
-          <div class="form-row"><label>카드2 이미지</label><input type="text" id="ptCmp2Img" class="inline-edit-input"><div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;"><input type="file" id="ptCmp2ImgFile" accept="image/*"><button type="button" class="btn btn-outline btn-sm" data-pt-upload="ptCmp2Img">업로드</button></div></div>
+          <div class="form-row"><label>카드2 이미지</label><input type="text" id="ptCmp2Img" class="inline-edit-input"><div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;"><input type="file" id="ptCmp2ImgFile" accept="image/*"><button type="button" class="btn btn-outline btn-sm" data-pt-upload="ptCmp2Img">업로드</button></div><img id="ptCmp2ImgPreview" class="seo-og-preview pt-admin-img-preview" alt="미리보기" hidden></div>
           <div class="form-row"><label>카드2 alt</label><input type="text" id="ptCmp2ImgAlt" class="inline-edit-input"></div>
           <div class="form-row"><label>카드2 설명</label><textarea id="ptCmp2Desc" rows="3"></textarea></div>
           <div class="form-row"><label>카드2 결과</label><textarea id="ptCmp2Result" rows="2"></textarea></div>
           <div class="form-row"><label>카드2 톤</label><select id="ptCmp2Tone"><option value="negative">부정(빨간 결과)</option><option value="positive">긍정(보라 결과)</option></select></div>
 
           <div class="form-row"><label>카드3 제목</label><input type="text" id="ptCmp3Title" class="inline-edit-input"></div>
-          <div class="form-row"><label>카드3 이미지</label><input type="text" id="ptCmp3Img" class="inline-edit-input"><div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;"><input type="file" id="ptCmp3ImgFile" accept="image/*"><button type="button" class="btn btn-outline btn-sm" data-pt-upload="ptCmp3Img">업로드</button></div></div>
+          <div class="form-row"><label>카드3 이미지</label><input type="text" id="ptCmp3Img" class="inline-edit-input"><div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;"><input type="file" id="ptCmp3ImgFile" accept="image/*"><button type="button" class="btn btn-outline btn-sm" data-pt-upload="ptCmp3Img">업로드</button></div><img id="ptCmp3ImgPreview" class="seo-og-preview pt-admin-img-preview" alt="미리보기" hidden></div>
           <div class="form-row"><label>카드3 alt</label><input type="text" id="ptCmp3ImgAlt" class="inline-edit-input"></div>
           <div class="form-row"><label>카드3 설명</label><textarea id="ptCmp3Desc" rows="3"></textarea></div>
           <div class="form-row"><label>카드3 결과</label><textarea id="ptCmp3Result" rows="2"></textarea></div>
@@ -1031,15 +1031,15 @@ body.admin-nav-open { overflow:hidden; }
           <div class="form-row"><label>eyebrow</label><input type="text" id="ptProcEyebrow" class="inline-edit-input"></div>
           <div class="form-row"><label>제목</label><textarea id="ptProcHeading" rows="2"></textarea></div>
           <div class="form-row"><label>스텝1 제목</label><input type="text" id="ptProc1Title" class="inline-edit-input"></div>
-          <div class="form-row"><label>스텝1 이미지</label><input type="text" id="ptProc1Img" class="inline-edit-input"><div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;"><input type="file" id="ptProc1ImgFile" accept="image/*"><button type="button" class="btn btn-outline btn-sm" data-pt-upload="ptProc1Img">업로드</button></div></div>
+          <div class="form-row"><label>스텝1 이미지</label><input type="text" id="ptProc1Img" class="inline-edit-input"><div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;"><input type="file" id="ptProc1ImgFile" accept="image/*"><button type="button" class="btn btn-outline btn-sm" data-pt-upload="ptProc1Img">업로드</button></div><img id="ptProc1ImgPreview" class="seo-og-preview pt-admin-img-preview" alt="미리보기" hidden></div>
           <div class="form-row"><label>스텝1 alt</label><input type="text" id="ptProc1ImgAlt" class="inline-edit-input"></div>
           <div class="form-row"><label>스텝1 설명</label><textarea id="ptProc1Desc" rows="3"></textarea></div>
           <div class="form-row"><label>스텝2 제목</label><input type="text" id="ptProc2Title" class="inline-edit-input"></div>
-          <div class="form-row"><label>스텝2 이미지</label><input type="text" id="ptProc2Img" class="inline-edit-input"><div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;"><input type="file" id="ptProc2ImgFile" accept="image/*"><button type="button" class="btn btn-outline btn-sm" data-pt-upload="ptProc2Img">업로드</button></div></div>
+          <div class="form-row"><label>스텝2 이미지</label><input type="text" id="ptProc2Img" class="inline-edit-input"><div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;"><input type="file" id="ptProc2ImgFile" accept="image/*"><button type="button" class="btn btn-outline btn-sm" data-pt-upload="ptProc2Img">업로드</button></div><img id="ptProc2ImgPreview" class="seo-og-preview pt-admin-img-preview" alt="미리보기" hidden></div>
           <div class="form-row"><label>스텝2 alt</label><input type="text" id="ptProc2ImgAlt" class="inline-edit-input"></div>
           <div class="form-row"><label>스텝2 설명</label><textarea id="ptProc2Desc" rows="3"></textarea></div>
           <div class="form-row"><label>스텝3 제목</label><input type="text" id="ptProc3Title" class="inline-edit-input"></div>
-          <div class="form-row"><label>스텝3 이미지</label><input type="text" id="ptProc3Img" class="inline-edit-input"><div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;"><input type="file" id="ptProc3ImgFile" accept="image/*"><button type="button" class="btn btn-outline btn-sm" data-pt-upload="ptProc3Img">업로드</button></div></div>
+          <div class="form-row"><label>스텝3 이미지</label><input type="text" id="ptProc3Img" class="inline-edit-input"><div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;"><input type="file" id="ptProc3ImgFile" accept="image/*"><button type="button" class="btn btn-outline btn-sm" data-pt-upload="ptProc3Img">업로드</button></div><img id="ptProc3ImgPreview" class="seo-og-preview pt-admin-img-preview" alt="미리보기" hidden></div>
           <div class="form-row"><label>스텝3 alt</label><input type="text" id="ptProc3ImgAlt" class="inline-edit-input"></div>
           <div class="form-row"><label>스텝3 설명</label><textarea id="ptProc3Desc" rows="3"></textarea></div>
 
@@ -1495,12 +1495,12 @@ body.admin-nav-open { overflow:hidden; }
 <script src="/js/seo-static-meta.js?v=20260627e"></script>
 <script src="/js/admin-auth.js?v=20260630d"></script>
 <script src="/js/review-topics.js?v=20260704a"></script>
-<script src="/js/paid-transfer-page.js?v=20260716f"></script>
-<script src="/js/admin-api.js?v=20260716f"></script>
+<script src="/js/paid-transfer-page.js?v=20260716g"></script>
+<script src="/js/admin-api.js?v=20260716g"></script>
 <script src="/js/admin-hero.js?v=20260703a"></script>
 <script src="/js/admin-partners.js?v=20260703a"></script>
 <script src="/js/lease-catalog-map.js"></script>
-<script src="/js/admin-app.js?v=20260716f"></script>
+<script src="/js/admin-app.js?v=20260716g"></script>
 <script>
 /* 퍼플오토 어드민 — 견적서 작성 (부품 / 장기렌트·리스) : #panel-estimate 자체 초기화 */
 (function () {

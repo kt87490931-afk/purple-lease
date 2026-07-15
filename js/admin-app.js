@@ -576,6 +576,30 @@
     }
   }
 
+  var PT_IMAGE_FIELD_IDS = [
+    'ptSvcImg', 'ptZeroImg', 'ptTrustImg',
+    'ptCmp1Img', 'ptCmp2Img', 'ptCmp3Img',
+    'ptProc1Img', 'ptProc2Img', 'ptProc3Img'
+  ];
+
+  function updatePaidTransferImgPreview(urlInputId) {
+    var input = document.getElementById(urlInputId);
+    var prev = document.getElementById(urlInputId + 'Preview');
+    if (!prev) return;
+    var url = input ? String(input.value || '').trim() : '';
+    if (url) {
+      prev.src = url;
+      prev.hidden = false;
+    } else {
+      prev.hidden = true;
+      prev.removeAttribute('src');
+    }
+  }
+
+  function refreshPaidTransferImgPreviews() {
+    PT_IMAGE_FIELD_IDS.forEach(updatePaidTransferImgPreview);
+  }
+
   function fillPaidTransferForm(content) {
     var c = content || {};
     var setVal = function (id, v) {
@@ -656,6 +680,7 @@
       setVal('ptProc' + n + 'ImgAlt', step.image_alt);
       setVal('ptProc' + n + 'Desc', step.desc);
     });
+    refreshPaidTransferImgPreviews();
   }
 
   function readPaidTransferForm() {
@@ -3420,7 +3445,33 @@
         e.preventDefault();
         var textId = btn.getAttribute('data-pt-upload');
         if (!textId) return;
-        bindUpload(textId + 'File', textId, 'paid-transfer').catch(function () {});
+        var fileInput = document.getElementById(textId + 'File');
+        if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+          alert('이미지 파일을 먼저 선택하세요.');
+          return;
+        }
+        var statusEl = document.getElementById('ptSaveStatus');
+        if (statusEl) {
+          statusEl.style.color = 'var(--ink-600)';
+          statusEl.textContent = '이미지 업로드 중…';
+        }
+        bindUpload(textId + 'File', textId, 'paid-transfer', { silent: true })
+          .then(function () {
+            updatePaidTransferImgPreview(textId);
+            if (statusEl) statusEl.textContent = '업로드 완료 — 공개 반영을 위해 저장 중…';
+            return savePaidTransferPanel();
+          })
+          .catch(function (err) {
+            if (statusEl) {
+              statusEl.style.color = '#b91c1c';
+              statusEl.textContent = (err && err.message) ? err.message : '이미지 업로드 실패';
+            }
+          });
+      });
+      ptPanel.addEventListener('input', function (e) {
+        var t = e.target;
+        if (!t || !t.id || PT_IMAGE_FIELD_IDS.indexOf(t.id) < 0) return;
+        updatePaidTransferImgPreview(t.id);
       });
     }
   }
