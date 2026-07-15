@@ -1837,12 +1837,15 @@
       { desc: '중도해지 시 발생되는 위약금(패널티) 때문에 걱정이라면??', title_main: '비교견적', title_accent: '서비스' },
       { desc: '전국 12개의 제휴업체와 함께 전국 어디서든 편하게 차량검수를 받을 수 있습니다.', title_main: '방문검수', title_accent: '시스템' }
     ],
-    cta_label: '더 알아보기',
+    cta_label: '매각 상담신청하기',
     cta_url: '',
     cta_new_tab: false
   };
 
   function normalizePaidTransferContent(raw) {
+    if (window.PurplePaidTransferPage && typeof window.PurplePaidTransferPage.mergeContent === 'function') {
+      return window.PurplePaidTransferPage.mergeContent(raw);
+    }
     var c = Object.assign({}, PAID_TRANSFER_DEFAULTS, raw || {});
     if (!Array.isArray(c.cards) || !c.cards.length) {
       c.cards = PAID_TRANSFER_DEFAULTS.cards.map(function (x) { return Object.assign({}, x); });

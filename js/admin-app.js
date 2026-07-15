@@ -576,41 +576,164 @@
     }
   }
 
-  function fillPaidTransferForm(c) {
-    document.getElementById('ptEyebrow').value = c.eyebrow || '';
-    document.getElementById('ptHeadline1').value = c.headline_line1 || '';
-    document.getElementById('ptHeadlineAccent').value = c.headline_accent || '';
-    document.getElementById('ptHeadline3').value = c.headline_line3 || '';
-    document.getElementById('ptSubCopy').value = c.sub_copy || '';
+  function fillPaidTransferForm(content) {
+    var c = content || {};
+    var setVal = function (id, v) {
+      var el = document.getElementById(id);
+      if (el) el.value = v == null ? '' : String(v);
+    };
+    setVal('ptEyebrow', c.eyebrow);
+    setVal('ptHeadline1', c.headline_line1);
+    setVal('ptHeadlineAccent', c.headline_accent);
+    setVal('ptHeadline3', c.headline_line3);
+    setVal('ptSubCopy', c.sub_copy);
     var cards = c.cards || [];
     [1, 2, 3].forEach(function (n) {
       var card = cards[n - 1] || {};
-      document.getElementById('ptCard' + n + 'Desc').value = card.desc || '';
-      document.getElementById('ptCard' + n + 'Main').value = card.title_main || '';
-      document.getElementById('ptCard' + n + 'Accent').value = card.title_accent || '';
+      setVal('ptCard' + n + 'Desc', card.desc);
+      setVal('ptCard' + n + 'Main', card.title_main);
+      setVal('ptCard' + n + 'Accent', card.title_accent);
     });
-    document.getElementById('ptCtaLabel').value = c.cta_label || '';
-    document.getElementById('ptCtaUrl').value = c.cta_url || '';
-    document.getElementById('ptCtaNewTab').checked = !!c.cta_new_tab;
+    setVal('ptCtaLabel', c.cta_label);
+    setVal('ptCtaUrl', c.cta_url);
+    var ctaTab = document.getElementById('ptCtaNewTab');
+    if (ctaTab) ctaTab.checked = !!c.cta_new_tab;
+
+    var b = c.bottom || {};
+    var s = b.service || {};
+    var z = b.zero || {};
+    var p = b.pain || {};
+    var cmp = b.compare_cards || [];
+    var pr = b.process || {};
+    setVal('ptSvcEyebrow', s.eyebrow);
+    setVal('ptSvcHeading', s.heading);
+    setVal('ptSvcHeadingAccent', s.heading_accent);
+    setVal('ptSvcSideEyebrow', s.side_eyebrow);
+    setVal('ptSvcSideHeading', s.side_heading);
+    setVal('ptSvcSideCopy', s.side_copy);
+    setVal('ptSvcImg', s.image_url);
+    setVal('ptSvcImgAlt', s.image_alt);
+
+    setVal('ptZeroImg', z.image_url);
+    setVal('ptZeroImgAlt', z.image_alt);
+    setVal('ptZeroEyebrow', z.eyebrow);
+    setVal('ptZeroTitle', z.title);
+    setVal('ptZeroCopy', z.copy);
+    setVal('ptTrustEyebrow', z.trust_eyebrow);
+    setVal('ptTrustImg', z.trust_image_url);
+    setVal('ptTrustImgAlt', z.trust_image_alt);
+    (z.trust_items || []).slice(0, 4).forEach(function (item, i) {
+      setVal('ptTrust' + (i + 1) + 'Desc', item.desc);
+      setVal('ptTrust' + (i + 1) + 'Tag', item.tag);
+    });
+
+    setVal('ptPainHeading', p.heading);
+    setVal('ptPainSub', p.sub_copy);
+    setVal('ptPainHighlight', p.sub_highlight);
+    (p.bars || []).slice(0, 4).forEach(function (bar, i) {
+      setVal('ptPainBar' + (i + 1), bar);
+    });
+    setVal('ptPainFooterHeading', p.footer_heading);
+    setVal('ptPainFooterCopy', p.footer_copy);
+
+    [1, 2, 3].forEach(function (n) {
+      var card = cmp[n - 1] || {};
+      setVal('ptCmp' + n + 'Title', card.title);
+      setVal('ptCmp' + n + 'Img', card.image_url);
+      setVal('ptCmp' + n + 'ImgAlt', card.image_alt);
+      setVal('ptCmp' + n + 'Desc', card.desc);
+      setVal('ptCmp' + n + 'Result', card.result);
+      var toneEl = document.getElementById('ptCmp' + n + 'Tone');
+      if (toneEl) toneEl.value = card.tone === 'positive' ? 'positive' : 'negative';
+    });
+
+    setVal('ptProcEyebrow', pr.eyebrow);
+    setVal('ptProcHeading', pr.heading);
+    (pr.steps || []).slice(0, 3).forEach(function (step, i) {
+      var n = i + 1;
+      setVal('ptProc' + n + 'Title', step.title);
+      setVal('ptProc' + n + 'Img', step.image_url);
+      setVal('ptProc' + n + 'ImgAlt', step.image_alt);
+      setVal('ptProc' + n + 'Desc', step.desc);
+    });
   }
 
   function readPaidTransferForm() {
+    var val = function (id) {
+      var el = document.getElementById(id);
+      return el ? String(el.value || '').trim() : '';
+    };
     return {
-      eyebrow: document.getElementById('ptEyebrow').value.trim(),
-      headline_line1: document.getElementById('ptHeadline1').value.trim(),
-      headline_accent: document.getElementById('ptHeadlineAccent').value.trim(),
-      headline_line3: document.getElementById('ptHeadline3').value.trim(),
-      sub_copy: document.getElementById('ptSubCopy').value.trim(),
+      eyebrow: val('ptEyebrow'),
+      headline_line1: val('ptHeadline1'),
+      headline_accent: val('ptHeadlineAccent'),
+      headline_line3: val('ptHeadline3'),
+      sub_copy: val('ptSubCopy'),
       cards: [1, 2, 3].map(function (n) {
         return {
-          desc: document.getElementById('ptCard' + n + 'Desc').value.trim(),
-          title_main: document.getElementById('ptCard' + n + 'Main').value.trim(),
-          title_accent: document.getElementById('ptCard' + n + 'Accent').value.trim()
+          desc: val('ptCard' + n + 'Desc'),
+          title_main: val('ptCard' + n + 'Main'),
+          title_accent: val('ptCard' + n + 'Accent')
         };
       }),
-      cta_label: document.getElementById('ptCtaLabel').value.trim(),
-      cta_url: document.getElementById('ptCtaUrl').value.trim(),
-      cta_new_tab: document.getElementById('ptCtaNewTab').checked
+      cta_label: val('ptCtaLabel'),
+      cta_url: val('ptCtaUrl'),
+      cta_new_tab: !!(document.getElementById('ptCtaNewTab') && document.getElementById('ptCtaNewTab').checked),
+      bottom: {
+        service: {
+          eyebrow: val('ptSvcEyebrow'),
+          heading: val('ptSvcHeading'),
+          heading_accent: val('ptSvcHeadingAccent'),
+          side_eyebrow: val('ptSvcSideEyebrow'),
+          side_heading: val('ptSvcSideHeading'),
+          side_copy: val('ptSvcSideCopy'),
+          image_url: val('ptSvcImg'),
+          image_alt: val('ptSvcImgAlt')
+        },
+        zero: {
+          image_url: val('ptZeroImg'),
+          image_alt: val('ptZeroImgAlt'),
+          eyebrow: val('ptZeroEyebrow'),
+          title: val('ptZeroTitle'),
+          copy: val('ptZeroCopy'),
+          trust_eyebrow: val('ptTrustEyebrow'),
+          trust_image_url: val('ptTrustImg'),
+          trust_image_alt: val('ptTrustImgAlt'),
+          trust_items: [1, 2, 3, 4].map(function (n) {
+            return { desc: val('ptTrust' + n + 'Desc'), tag: val('ptTrust' + n + 'Tag') };
+          })
+        },
+        pain: {
+          heading: val('ptPainHeading'),
+          sub_copy: val('ptPainSub'),
+          sub_highlight: val('ptPainHighlight'),
+          bars: [1, 2, 3, 4].map(function (n) { return val('ptPainBar' + n); }).filter(Boolean),
+          footer_heading: val('ptPainFooterHeading'),
+          footer_copy: val('ptPainFooterCopy')
+        },
+        compare_cards: [1, 2, 3].map(function (n) {
+          return {
+            title: val('ptCmp' + n + 'Title'),
+            image_url: val('ptCmp' + n + 'Img'),
+            image_alt: val('ptCmp' + n + 'ImgAlt'),
+            desc: val('ptCmp' + n + 'Desc'),
+            result: val('ptCmp' + n + 'Result'),
+            tone: val('ptCmp' + n + 'Tone') === 'positive' ? 'positive' : 'negative'
+          };
+        }),
+        process: {
+          eyebrow: val('ptProcEyebrow'),
+          heading: val('ptProcHeading'),
+          steps: [1, 2, 3].map(function (n) {
+            return {
+              title: val('ptProc' + n + 'Title'),
+              image_url: val('ptProc' + n + 'Img'),
+              image_alt: val('ptProc' + n + 'ImgAlt'),
+              desc: val('ptProc' + n + 'Desc')
+            };
+          })
+        }
+      }
     };
   }
 
@@ -3287,6 +3410,19 @@
     }
     bindOptionalClick('btnSaveFooter', saveFooterPanel);
     bindOptionalClick('btnSavePaidTransfer', savePaidTransferPanel);
+
+    var ptPanel = document.getElementById('panel-paid-transfer');
+    if (ptPanel && !ptPanel.dataset.ptUploadBound) {
+      ptPanel.dataset.ptUploadBound = '1';
+      ptPanel.addEventListener('click', function (e) {
+        var btn = e.target && e.target.closest ? e.target.closest('[data-pt-upload]') : null;
+        if (!btn) return;
+        e.preventDefault();
+        var textId = btn.getAttribute('data-pt-upload');
+        if (!textId) return;
+        bindUpload(textId + 'File', textId, 'paid-transfer').catch(function () {});
+      });
+    }
   }
 
   async function init() {
