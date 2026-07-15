@@ -164,6 +164,55 @@ body.admin-nav-open { overflow:hidden; }
 .btn-danger-text:hover { text-decoration: underline; }
 .btn-sm { padding:6px 10px; font-size:11.5px; }
 
+.photo-urls-hidden { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; overflow:hidden; }
+.car-photo-gallery {
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap:10px;
+  margin: 4px 0 10px;
+}
+.car-photo-tile {
+  position:relative;
+  display:block;
+  width:100%;
+  aspect-ratio: 4 / 3;
+  padding:0;
+  border:2.5px solid var(--line);
+  border-radius:10px;
+  overflow:hidden;
+  background: var(--surface-alt);
+  cursor:pointer;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.car-photo-tile:hover { border-color: var(--purple-400, #9B6FE8); }
+.car-photo-tile.selected {
+  border-color: var(--purple-600);
+  box-shadow: 0 0 0 3px rgba(108, 60, 224, 0.22);
+}
+.car-photo-tile.is-thumb:not(.selected) { border-color: var(--navy-900, #1A1E6E); }
+.car-photo-tile img {
+  width:100%; height:100%; object-fit:cover; display:block;
+  pointer-events:none;
+}
+.car-photo-badge {
+  position:absolute; left:6px; top:6px;
+  background: rgba(26,30,110,.88); color:#fff;
+  font-size:10px; font-weight:800; padding:3px 6px; border-radius:5px;
+}
+.car-photo-empty {
+  grid-column: 1 / -1;
+  padding:28px 12px;
+  text-align:center;
+  color: var(--ink-400);
+  font-size:12.5px;
+  border:1px dashed var(--line);
+  border-radius:10px;
+  background: var(--surface);
+}
+.car-photo-toolbar {
+  display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:2px;
+}
+
 .data-table { width:100%; border-collapse: collapse; background:#fff; border-radius: var(--radius-md); overflow:hidden; box-shadow: var(--shadow-sm); }
 .data-table th { text-align:left; font-size:11.5px; color: var(--ink-500); font-weight:700; padding:11px 14px; background: var(--surface); border-bottom:1px solid var(--line); white-space:nowrap; }
 .data-table td { padding:11px 14px; border-bottom:1px solid var(--line-soft); font-size:13px; vertical-align:middle; }
@@ -1125,12 +1174,14 @@ body.admin-nav-open { overflow:hidden; }
       </div>
       <div class="form-row">
         <label>차량 사진 (4:3 — 목록 800×600 / 상세 1280×960)</label>
-        <textarea id="ucPhotos" rows="4" placeholder="업로드된 이미지 URL (한 줄에 하나)"></textarea>
-        <div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;">
+        <textarea id="ucPhotos" class="photo-urls-hidden" rows="1" aria-hidden="true" tabindex="-1"></textarea>
+        <div class="car-photo-gallery" id="ucPhotoGallery" aria-label="중고차 사진 미리보기"></div>
+        <div class="car-photo-toolbar">
           <input type="file" id="ucPhotosFiles" accept="image/jpeg,image/png,image/webp,image/gif" multiple>
           <button type="button" class="btn btn-outline btn-sm" id="btnUploadUcPhotos">선택 사진 업로드</button>
+          <button type="button" class="btn btn-outline btn-sm" id="btnDeleteUcPhotos">선택 삭제</button>
         </div>
-        <span class="hint">첫 번째 사진이 목록 썸네일·상세 대표 사진으로 사용됩니다. (최대 20장)</span>
+        <span class="hint" id="ucPhotosStatus">첫 번째 사진이 목록 썸네일·상세 대표 사진으로 사용됩니다. (최대 20장)</span>
       </div>
     </div>
     <div class="modal-foot"><button class="btn btn-outline" data-close="modalUsedcar">취소</button><button class="btn btn-primary" id="btnSaveUsedcar">저장</button></div>
@@ -1184,10 +1235,12 @@ body.admin-nav-open { overflow:hidden; }
       </div>
       <div class="form-row">
         <label>차량 사진 <span style="color:var(--danger-600,#E0395B);">*</span> (4:3 — 목록 800×600 / 상세 1280×960)</label>
-        <textarea id="ltPhotos" rows="4" placeholder="업로드된 이미지 URL (한 줄에 하나)"></textarea>
-        <div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;">
+        <textarea id="ltPhotos" class="photo-urls-hidden" rows="1" aria-hidden="true" tabindex="-1"></textarea>
+        <div class="car-photo-gallery" id="ltPhotoGallery" aria-label="일반승계 사진 미리보기"></div>
+        <div class="car-photo-toolbar">
           <input type="file" id="ltPhotosFiles" accept="image/*,.jpg,.jpeg,.png,.webp,.gif" multiple>
           <button type="button" class="btn btn-outline btn-sm" id="btnUploadLtPhotos">선택 사진 업로드</button>
+          <button type="button" class="btn btn-outline btn-sm" id="btnDeleteLtPhotos">선택 삭제</button>
         </div>
         <p id="ltPhotosStatus" style="margin:6px 0 0;font-size:12px;color:var(--ink-400);">첫 번째 사진이 목록 썸네일·상세 대표 사진입니다. (최대 20장)</p>
       </div>
@@ -1356,11 +1409,11 @@ body.admin-nav-open { overflow:hidden; }
 <script src="/js/seo-static-meta.js?v=20260627e"></script>
 <script src="/js/admin-auth.js?v=20260630d"></script>
 <script src="/js/review-topics.js?v=20260704a"></script>
-<script src="/js/admin-api.js?v=20260716d"></script>
+<script src="/js/admin-api.js?v=20260716e"></script>
 <script src="/js/admin-hero.js?v=20260703a"></script>
 <script src="/js/admin-partners.js?v=20260703a"></script>
 <script src="/js/lease-catalog-map.js"></script>
-<script src="/js/admin-app.js?v=20260716d"></script>
+<script src="/js/admin-app.js?v=20260716e"></script>
 <script>
 /* 퍼플오토 어드민 — 견적서 작성 (부품 / 장기렌트·리스) : #panel-estimate 자체 초기화 */
 (function () {

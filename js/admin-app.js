@@ -117,17 +117,77 @@
     ta.value = existing.concat(urls).join('\n');
   }
 
+  var carPhotoSelected = { uc: {}, lt: {} };
+
+  function carPhotoTextareaId(kind) {
+    return kind === 'lt' ? 'ltPhotos' : 'ucPhotos';
+  }
+
+  function carPhotoGalleryId(kind) {
+    return kind === 'lt' ? 'ltPhotoGallery' : 'ucPhotoGallery';
+  }
+
+  function getCarPhotos(kind) {
+    return parsePartPhotoLines((document.getElementById(carPhotoTextareaId(kind)) || {}).value || '');
+  }
+
+  function setCarPhotos(kind, urls, opts) {
+    opts = opts || {};
+    var ta = document.getElementById(carPhotoTextareaId(kind));
+    if (!ta) return;
+    ta.value = (urls || []).filter(Boolean).join('\n');
+    if (!opts.keepSelection) carPhotoSelected[kind] = {};
+    renderCarPhotoGallery(kind);
+    updateCarPhotosStatus(kind);
+  }
+
+  function appendCarPhotos(kind, urls) {
+    setCarPhotos(kind, getCarPhotos(kind).concat(urls || []));
+  }
+
+  function setPhotoUrls(textareaId, urls) {
+    if (textareaId === 'ltPhotos') {
+      setCarPhotos('lt', urls);
+      return;
+    }
+    if (textareaId === 'ucPhotos') {
+      setCarPhotos('uc', urls);
+      return;
+    }
+    var ta = document.getElementById(textareaId);
+    if (!ta) return;
+    ta.value = (urls || []).filter(Boolean).join('\n');
+  }
+
   function appendPhotoUrls(textareaId, urls) {
+    if (textareaId === 'ltPhotos') {
+      appendCarPhotos('lt', urls);
+      return;
+    }
+    if (textareaId === 'ucPhotos') {
+      appendCarPhotos('uc', urls);
+      return;
+    }
     var ta = document.getElementById(textareaId);
     if (!ta) return;
     var existing = parsePartPhotoLines(ta.value);
     ta.value = existing.concat(urls || []).join('\n');
   }
 
-  function setPhotoUrls(textareaId, urls) {
-    var ta = document.getElementById(textareaId);
-    if (!ta) return;
-    ta.value = (urls || []).filter(Boolean).join('\n');
+  function updateCarPhotosStatus(kind) {
+    var photos = getCarPhotos(kind);
+    var selectedCount = Object.keys(carPhotoSelected[kind] || {}).length;
+    var msg = photos.length
+      ? ('등록된 사진 ' + photos.length + '장 · 첫 번째 사진이 목록 썸네일입니다. (최대 20장)' +
+        (selectedCount ? ' · 선택 ' + selectedCount + '장' : ''))
+      : '차량 사진을 1장 이상 등록해 주세요. (최대 20장)';
+    if (kind === 'lt') {
+      var ltStatus = document.getElementById('ltPhotosStatus');
+      if (ltStatus) ltStatus.textContent = msg;
+    } else {
+      var ucStatus = document.getElementById('ucPhotosStatus');
+      if (ucStatus) ucStatus.textContent = msg;
+    }
   }
 
   function updateLtPhotosStatus(msg) {
@@ -135,19 +195,52 @@
     if (status && msg) status.textContent = msg;
   }
 
+  function renderCarPhotoGallery(kind) {
+    var gallery = document.getElementById(carPhotoGalleryId(kind));
+    if (!gallery) return;
+    var photos = getCarPhotos(kind);
+    var selected = carPhotoSelected[kind] || {};
+    if (!photos.length) {
+      gallery.innerHTML = '<div class="car-photo-empty">등록된 사진이 없습니다. 아래에서 파일을 선택한 뒤 업로드하세요.</div>';
+      updateCarPhotosStatus(kind);
+      return;
+    }
+    gallery.innerHTML = photos.map(function (url, i) {
+      var classes = 'car-photo-tile' + (selected[i] ? ' selected' : '') + (i === 0 ? ' is-thumb' : '');
+      return '<button type="button" class="' + classes + '" data-car-photo-kind="' + kind + '" data-car-photo-idx="' + i + '" title="' + (i === 0 ? '썸네일 · ' : '') + '클릭하여 선택">' +
+        '<img src="' + escapeAttr(url) + '" alt="사진 ' + (i + 1) + '" loading="lazy" onerror="this.style.opacity=0.25">' +
+        (i === 0 ? '<span class="car-photo-badge">썸네일</span>' : '') +
+        '</button>';
+    }).join('');
+    updateCarPhotosStatus(kind);
+  }
+
+  function toggleCarPhotoSelect(kind, idx) {
+    if (!carPhotoSelected[kind]) carPhotoSelected[kind] = {};
+    if (carPhotoSelected[kind][idx]) delete carPhotoSelected[kind][idx];
+    else carPhotoSelected[kind][idx] = true;
+    renderCarPhotoGallery(kind);
+  }
+
+  function deleteSelectedCarPhotos(kind) {
+    var photos = getCarPhotos(kind);
+    var selected = carPhotoSelected[kind] || {};
+    var selectedIdx = Object.keys(selected).map(function (k) { return parseInt(k, 10); }).filter(function (n) { return !isNaN(n); });
+    if (!selectedIdx.length) {
+      alert('삭제할 사진을 먼저 클릭하여 선택해 주세요.');
+      return;
+    }
+    if (!confirm('선택한 사진 ' + selectedIdx.length + '장을 삭제할까요?')) return;
+    var next = photos.filter(function (_url, i) { return !selected[i]; });
+    setCarPhotos(kind, next);
+  }
+
   function showError(err) {
     alert((err && err.message) ? err.message : String(err));
   }
 
-  function updateLtThumbPreview(url) {
-    var count = parsePartPhotoLines((document.getElementById('ltPhotos') || {}).value || '').length;
-    var u = String(url || '').trim();
-    if (!count && u) count = 1;
-    updateLtPhotosStatus(
-      count
-        ? ('등록된 사진 ' + count + '장 · 첫 번째 사진이 목록 썸네일입니다. (최대 20장)')
-        : '차량 사진을 1장 이상 등록해 주세요. (최대 20장)'
-    );
+  function updateLtThumbPreview() {
+    updateCarPhotosStatus('lt');
   }
 
   function setLtContractType(value) {
@@ -3051,6 +3144,9 @@
         alert('사진 ' + urls.length + '장이 업로드되었습니다. 첫 번째 사진이 썸네일입니다.');
       } catch (err) { showError(err); }
     });
+    document.getElementById('btnDeleteUcPhotos') && document.getElementById('btnDeleteUcPhotos').addEventListener('click', function () {
+      deleteSelectedCarPhotos('uc');
+    });
 
     document.getElementById('btnAddLeaseTransfer').addEventListener('click', function () {
       editingLtId = null;
@@ -3120,12 +3216,24 @@
         var urls = await API.uploadLeaseTransferPhotoFiles(listingId, Array.prototype.slice.call(fileInput.files), existing.length);
         appendPhotoUrls('ltPhotos', urls);
         fileInput.value = '';
-        updateLtThumbPreview(urls[0] || existing[0] || '');
+        updateLtThumbPreview();
         alert('사진 ' + urls.length + '장이 업로드되었습니다. 저장을 누르면 반영되며, 첫 번째 사진이 썸네일입니다.');
       } catch (err) {
         updateLtPhotosStatus('업로드 실패 — 오류를 확인하세요.');
         showError(err);
       }
+    });
+    document.getElementById('btnDeleteLtPhotos') && document.getElementById('btnDeleteLtPhotos').addEventListener('click', function () {
+      deleteSelectedCarPhotos('lt');
+    });
+
+    document.addEventListener('click', function (e) {
+      var tile = e.target && e.target.closest ? e.target.closest('[data-car-photo-kind]') : null;
+      if (!tile) return;
+      var kind = tile.getAttribute('data-car-photo-kind');
+      var idx = parseInt(tile.getAttribute('data-car-photo-idx'), 10);
+      if (!kind || isNaN(idx)) return;
+      toggleCarPhotoSelect(kind, idx);
     });
 
     document.getElementById('btnAddLeaseBrand').addEventListener('click', async function () {
