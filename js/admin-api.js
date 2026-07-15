@@ -43,6 +43,8 @@
     return cfg.url + '/storage/v1/object/public/purple-uploads/' + path.replace(/^\//, '');
   }
 
+  var MAX_PHOTOS_PER_CAR = 20;
+
   function imageExtAndType(file) {
     var ext = (String(file.name || '').split('.').pop() || 'jpg').toLowerCase();
     if (ext === 'jpeg') ext = 'jpg';
@@ -78,40 +80,57 @@
 
   async function uploadLeaseTransferThumb(file, listingId) {
     if (listingId == null || listingId === '') throw new Error('매물 번호가 없습니다.');
-    var info = assertAllowedImage(file);
-    if (file.size > 5 * 1024 * 1024) throw new Error('파일 크기는 5MB 이하여야 합니다.');
-    var path = 'lease-transfers/' + listingId + '/thumb.' + info.ext;
-    var res = await db().storage.from('purple-uploads').upload(path, file, {
-      cacheControl: '86400',
-      upsert: true,
-      contentType: info.contentType
-    });
-    if (res.error) {
-      var errMsg = (res.error.message || res.error.error || String(res.error));
-      if (/policy|permission|403|401|row-level security/i.test(errMsg)) {
-        throw new Error('이미지 업로드 권한이 없습니다. 어드민에서 로그아웃 후 다시 로그인해 주세요. (' + errMsg + ')');
+    var urls = await uploadLeaseTransferPhotoFiles(listingId, [file], 0);
+    return urls[0] || '';
+  }
+
+  async function uploadLeaseTransferPhotoFiles(listingId, files, startIndex) {
+    if (!files || !files.length) return [];
+    if (listingId == null || listingId === '') throw new Error('매물 번호가 없습니다.');
+    var PI = window.PurpleImage;
+    if (!PI) throw new Error('PurpleImage 모듈이 로드되지 않았습니다.');
+    var out = [];
+    var start = startIndex || 0;
+    var maxAdd = Math.max(0, MAX_PHOTOS_PER_CAR - start);
+    var limited = Array.prototype.slice.call(files, 0, maxAdd);
+    for (var i = 0; i < limited.length; i++) {
+      var file = limited[i];
+      assertAllowedImage(file);
+      if (file.size > 8 * 1024 * 1024) throw new Error('파일 크기는 8MB 이하여야 합니다.');
+      var idx = start + i;
+      var img = await PI.loadFileAsImage(file);
+      var galleryBlob = await PI.resizeImageToBlob(img, PI.SIZES.GALLERY.w, PI.SIZES.GALLERY.h);
+      var url = await uploadBlob(galleryBlob, 'lease-transfers/' + listingId + '/' + idx + '.jpg');
+      if (idx === 0) {
+        var thumbBlob = await PI.resizeImageToBlob(img, PI.SIZES.THUMB.w, PI.SIZES.THUMB.h);
+        await uploadBlob(thumbBlob, 'lease-transfers/' + listingId + '/thumb.jpg');
       }
-      throw new Error('이미지 업로드 실패: ' + errMsg);
+      out.push(url);
     }
-    return storagePublicUrl(path);
+    return out;
   }
 
   async function syncLeaseTransferThumb(listingId, file) {
     var row = await findLeaseTransferRow(listingId);
     if (!row) throw new Error('매물을 찾을 수 없습니다.');
     var targetId = row.listing_id != null ? row.listing_id : listingId;
-    var url = await uploadLeaseTransferThumb(file, targetId);
-    var dj = Object.assign({}, row.detail_json || {}, { photos: [url] });
+    var existingPhotos = ((row.detail_json && row.detail_json.photos) || []).filter(Boolean);
+    var start = existingPhotos.length;
+    if (start >= MAX_PHOTOS_PER_CAR) throw new Error('사진은 최대 ' + MAX_PHOTOS_PER_CAR + '장까지 등록할 수 있습니다.');
+    var urls = await uploadLeaseTransferPhotoFiles(targetId, [file], start);
+    var photos = existingPhotos.concat(urls).slice(0, MAX_PHOTOS_PER_CAR);
+    var thumb = photos[0] || '';
+    var dj = Object.assign({}, row.detail_json || {}, { photos: photos });
     var up = await db().from('lease_transfers').update({
-      thumb_url: url,
-      photo_count: 1,
+      thumb_url: thumb,
+      photo_count: photos.length,
       detail_json: dj
     }).eq('listing_id', targetId).select('listing_id,thumb_url,photo_count').single();
     if (up.error) {
       var upMsg = (up.error.message || String(up.error));
-      throw new Error('썸네일 DB 저장 실패: ' + upMsg);
+      throw new Error('사진 DB 저장 실패: ' + upMsg);
     }
-    return url;
+    return { url: urls[0] || thumb, photos: photos, thumb: thumb };
   }
 
   async function uploadBlob(blob, storagePath) {
@@ -129,8 +148,6 @@
   function isPurpleStoredCarPhoto(url) {
     return String(url || '').indexOf('/purple-uploads/usedcars/') >= 0;
   }
-
-  var MAX_PHOTOS_PER_CAR = 20;
 
   async function processSwautopiaRowPhotos(row, onPhotoProgress, shouldCancel, forcePhotos) {
     var PI = window.PurpleImage;
@@ -747,6 +764,8 @@
       var f = (window.PurpleUsedCarFilters && window.PurpleUsedCarFilters.normalizeFilterFields)
         ? window.PurpleUsedCarFilters.normalizeFilterFields(r)
         : { brand: r.brand || '', fuel: r.fuel || '', segment: r.segment || '', origin: r.origin || 'domestic' };
+      var photos = ((r.detail_json && r.detail_json.photos) || []).filter(Boolean);
+      if (!photos.length && r.thumb_url) photos = [r.thumb_url];
       return {
         id: r.listing_id || r.id,
         name: r.name,
@@ -754,20 +773,55 @@
         mileage: r.mileage || 0,
         price: r.price_num || 0,
         status: r.status || '판매중',
-        thumb: r.thumb_url || '',
+        thumb: r.thumb_url || photos[0] || '',
+        photos: photos,
+        photoCount: r.photo_count || photos.length || 0,
         syncSource: r.sync_source || '',
         brand: f.brand,
         fuel: f.fuel,
         segment: f.segment,
-        origin: f.origin
+        origin: f.origin,
+        detailJson: r.detail_json || {}
       };
     });
+  }
+
+  async function getNextUsedCarListingId() {
+    var maxRes = await db().from('used_cars').select('listing_id').order('listing_id', { ascending: false }).limit(1);
+    if (maxRes.error) throw maxRes.error;
+    return (maxRes.data && maxRes.data[0]) ? maxRes.data[0].listing_id + 1 : 481;
+  }
+
+  async function uploadUsedCarPhotoFiles(listingId, files, startIndex) {
+    if (!files || !files.length) return [];
+    if (listingId == null || listingId === '') throw new Error('매물 번호가 없습니다.');
+    var PI = window.PurpleImage;
+    if (!PI) throw new Error('PurpleImage 모듈이 로드되지 않았습니다.');
+    var out = [];
+    var start = startIndex || 0;
+    var maxAdd = Math.max(0, MAX_PHOTOS_PER_CAR - start);
+    var limited = Array.prototype.slice.call(files, 0, maxAdd);
+    for (var i = 0; i < limited.length; i++) {
+      var file = limited[i];
+      assertAllowedImage(file);
+      if (file.size > 8 * 1024 * 1024) throw new Error('파일 크기는 8MB 이하여야 합니다.');
+      var idx = start + i;
+      var img = await PI.loadFileAsImage(file);
+      var galleryBlob = await PI.resizeImageToBlob(img, PI.SIZES.GALLERY.w, PI.SIZES.GALLERY.h);
+      var url = await uploadBlob(galleryBlob, 'usedcars/' + listingId + '/' + idx + '.jpg');
+      if (idx === 0) {
+        var thumbBlob = await PI.resizeImageToBlob(img, PI.SIZES.THUMB.w, PI.SIZES.THUMB.h);
+        await uploadBlob(thumbBlob, 'usedcars/' + listingId + '/thumb.jpg');
+      }
+      out.push(url);
+    }
+    return out;
   }
 
   async function findUsedCarRow(carId) {
     if (carId == null || carId === '') return null;
     var res = await db().from('used_cars')
-      .select('id,listing_id,sync_source,detail_json,detail_slug')
+      .select('id,listing_id,sync_source,detail_json,detail_slug,thumb_url,photo_count')
       .or('listing_id.eq.' + carId + ',id.eq.' + carId)
       .maybeSingle();
     if (res.error) throw res.error;
@@ -791,13 +845,40 @@
       ? Filters.buildMeta(payload.year, payload.mileage || 0, fuel)
       : payload.year + '년 · ' + Math.round((payload.mileage || 0) / 10000 * 10) / 10 + '만km';
 
+    var existing = null;
+    if (editingId) {
+      existing = await findUsedCarRow(editingId);
+      if (!existing) throw new Error('매물을 찾을 수 없습니다.');
+    }
+
+    var listingId = existing
+      ? (existing.listing_id != null ? existing.listing_id : editingId)
+      : (payload.listingId || await getNextUsedCarListingId());
+
+    var photos = (payload.photos || []).filter(Boolean).slice(0, MAX_PHOTOS_PER_CAR);
+    if (payload.photoFiles && payload.photoFiles.length) {
+      var uploaded = await uploadUsedCarPhotoFiles(listingId, payload.photoFiles, photos.length);
+      photos = photos.concat(uploaded).slice(0, MAX_PHOTOS_PER_CAR);
+    }
+    if (!photos.length && payload.thumb) photos = [String(payload.thumb).trim()].filter(Boolean);
+    if (!photos.length && existing) {
+      var prev = ((existing.detail_json && existing.detail_json.photos) || []).filter(Boolean);
+      if (prev.length) photos = prev;
+      else if (existing.thumb_url) photos = [existing.thumb_url];
+    }
+    photos = photos.filter(Boolean).slice(0, MAX_PHOTOS_PER_CAR);
+
+    var existingDj = existing ? (existing.detail_json || {}) : {};
+    var detailJson = Object.assign({}, existingDj, { photos: photos });
+
     var row = {
       name: payload.name,
       year: payload.year,
       mileage: payload.mileage || 0,
       price_num: payload.price,
       status: payload.status || '판매중',
-      thumb_url: payload.thumb || '',
+      thumb_url: photos[0] || payload.thumb || '',
+      photo_count: photos.length,
       origin: origin,
       brand: brand,
       fuel: fuel,
@@ -806,11 +887,10 @@
       price: payload.price.toLocaleString('ko-KR') + '만원',
       badge: badgeInfo.badge,
       badge_class: badgeInfo.badge_class,
+      detail_json: detailJson,
       is_active: true
     };
     if (editingId) {
-      var existing = await findUsedCarRow(editingId);
-      if (!existing) throw new Error('매물을 찾을 수 없습니다.');
       row.detail_slug = existing.detail_slug || String(existing.listing_id || existing.id);
       if (existing.sync_source) row.sync_source = existing.sync_source;
       var upQuery = existing.listing_id != null
@@ -820,12 +900,9 @@
       if (up.error) throw up.error;
       return up.data;
     }
-    row.detail_slug = undefined;
-    var maxRes = await db().from('used_cars').select('listing_id').order('listing_id', { ascending: false }).limit(1);
-    var nextId = (maxRes.data && maxRes.data[0]) ? maxRes.data[0].listing_id + 1 : 481;
-    row.listing_id = nextId;
-    row.detail_slug = String(nextId);
-    row.sort_order = nextId;
+    row.listing_id = listingId;
+    row.detail_slug = String(listingId);
+    row.sort_order = listingId;
     row.sync_source = 'manual';
     var ins = await db().from('used_cars').insert([row]).select().single();
     if (ins.error) throw ins.error;
@@ -867,6 +944,12 @@
         price: r.price_num || 0,
         status: r.status || '판매중',
         thumb: r.thumb_url || '',
+        photos: (function () {
+          var photos = ((r.detail_json && r.detail_json.photos) || []).filter(Boolean);
+          if (!photos.length && r.thumb_url) photos = [r.thumb_url];
+          return photos;
+        })(),
+        photoCount: r.photo_count || 0,
         brand: f.brand,
         fuel: f.fuel,
         segment: f.segment,
@@ -909,11 +992,17 @@
 
   function mergeLeaseTransferDetailJson(existing, payload, thumb) {
     var dj = Object.assign({}, existing || {});
-    if (thumb) {
-      dj.photos = [thumb];
+    if (payload && Array.isArray(payload.photos)) {
+      dj.photos = payload.photos.filter(Boolean).slice(0, MAX_PHOTOS_PER_CAR);
+    } else if (thumb) {
+      var prev = (dj.photos && dj.photos.length) ? dj.photos.filter(Boolean) : [];
+      if (!prev.length) dj.photos = [thumb];
+      else if (prev[0] !== thumb) dj.photos = [thumb].concat(prev.filter(function (u) { return u !== thumb; }));
+      else dj.photos = prev;
     } else if (!dj.photos) {
       dj.photos = [];
     }
+    dj.photos = (dj.photos || []).filter(Boolean).slice(0, MAX_PHOTOS_PER_CAR);
 
     if (payload) {
       if (payload.plate != null) dj.plate = String(payload.plate || '').trim();
@@ -976,24 +1065,42 @@
       ? Filters.buildMeta(payload.year, payload.mileage || 0, fuel)
       : payload.year + '년 · ' + Math.round((payload.mileage || 0) / 10000 * 10) / 10 + '만km';
 
-    var thumb = String(payload.thumb || '').trim();
-    if (thumb.indexOf('/assets/lease-transfers/') === 0) {
-      throw new Error('대표 이미지는 파일 선택 후 「업로드」를 누르거나, 저장 시 파일이 선택되어 있어야 합니다. 예시 경로(/assets/...)는 실제 이미지가 아닙니다.');
-    }
-
     var existing = null;
     if (editingId) {
       existing = await findLeaseTransferRow(editingId);
       if (!existing) throw new Error('매물을 찾을 수 없습니다.');
-      if (!thumb && existing.thumb_url) {
+    }
+
+    var listingId = existing
+      ? (existing.listing_id != null ? existing.listing_id : editingId)
+      : (payload.listingId || await getNextLeaseTransferListingId());
+
+    var photos = (payload.photos || []).filter(Boolean).slice(0, MAX_PHOTOS_PER_CAR);
+    if (payload.photoFiles && payload.photoFiles.length) {
+      var uploaded = await uploadLeaseTransferPhotoFiles(listingId, payload.photoFiles, photos.length);
+      photos = photos.concat(uploaded).slice(0, MAX_PHOTOS_PER_CAR);
+    }
+
+    if (!photos.length) {
+      var fallbackThumb = String(payload.thumb || '').trim();
+      if (fallbackThumb.indexOf('/assets/lease-transfers/') === 0) fallbackThumb = '';
+      if (!fallbackThumb && existing && existing.thumb_url) {
         var prevThumb = String(existing.thumb_url).trim();
-        if (prevThumb.indexOf('/assets/lease-transfers/') !== 0) thumb = prevThumb;
+        if (prevThumb.indexOf('/assets/lease-transfers/') !== 0) fallbackThumb = prevThumb;
+      }
+      if (fallbackThumb) photos = [fallbackThumb];
+      else if (existing && existing.detail_json && existing.detail_json.photos && existing.detail_json.photos.length) {
+        photos = existing.detail_json.photos.filter(Boolean);
       }
     }
 
-    if (!thumb) {
-      throw new Error('대표 이미지를 선택한 뒤 저장해 주세요. (파일 선택 후 저장하면 자동 업로드됩니다)');
+    photos = photos.filter(Boolean).slice(0, MAX_PHOTOS_PER_CAR);
+    if (!photos.length) {
+      throw new Error('차량 사진을 1장 이상 등록해 주세요. (여러 장 선택 후 업로드/저장)');
     }
+
+    var thumb = photos[0];
+    var savePayload = Object.assign({}, payload, { photos: photos });
 
     var row = {
       name: payload.name,
@@ -1002,7 +1109,7 @@
       price_num: payload.price,
       status: payload.status || '판매중',
       thumb_url: thumb,
-      photo_count: thumb ? 1 : 0,
+      photo_count: photos.length,
       origin: origin,
       brand: brand,
       fuel: fuel,
@@ -1015,7 +1122,7 @@
     };
     if (editingId) {
       row.detail_slug = existing.detail_slug || String(existing.listing_id || existing.id);
-      row.detail_json = mergeLeaseTransferDetailJson(existing.detail_json || {}, payload, thumb);
+      row.detail_json = mergeLeaseTransferDetailJson(existing.detail_json || {}, savePayload, thumb);
       var upQuery = existing.listing_id != null
         ? db().from('lease_transfers').update(row).eq('listing_id', existing.listing_id)
         : db().from('lease_transfers').update(row).eq('id', existing.id);
@@ -1023,12 +1130,10 @@
       if (up.error) throw up.error;
       return up.data;
     }
-    var maxRes = await db().from('lease_transfers').select('listing_id').order('listing_id', { ascending: false }).limit(1);
-    var nextId = (maxRes.data && maxRes.data[0]) ? maxRes.data[0].listing_id + 1 : 10001;
-    row.listing_id = nextId;
-    row.detail_slug = String(nextId);
-    row.sort_order = nextId;
-    row.detail_json = mergeLeaseTransferDetailJson({}, payload, thumb);
+    row.listing_id = listingId;
+    row.detail_slug = String(listingId);
+    row.sort_order = listingId;
+    row.detail_json = mergeLeaseTransferDetailJson({}, savePayload, thumb);
     var ins = await db().from('lease_transfers').insert([row]).select().single();
     if (ins.error) throw ins.error;
     return ins.data;
@@ -2245,8 +2350,11 @@
     parseYoutubeVideoId: parseYoutubeVideoId,
     uploadImage: uploadImage,
     uploadLeaseTransferThumb: uploadLeaseTransferThumb,
+    uploadLeaseTransferPhotoFiles: uploadLeaseTransferPhotoFiles,
     syncLeaseTransferThumb: syncLeaseTransferThumb,
     getNextLeaseTransferListingId: getNextLeaseTransferListingId,
+    getNextUsedCarListingId: getNextUsedCarListingId,
+    uploadUsedCarPhotoFiles: uploadUsedCarPhotoFiles,
     uploadBlob: uploadBlob,
     storagePublicUrl: storagePublicUrl,
     listYoutube: listYoutube,
