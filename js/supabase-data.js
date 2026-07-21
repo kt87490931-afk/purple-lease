@@ -46,18 +46,22 @@
       url: 'https://www.youtube.com/watch?v=' + vid,
       detailUrl: '/youtube-detail?id=' + r.id,
       isHomeMain: !!r.is_home_main,
-      isHomeFeatured: !!r.is_home_featured
+      isHomeFeatured: !!r.is_home_featured,
+      tabId: r.tab_id != null ? r.tab_id : null
     };
   }
 
-  async function fetchYoutubeVideos() {
+  async function fetchYoutubeVideos(opts) {
+    opts = opts || {};
     var client = getClient();
     if (!client) return null;
-    var res = await client
+    var q = client
       .from('youtube_videos')
-      .select('id,video_id,title,description,thumb_url,duration,sort_order,created_at,published_at,is_home_main,is_home_featured')
+      .select('id,video_id,title,description,thumb_url,duration,sort_order,created_at,published_at,is_home_main,is_home_featured,tab_id')
       .eq('is_active', true)
       .order('sort_order', { ascending: false });
+    if (opts.tabId != null) q = q.eq('tab_id', opts.tabId);
+    var res = await q;
     if (res.error) throw res.error;
     return (res.data || []).map(mapYoutubeRow);
   }
@@ -70,9 +74,20 @@
       .select('id,video_id,title,description,thumb_url,duration,sort_order,created_at,published_at,is_home_main,is_home_featured')
       .eq('is_active', true)
       .eq('is_home_main', true)
+      .eq('tab_id', 1)
       .order('sort_order', { ascending: false })
       .limit(1);
-    if (res.error) throw res.error;
+    if (res.error) {
+      var res2 = await client
+        .from('youtube_videos')
+        .select('id,video_id,title,description,thumb_url,duration,sort_order,created_at,published_at,is_home_main,is_home_featured')
+        .eq('is_active', true)
+        .eq('is_home_main', true)
+        .order('sort_order', { ascending: false })
+        .limit(1);
+      if (res2.error) throw res2.error;
+      return (res2.data && res2.data[0]) ? mapYoutubeRow(res2.data[0]) : null;
+    }
     return (res.data && res.data[0]) ? mapYoutubeRow(res.data[0]) : null;
   }
 
@@ -84,17 +99,27 @@
       .select('id,video_id,title,description,thumb_url,duration,sort_order,created_at,published_at,is_home_main,is_home_featured')
       .eq('is_active', true)
       .eq('is_home_featured', true)
+      .eq('tab_id', 1)
       .order('sort_order', { ascending: false });
-    if (res.error) throw res.error;
+    if (res.error) {
+      var res2 = await client
+        .from('youtube_videos')
+        .select('id,video_id,title,description,thumb_url,duration,sort_order,created_at,published_at,is_home_main,is_home_featured')
+        .eq('is_active', true)
+        .eq('is_home_featured', true)
+        .order('sort_order', { ascending: false });
+      if (res2.error) throw res2.error;
+      return (res2.data || []).map(mapYoutubeRow);
+    }
     return (res.data || []).map(mapYoutubeRow);
   }
 
-  async function fetchYoutubeAll() {
-    return fetchYoutubeVideos();
+  async function fetchYoutubeAll(opts) {
+    return fetchYoutubeVideos(opts || {});
   }
 
-  async function fetchYoutubeGrid() {
-    var rows = await fetchYoutubeAll();
+  async function fetchYoutubeGrid(opts) {
+    var rows = await fetchYoutubeAll(opts || {});
     return rows;
   }
 
@@ -103,7 +128,7 @@
     if (!client || !dbId) return null;
     var res = await client
       .from('youtube_videos')
-      .select('id,video_id,title,description,thumb_url,duration,sort_order,created_at,published_at,is_home_main,is_home_featured')
+      .select('id,video_id,title,description,thumb_url,duration,sort_order,created_at,published_at,is_home_main,is_home_featured,tab_id')
       .eq('id', dbId)
       .eq('is_active', true)
       .maybeSingle();
@@ -113,9 +138,11 @@
   }
 
   async function fetchYoutubeDetailWithNav(dbId) {
-    var all = await fetchYoutubeVideos();
+    var detail = await fetchYoutubeDetail(dbId);
+    if (!detail) return { detail: null, prev: null, next: null };
+    var all = await fetchYoutubeVideos(detail.tabId != null ? { tabId: detail.tabId } : {});
     if (!all || !all.length) {
-      return { detail: await fetchYoutubeDetail(dbId), prev: null, next: null };
+      return { detail: detail, prev: null, next: null };
     }
     var sid = String(dbId);
     var idx = -1;
@@ -123,7 +150,7 @@
       if (String(all[i].id) === sid) { idx = i; break; }
     }
     if (idx < 0) {
-      return { detail: await fetchYoutubeDetail(dbId), prev: null, next: null };
+      return { detail: detail, prev: null, next: null };
     }
     return {
       detail: all[idx],
@@ -508,14 +535,17 @@
     };
   }
 
-  async function fetchCustomerReviews() {
+  async function fetchCustomerReviews(opts) {
+    opts = opts || {};
     var client = getClient();
     if (!client) return null;
-    var res = await client
+    var q = client
       .from('customer_reviews')
-      .select('listing_id,title,views,published_at,sort_order')
+      .select('listing_id,title,views,published_at,sort_order,tab_id')
       .eq('is_active', true)
       .order('sort_order', { ascending: false });
+    if (opts.tabId != null) q = q.eq('tab_id', opts.tabId);
+    var res = await q;
     if (res.error) throw res.error;
     return (res.data || []).map(function (r) {
       return {
@@ -618,14 +648,17 @@
     };
   }
 
-  async function fetchBlogPosts() {
+  async function fetchBlogPosts(opts) {
+    opts = opts || {};
     var client = getClient();
     if (!client) return null;
-    var res = await client
+    var q = client
       .from('blog_posts')
-      .select('id,title,excerpt,thumb_url,external_url,published_at,view_count,sort_order')
+      .select('id,title,excerpt,thumb_url,external_url,published_at,view_count,sort_order,tab_id')
       .eq('is_active', true)
       .order('sort_order', { ascending: true });
+    if (opts.tabId != null) q = q.eq('tab_id', opts.tabId);
+    var res = await q;
     if (res.error) throw res.error;
     return (res.data || []).map(mapBlogRow);
   }
@@ -637,9 +670,20 @@
       .from('blog_posts')
       .select('id,title,excerpt,thumb_url,external_url,published_at,view_count')
       .eq('is_active', true)
+      .eq('tab_id', 2)
       .order('published_at', { ascending: false, nullsFirst: false })
       .limit(limit || 4);
-    if (res.error) throw res.error;
+    if (res.error) {
+      // tab_id 마이그레이션 전 하위호환
+      var res2 = await client
+        .from('blog_posts')
+        .select('id,title,excerpt,thumb_url,external_url,published_at,view_count')
+        .eq('is_active', true)
+        .order('published_at', { ascending: false, nullsFirst: false })
+        .limit(limit || 4);
+      if (res2.error) throw res2.error;
+      return (res2.data || []).map(mapBlogRow);
+    }
     return (res.data || []).map(mapBlogRow);
   }
 
@@ -650,11 +694,53 @@
       .from('blog_posts')
       .select('id,title,excerpt,thumb_url,external_url,published_at,view_count')
       .eq('is_active', true)
+      .eq('tab_id', 2)
       .order('view_count', { ascending: false })
       .order('published_at', { ascending: false, nullsFirst: false })
       .limit(limit || 4);
-    if (res.error) throw res.error;
+    if (res.error) {
+      var res2 = await client
+        .from('blog_posts')
+        .select('id,title,excerpt,thumb_url,external_url,published_at,view_count')
+        .eq('is_active', true)
+        .order('view_count', { ascending: false })
+        .order('published_at', { ascending: false, nullsFirst: false })
+        .limit(limit || 4);
+      if (res2.error) throw res2.error;
+      return (res2.data || []).map(mapBlogRow);
+    }
     return (res.data || []).map(mapBlogRow);
+  }
+
+  var SYSTEM_TAB = {
+    youtube: { id: 1, slug: 'purple-youtube' },
+    blog: { id: 2, slug: 'purple-blog' },
+    board: { id: 3, slug: 'customer-reviews' }
+  };
+
+  async function fetchReviewTabs(opts) {
+    opts = opts || {};
+    var client = getClient();
+    if (!client) return null;
+    var q = client
+      .from('review_tabs')
+      .select('id,slug,title,type,sort_order,is_active,is_system')
+      .order('sort_order', { ascending: true })
+      .order('id', { ascending: true });
+    if (opts.activeOnly !== false) q = q.eq('is_active', true);
+    var res = await q;
+    if (res.error) throw res.error;
+    return res.data || [];
+  }
+
+  async function fetchReviewTabBySlug(slug) {
+    var tabs = await fetchReviewTabs({ activeOnly: true });
+    if (!tabs) return null;
+    var s = String(slug || '').trim();
+    for (var i = 0; i < tabs.length; i++) {
+      if (tabs[i].slug === s) return tabs[i];
+    }
+    return tabs[0] || null;
   }
 
   async function incrementBlogViews(id) {
@@ -877,6 +963,9 @@
     fetchBlogHomeLatest: fetchBlogHomeLatest,
     fetchBlogHomePopular: fetchBlogHomePopular,
     incrementBlogViews: incrementBlogViews,
+    fetchReviewTabs: fetchReviewTabs,
+    fetchReviewTabBySlug: fetchReviewTabBySlug,
+    SYSTEM_TAB: SYSTEM_TAB,
     submitInquiry: submitInquiry,
     submitLeaseQuote: submitLeaseQuote,
     submitLeaseCalculatorInquiry: submitLeaseCalculatorInquiry,

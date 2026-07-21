@@ -8,6 +8,11 @@
   var editingId = null;
   var youtubeData = [];
   var blogData = [];
+  var reviewTabsData = [];
+  var editingReviewTabId = null;
+  var extraTabContext = null;
+  var rtExtraData = [];
+  var extraContentMode = false;
   var reviewData = [];
   var partsData = [];
   var usedcarsData = [];
@@ -1425,6 +1430,7 @@
     var dateEl = document.querySelector('[data-blog-date="' + id + '"]');
     var viewsEl = document.querySelector('[data-blog-views="' + id + '"]');
     editingId = id;
+    extraContentMode = false;
     document.getElementById('modalBlogTitle').textContent = '블로그 글 수정';
     document.getElementById('blogTitle').value = b.title;
     document.getElementById('blogUrl').value = b.url;
@@ -2329,6 +2335,230 @@
     }
   }
 
+  function typeLabel(type) {
+    if (type === 'youtube') return '유튜브';
+    if (type === 'blog') return '블로그';
+    if (type === 'board') return '게시판';
+    return type || '';
+  }
+
+  function renderReviewTabsTable() {
+    var body = document.getElementById('reviewTabTableBody');
+    if (!body) return;
+    if (!reviewTabsData.length) {
+      body.innerHTML = '<tr><td colspan="7"><div class="empty-row">탭이 없습니다. migration-review-tabs.sql 실행 후 새로고침하세요.</div></td></tr>';
+      return;
+    }
+    body.innerHTML = reviewTabsData.map(function (t, idx) {
+      return '<tr>' +
+        '<td>' + (idx + 1) + '</td>' +
+        '<td class="title-cell">' + (t.title || '') + '</td>' +
+        '<td><code>' + (t.slug || '') + '</code></td>' +
+        '<td>' + typeLabel(t.type) + '</td>' +
+        '<td>' + (t.is_system ? '기본' : '-') + '</td>' +
+        '<td>' + (t.is_active === false ? '숨김' : '노출') + '</td>' +
+        '<td class="row-actions">' +
+          '<button type="button" class="btn btn-outline btn-sm" data-rt-up="' + t.id + '" ' + (idx === 0 ? 'disabled' : '') + '>↑</button> ' +
+          '<button type="button" class="btn btn-outline btn-sm" data-rt-down="' + t.id + '" ' + (idx === reviewTabsData.length - 1 ? 'disabled' : '') + '>↓</button> ' +
+          '<button type="button" class="btn btn-outline btn-sm" data-rt-edit="' + t.id + '">수정</button> ' +
+          (t.is_system ? '' : '<button type="button" class="btn-danger-text" data-rt-del="' + t.id + '">삭제</button>') +
+        '</td></tr>';
+    }).join('');
+    body.querySelectorAll('[data-rt-up]').forEach(function (btn) {
+      btn.addEventListener('click', function () { reorderReviewTab(btn.dataset.rtUp, 'up'); });
+    });
+    body.querySelectorAll('[data-rt-down]').forEach(function (btn) {
+      btn.addEventListener('click', function () { reorderReviewTab(btn.dataset.rtDown, 'down'); });
+    });
+    body.querySelectorAll('[data-rt-edit]').forEach(function (btn) {
+      btn.addEventListener('click', function () { editReviewTab(parseInt(btn.dataset.rtEdit, 10)); });
+    });
+    body.querySelectorAll('[data-rt-del]').forEach(function (btn) {
+      btn.addEventListener('click', function () { deleteReviewTabRow(parseInt(btn.dataset.rtDel, 10)); });
+    });
+  }
+
+  function fillExtraTabSelect() {
+    var sel = document.getElementById('rtExtraTabSelect');
+    if (!sel) return;
+    var extras = reviewTabsData.filter(function (t) { return !t.is_system; });
+    var prev = sel.value;
+    sel.innerHTML = '<option value="">— 추가 탭 선택 —</option>' +
+      extras.map(function (t) {
+        return '<option value="' + t.id + '">' + (t.title || '') + ' (' + typeLabel(t.type) + ')</option>';
+      }).join('');
+    if (prev && extras.some(function (t) { return String(t.id) === String(prev); })) sel.value = prev;
+    else sel.value = '';
+    updateExtraTabHint();
+  }
+
+  function updateExtraTabHint() {
+    var sel = document.getElementById('rtExtraTabSelect');
+    var hint = document.getElementById('rtExtraHint');
+    var addBtn = document.getElementById('btnAddRtExtra');
+    var id = sel && sel.value ? parseInt(sel.value, 10) : 0;
+    extraTabContext = reviewTabsData.find(function (t) { return t.id === id && !t.is_system; }) || null;
+    if (addBtn) addBtn.disabled = !extraTabContext;
+    if (hint) {
+      hint.textContent = extraTabContext
+        ? '선택됨: ' + extraTabContext.title + ' — 업로드 방식은 기존 ' + typeLabel(extraTabContext.type) + '과 동일'
+        : '기본 탭 콘텐츠는 「유튜브」「블로그」「고객후기」 메뉴에서 관리합니다.';
+    }
+  }
+
+  async function loadReviewTabsPanel() {
+    reviewTabsData = await API.listReviewTabs({});
+    renderReviewTabsTable();
+    fillExtraTabSelect();
+    if (extraTabContext) await loadRtExtraContent();
+    else renderRtExtraEmpty();
+  }
+
+  function renderRtExtraEmpty() {
+    var thead = document.getElementById('rtExtraThead');
+    var body = document.getElementById('rtExtraTableBody');
+    if (thead) thead.innerHTML = '<tr><th>제목</th><th></th></tr>';
+    if (body) body.innerHTML = '<tr><td colspan="4"><div class="empty-row">추가 탭을 선택하세요. (기본 블로그/유튜브/고객후기는 기존 메뉴에서 관리)</div></td></tr>';
+    rtExtraData = [];
+  }
+
+  async function loadRtExtraContent() {
+    updateExtraTabHint();
+    if (!extraTabContext) {
+      renderRtExtraEmpty();
+      return;
+    }
+    var type = extraTabContext.type;
+    var thead = document.getElementById('rtExtraThead');
+    var body = document.getElementById('rtExtraTableBody');
+    if (type === 'blog') {
+      rtExtraData = await API.listBlog({ tabId: extraTabContext.id });
+      if (thead) thead.innerHTML = '<tr><th>썸네일</th><th>제목</th><th>URL</th><th></th></tr>';
+      if (!rtExtraData.length) {
+        body.innerHTML = '<tr><td colspan="4"><div class="empty-row">등록된 글이 없습니다.</div></td></tr>';
+        return;
+      }
+      body.innerHTML = rtExtraData.map(function (b) {
+        return '<tr><td class="thumb-cell"><img src="' + escapeAttr(b.thumb) + '" onerror="this.style.opacity=0.15"></td>' +
+          '<td class="title-cell">' + b.title + '</td>' +
+          '<td><a href="' + escapeAttr(b.url) + '" target="_blank" rel="noopener">바로가기</a></td>' +
+          '<td class="row-actions"><button type="button" class="btn btn-outline btn-sm" data-rtx-edit-blog="' + b.id + '">수정</button> ' +
+          '<button type="button" class="btn-danger-text" data-rtx-del-blog="' + b.id + '">삭제</button></td></tr>';
+      }).join('');
+      body.querySelectorAll('[data-rtx-edit-blog]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var b = rtExtraData.find(function (x) { return x.id === parseInt(btn.dataset.rtxEditBlog, 10); });
+          if (!b) return;
+          extraContentMode = true;
+          editingId = b.id;
+          document.getElementById('modalBlogTitle').textContent = '추가 탭 블로그 수정';
+          document.getElementById('blogTitle').value = b.title;
+          document.getElementById('blogUrl').value = b.url;
+          document.getElementById('blogThumb').value = b.thumb || '';
+          document.getElementById('blogDate').value = b.date || '';
+          document.getElementById('blogViewCount').value = b.viewCount || 0;
+          openModal('modalBlog');
+        });
+      });
+      body.querySelectorAll('[data-rtx-del-blog]').forEach(function (btn) {
+        btn.addEventListener('click', async function () {
+          if (!confirm('삭제할까요?')) return;
+          try {
+            await API.deleteBlog(parseInt(btn.dataset.rtxDelBlog, 10));
+            await loadRtExtraContent();
+          } catch (err) { showError(err); }
+        });
+      });
+    } else if (type === 'youtube') {
+      rtExtraData = await API.listYoutube({ tabId: extraTabContext.id });
+      if (thead) thead.innerHTML = '<tr><th>썸네일</th><th>제목</th><th>URL</th><th></th></tr>';
+      if (!rtExtraData.length) {
+        body.innerHTML = '<tr><td colspan="4"><div class="empty-row">등록된 영상이 없습니다.</div></td></tr>';
+        return;
+      }
+      body.innerHTML = rtExtraData.map(function (v) {
+        return '<tr><td class="thumb-cell"><img src="' + escapeAttr(v.thumb) + '" onerror="this.style.opacity=0.15"></td>' +
+          '<td class="title-cell">' + v.title + '</td>' +
+          '<td><a href="' + escapeAttr(v.url) + '" target="_blank" rel="noopener">바로가기</a></td>' +
+          '<td class="row-actions"><button type="button" class="btn-danger-text" data-rtx-del-yt="' + v.id + '">삭제</button></td></tr>';
+      }).join('');
+      body.querySelectorAll('[data-rtx-del-yt]').forEach(function (btn) {
+        btn.addEventListener('click', async function () {
+          if (!confirm('삭제할까요?')) return;
+          try {
+            await API.deleteYoutube(parseInt(btn.dataset.rtxDelYt, 10));
+            await loadRtExtraContent();
+          } catch (err) { showError(err); }
+        });
+      });
+    } else {
+      rtExtraData = await API.listReviews({ tabId: extraTabContext.id });
+      if (thead) thead.innerHTML = '<tr><th>제목</th><th>등록일</th><th>조회</th><th></th></tr>';
+      if (!rtExtraData.length) {
+        body.innerHTML = '<tr><td colspan="4"><div class="empty-row">등록된 후기가 없습니다.</div></td></tr>';
+        return;
+      }
+      body.innerHTML = rtExtraData.map(function (r) {
+        return '<tr><td class="title-cell">' + r.title + '</td><td>' + (r.date || '') + '</td><td>' + (r.views || 0) + '</td>' +
+          '<td class="row-actions"><button type="button" class="btn btn-outline btn-sm" data-rtx-edit-rev="' + r.id + '">수정</button> ' +
+          '<button type="button" class="btn-danger-text" data-rtx-del-rev="' + r.id + '">삭제</button></td></tr>';
+      }).join('');
+      body.querySelectorAll('[data-rtx-edit-rev]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var r = rtExtraData.find(function (x) { return x.id === parseInt(btn.dataset.rtxEditRev, 10); });
+          if (!r) return;
+          extraContentMode = true;
+          editingId = r.id;
+          document.getElementById('modalReviewTitle').textContent = '추가 탭 후기 수정';
+          document.getElementById('reviewTitle').value = r.title;
+          document.getElementById('reviewBody').value = r.body || '';
+          document.getElementById('reviewDate').value = r.date || '';
+          openModal('modalReview');
+        });
+      });
+      body.querySelectorAll('[data-rtx-del-rev]').forEach(function (btn) {
+        btn.addEventListener('click', async function () {
+          if (!confirm('삭제할까요?')) return;
+          try {
+            await API.deleteReview(parseInt(btn.dataset.rtxDelRev, 10));
+            await loadRtExtraContent();
+          } catch (err) { showError(err); }
+        });
+      });
+    }
+  }
+
+  function editReviewTab(id) {
+    var t = reviewTabsData.find(function (x) { return x.id === id; });
+    if (!t) return;
+    editingReviewTabId = id;
+    document.getElementById('modalReviewTabTitle').textContent = t.is_system ? '기본 탭 수정' : '탭 수정';
+    document.getElementById('rtTitle').value = t.title || '';
+    document.getElementById('rtSlug').value = t.slug || '';
+    document.getElementById('rtType').value = t.type || 'blog';
+    document.getElementById('rtActive').checked = t.is_active !== false;
+    document.getElementById('rtSlug').disabled = !!t.is_system;
+    document.getElementById('rtType').disabled = !!t.is_system;
+    document.getElementById('rtTypeLockHint').style.display = t.is_system ? 'block' : 'none';
+    openModal('modalReviewTab');
+  }
+
+  async function reorderReviewTab(id, dir) {
+    try {
+      reviewTabsData = await API.reorderReviewTab(id, dir);
+      renderReviewTabsTable();
+      fillExtraTabSelect();
+    } catch (err) { showError(err); }
+  }
+
+  async function deleteReviewTabRow(id) {
+    if (!confirm('이 탭을 삭제할까요?')) return;
+    try {
+      await API.deleteReviewTab(id);
+      await loadReviewTabsPanel();
+    } catch (err) { showError(err); }
+  }
+
   async function loadAll() {
     var visitorsPromise = loadDashboardVisitors();
     var usedCarAutoSyncPromise = loadDashboardUsedCarAutoSync();
@@ -2896,6 +3126,9 @@
         if (item.dataset.panel === 'customer-review') {
           await loadAiReviewGenPanel();
         }
+        if (item.dataset.panel === 'review-tabs') {
+          await loadReviewTabsPanel();
+        }
       });
     });
 
@@ -3069,22 +3302,30 @@
 
     document.getElementById('btnAddYoutube').addEventListener('click', function () {
       editingId = null;
+      extraContentMode = false;
       document.getElementById('modalYoutubeTitle').textContent = '영상 등록';
       ['ytTitle', 'ytUrl', 'ytThumb', 'ytDuration', 'ytDate'].forEach(function (id) { document.getElementById(id).value = ''; });
       openModal('modalYoutube');
     });
     document.getElementById('btnSaveYoutube').addEventListener('click', async function () {
       try {
-        await API.saveYoutube({
+        var payload = {
           title: document.getElementById('ytTitle').value.trim(),
           url: document.getElementById('ytUrl').value.trim(),
           thumb: document.getElementById('ytThumb').value.trim(),
           duration: document.getElementById('ytDuration').value.trim(),
           date: document.getElementById('ytDate').value.trim()
-        }, editingId);
+        };
+        if (extraContentMode && extraTabContext) payload.tabId = extraTabContext.id;
+        await API.saveYoutube(payload, editingId);
         closeModal('modalYoutube');
-        youtubeData = await API.listYoutube();
-        renderYoutubeTable();
+        if (extraContentMode) {
+          extraContentMode = false;
+          await loadRtExtraContent();
+        } else {
+          youtubeData = await API.listYoutube();
+          renderYoutubeTable();
+        }
       } catch (err) { showError(err); }
     });
     document.getElementById('btnUploadYtThumb').addEventListener('click', function () {
@@ -3093,6 +3334,7 @@
 
     document.getElementById('btnAddBlog').addEventListener('click', function () {
       editingId = null;
+      extraContentMode = false;
       document.getElementById('modalBlogTitle').textContent = '블로그 글 등록';
       ['blogTitle', 'blogUrl', 'blogThumb', 'blogDate', 'blogViewCount'].forEach(function (id) { document.getElementById(id).value = ''; });
       document.getElementById('blogViewCount').value = '0';
@@ -3100,16 +3342,23 @@
     });
     document.getElementById('btnSaveBlog').addEventListener('click', async function () {
       try {
-        await API.saveBlog({
+        var payload = {
           title: document.getElementById('blogTitle').value.trim(),
           url: document.getElementById('blogUrl').value.trim(),
           thumb: document.getElementById('blogThumb').value.trim(),
           date: document.getElementById('blogDate').value.trim(),
           viewCount: document.getElementById('blogViewCount').value.trim()
-        }, editingId);
+        };
+        if (extraContentMode && extraTabContext) payload.tabId = extraTabContext.id;
+        await API.saveBlog(payload, editingId);
         closeModal('modalBlog');
-        blogData = await API.listBlog();
-        renderBlogTable();
+        if (extraContentMode) {
+          extraContentMode = false;
+          await loadRtExtraContent();
+        } else {
+          blogData = await API.listBlog();
+          renderBlogTable();
+        }
       } catch (err) { showError(err); }
     });
     document.getElementById('btnUploadBlogThumb').addEventListener('click', function () {
@@ -3118,20 +3367,28 @@
 
     document.getElementById('btnAddReview').addEventListener('click', function () {
       editingId = null;
+      extraContentMode = false;
       document.getElementById('modalReviewTitle').textContent = '후기 작성';
       ['reviewTitle', 'reviewBody', 'reviewDate'].forEach(function (id) { document.getElementById(id).value = ''; });
       openModal('modalReview');
     });
     document.getElementById('btnSaveReview').addEventListener('click', async function () {
       try {
-        await API.saveReview({
+        var payload = {
           title: document.getElementById('reviewTitle').value.trim(),
           body: document.getElementById('reviewBody').value.trim(),
           date: document.getElementById('reviewDate').value.trim()
-        }, editingId);
+        };
+        if (extraContentMode && extraTabContext) payload.tabId = extraTabContext.id;
+        await API.saveReview(payload, editingId);
         closeModal('modalReview');
-        reviewData = await API.listReviews();
-        renderReviewTable();
+        if (extraContentMode) {
+          extraContentMode = false;
+          await loadRtExtraContent();
+        } else {
+          reviewData = await API.listReviews();
+          renderReviewTable();
+        }
       } catch (err) { showError(err); }
     });
 
@@ -3435,6 +3692,56 @@
     }
     bindOptionalClick('btnSaveFooter', saveFooterPanel);
     bindOptionalClick('btnSavePaidTransfer', savePaidTransferPanel);
+
+    bindOptionalClick('btnAddReviewTab', function () {
+      editingReviewTabId = null;
+      document.getElementById('modalReviewTabTitle').textContent = '탭 추가';
+      document.getElementById('rtTitle').value = '';
+      document.getElementById('rtSlug').value = '';
+      document.getElementById('rtType').value = 'blog';
+      document.getElementById('rtActive').checked = true;
+      document.getElementById('rtSlug').disabled = false;
+      document.getElementById('rtType').disabled = false;
+      document.getElementById('rtTypeLockHint').style.display = 'none';
+      openModal('modalReviewTab');
+    });
+    bindOptionalClick('btnSaveReviewTab', async function () {
+      try {
+        await API.saveReviewTab({
+          title: document.getElementById('rtTitle').value.trim(),
+          slug: document.getElementById('rtSlug').value.trim(),
+          type: document.getElementById('rtType').value,
+          is_active: document.getElementById('rtActive').checked
+        }, editingReviewTabId);
+        closeModal('modalReviewTab');
+        await loadReviewTabsPanel();
+      } catch (err) { showError(err); }
+    });
+    var rtExtraSel = document.getElementById('rtExtraTabSelect');
+    if (rtExtraSel) {
+      rtExtraSel.addEventListener('change', function () {
+        loadRtExtraContent().catch(function (err) { showError(err); });
+      });
+    }
+    bindOptionalClick('btnAddRtExtra', function () {
+      if (!extraTabContext) return;
+      extraContentMode = true;
+      editingId = null;
+      if (extraTabContext.type === 'blog') {
+        document.getElementById('modalBlogTitle').textContent = '추가 탭 블로그 등록';
+        ['blogTitle', 'blogUrl', 'blogThumb', 'blogDate', 'blogViewCount'].forEach(function (id) { document.getElementById(id).value = ''; });
+        document.getElementById('blogViewCount').value = '0';
+        openModal('modalBlog');
+      } else if (extraTabContext.type === 'youtube') {
+        document.getElementById('modalYoutubeTitle').textContent = '추가 탭 영상 등록';
+        ['ytTitle', 'ytUrl', 'ytThumb', 'ytDuration', 'ytDate'].forEach(function (id) { document.getElementById(id).value = ''; });
+        openModal('modalYoutube');
+      } else {
+        document.getElementById('modalReviewTitle').textContent = '추가 탭 후기 작성';
+        ['reviewTitle', 'reviewBody', 'reviewDate'].forEach(function (id) { document.getElementById(id).value = ''; });
+        openModal('modalReview');
+      }
+    });
 
     var ptPanel = document.getElementById('panel-paid-transfer');
     if (ptPanel && !ptPanel.dataset.ptUploadBound) {

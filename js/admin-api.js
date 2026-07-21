@@ -315,9 +315,101 @@
     };
   }
 
-  async function listYoutube() {
-    var res = await db().from('youtube_videos').select('*').order('sort_order', { ascending: false });
+  /* ---------- Review Tabs (퍼플리뷰) ---------- */
+  var SYSTEM_TAB_ID = { youtube: 1, blog: 2, board: 3 };
+
+  async function listReviewTabs(opts) {
+    opts = opts || {};
+    var q = db().from('review_tabs').select('*').order('sort_order', { ascending: true }).order('id', { ascending: true });
+    if (opts.activeOnly) q = q.eq('is_active', true);
+    var res = await q;
     if (res.error) throw res.error;
+    return res.data || [];
+  }
+
+  async function saveReviewTab(payload, editingId) {
+    var title = String(payload.title || '').trim();
+    var slug = String(payload.slug || '').trim().toLowerCase().replace(/[^a-z0-9\-]+/g, '-').replace(/^-+|-+$/g, '');
+    var type = payload.type;
+    if (!title) throw new Error('탭 제목은 필수입니다.');
+    if (!slug) throw new Error('슬러그(영문 URL키)는 필수입니다.');
+    if (['blog', 'youtube', 'board'].indexOf(type) < 0) throw new Error('타입은 blog / youtube / board 중 하나여야 합니다.');
+
+    if (editingId) {
+      var existing = await db().from('review_tabs').select('*').eq('id', editingId).maybeSingle();
+      if (existing.error) throw existing.error;
+      if (!existing.data) throw new Error('탭을 찾을 수 없습니다.');
+      var rowUp = {
+        title: title,
+        is_active: payload.is_active !== false,
+        updated_at: new Date().toISOString()
+      };
+      if (!existing.data.is_system) {
+        rowUp.slug = slug;
+        rowUp.type = type;
+      }
+      var up = await db().from('review_tabs').update(rowUp).eq('id', editingId).select().single();
+      if (up.error) throw up.error;
+      return up.data;
+    }
+
+    var maxRes = await db().from('review_tabs').select('sort_order').order('sort_order', { ascending: false }).limit(1);
+    var nextOrder = (maxRes.data && maxRes.data[0]) ? (maxRes.data[0].sort_order + 10) : 100;
+    var ins = await db().from('review_tabs').insert([{
+      title: title,
+      slug: slug,
+      type: type,
+      sort_order: nextOrder,
+      is_active: payload.is_active !== false,
+      is_system: false
+    }]).select().single();
+    if (ins.error) throw ins.error;
+    return ins.data;
+  }
+
+  async function reorderReviewTab(id, direction) {
+    var tabs = await listReviewTabs({});
+    var idx = -1;
+    for (var i = 0; i < tabs.length; i++) {
+      if (String(tabs[i].id) === String(id)) { idx = i; break; }
+    }
+    if (idx < 0) throw new Error('탭을 찾을 수 없습니다.');
+    var swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= tabs.length) return tabs;
+    var a = tabs[idx];
+    var b = tabs[swapIdx];
+    var orderA = a.sort_order;
+    var up1 = await db().from('review_tabs').update({ sort_order: b.sort_order, updated_at: new Date().toISOString() }).eq('id', a.id);
+    if (up1.error) throw up1.error;
+    var up2 = await db().from('review_tabs').update({ sort_order: orderA, updated_at: new Date().toISOString() }).eq('id', b.id);
+    if (up2.error) throw up2.error;
+    return listReviewTabs({});
+  }
+
+  async function deleteReviewTab(id) {
+    var existing = await db().from('review_tabs').select('*').eq('id', id).maybeSingle();
+    if (existing.error) throw existing.error;
+    if (!existing.data) throw new Error('탭을 찾을 수 없습니다.');
+    if (existing.data.is_system) throw new Error('기본 탭(유튜브/블로그/고객후기)은 삭제할 수 없습니다.');
+    var type = existing.data.type;
+    var table = type === 'blog' ? 'blog_posts' : (type === 'youtube' ? 'youtube_videos' : 'customer_reviews');
+    var cnt = await db().from(table).select('id', { count: 'exact', head: true }).eq('tab_id', id);
+    if (cnt.error) throw cnt.error;
+    if ((cnt.count || 0) > 0) throw new Error('이 탭에 등록된 콘텐츠가 있어 삭제할 수 없습니다. 글을 먼저 삭제하세요.');
+    var del = await db().from('review_tabs').delete().eq('id', id);
+    if (del.error) throw del.error;
+  }
+
+  async function listYoutube(opts) {
+    opts = opts || {};
+    var tabId = opts.tabId != null ? opts.tabId : SYSTEM_TAB_ID.youtube;
+    var res = await db().from('youtube_videos').select('*').eq('tab_id', tabId).order('sort_order', { ascending: false });
+    if (res.error) {
+      if (opts.tabId != null) throw res.error;
+      var res2 = await db().from('youtube_videos').select('*').order('sort_order', { ascending: false });
+      if (res2.error) throw res2.error;
+      return (res2.data || []).map(mapYoutubeAdminRow);
+    }
     return (res.data || []).map(mapYoutubeAdminRow);
   }
 
@@ -415,7 +507,8 @@
         is_active: true,
         sort_order: videoIds.length - idx,
         is_home_main: !!flags.main,
-        is_home_featured: !!flags.featured
+        is_home_featured: !!flags.featured,
+        tab_id: SYSTEM_TAB_ID.youtube
       };
       var ups = await db().from('youtube_videos').upsert(row, { onConflict: 'video_id' });
       if (ups.error) throw ups.error;
@@ -427,6 +520,7 @@
   async function saveYoutube(payload, editingId) {
     var videoId = parseYoutubeVideoId(payload.url);
     if (!payload.title || !videoId) throw new Error('제목과 유효한 유튜브 URL이 필요합니다.');
+    var tabId = payload.tabId != null ? payload.tabId : SYSTEM_TAB_ID.youtube;
     var row = {
       title: payload.title,
       video_id: videoId,
@@ -434,7 +528,8 @@
       thumb_url: payload.thumb || '',
       duration: payload.duration || '',
       published_at: parseDotDate(payload.date),
-      is_active: true
+      is_active: true,
+      tab_id: tabId
     };
     if (editingId) {
       var up = await db().from('youtube_videos').update(row).eq('id', editingId).select().single();
@@ -453,9 +548,26 @@
   }
 
   /* ---------- Blog ---------- */
-  async function listBlog() {
-    var res = await db().from('blog_posts').select('*').order('sort_order', { ascending: true });
-    if (res.error) throw res.error;
+  async function listBlog(opts) {
+    opts = opts || {};
+    var tabId = opts.tabId != null ? opts.tabId : SYSTEM_TAB_ID.blog;
+    var res = await db().from('blog_posts').select('*').eq('tab_id', tabId).order('sort_order', { ascending: true });
+    if (res.error) {
+      if (opts.tabId != null) throw res.error;
+      var res2 = await db().from('blog_posts').select('*').order('sort_order', { ascending: true });
+      if (res2.error) throw res2.error;
+      return (res2.data || []).map(function (r) {
+        return {
+          id: r.id,
+          title: r.title,
+          url: r.external_url,
+          thumb: r.thumb_url,
+          date: fmtDate(r.published_at),
+          viewCount: r.view_count || 0,
+          tabId: r.tab_id
+        };
+      });
+    }
     return (res.data || []).map(function (r) {
       return {
         id: r.id,
@@ -463,13 +575,15 @@
         url: r.external_url,
         thumb: r.thumb_url,
         date: fmtDate(r.published_at),
-        viewCount: r.view_count || 0
+        viewCount: r.view_count || 0,
+        tabId: r.tab_id
       };
     });
   }
 
   async function saveBlog(payload, editingId) {
     if (!payload.title || !payload.url) throw new Error('제목과 URL은 필수입니다.');
+    var tabId = payload.tabId != null ? payload.tabId : SYSTEM_TAB_ID.blog;
     var row = {
       title: payload.title,
       external_url: payload.url,
@@ -477,7 +591,8 @@
       excerpt: payload.title,
       published_at: parseDotDate(payload.date),
       view_count: parseInt(payload.viewCount, 10) || 0,
-      is_active: true
+      is_active: true,
+      tab_id: tabId
     };
     if (editingId) {
       var up = await db().from('blog_posts').update(row).eq('id', editingId).select().single();
@@ -507,27 +622,46 @@
   }
 
   /* ---------- Customer Reviews ---------- */
-  async function listReviews() {
-    var res = await db().from('customer_reviews').select('*').order('sort_order', { ascending: false });
-    if (res.error) throw res.error;
+  async function listReviews(opts) {
+    opts = opts || {};
+    var tabId = opts.tabId != null ? opts.tabId : SYSTEM_TAB_ID.board;
+    var res = await db().from('customer_reviews').select('*').eq('tab_id', tabId).order('sort_order', { ascending: false });
+    if (res.error) {
+      if (opts.tabId != null) throw res.error;
+      var res2 = await db().from('customer_reviews').select('*').order('sort_order', { ascending: false });
+      if (res2.error) throw res2.error;
+      return (res2.data || []).map(function (r) {
+        return {
+          id: r.listing_id,
+          title: r.title,
+          body: r.body,
+          date: fmtDate(r.published_at),
+          views: r.views || 0,
+          tabId: r.tab_id
+        };
+      });
+    }
     return (res.data || []).map(function (r) {
       return {
         id: r.listing_id,
         title: r.title,
         body: r.body,
         date: fmtDate(r.published_at),
-        views: r.views || 0
+        views: r.views || 0,
+        tabId: r.tab_id
       };
     });
   }
 
   async function saveReview(payload, editingId) {
     if (!payload.title) throw new Error('제목은 필수입니다.');
+    var tabId = payload.tabId != null ? payload.tabId : SYSTEM_TAB_ID.board;
     var row = {
       title: payload.title,
       body: payload.body || '',
       published_at: parseDotDate(payload.date) || new Date().toISOString().slice(0, 10),
-      is_active: true
+      is_active: true,
+      tab_id: tabId
     };
     if (editingId) {
       var up = await db().from('customer_reviews').update(row).eq('listing_id', editingId).select().single();
@@ -2403,6 +2537,11 @@
     listReviews: listReviews,
     saveReview: saveReview,
     deleteReview: deleteReview,
+    listReviewTabs: listReviewTabs,
+    saveReviewTab: saveReviewTab,
+    reorderReviewTab: reorderReviewTab,
+    deleteReviewTab: deleteReviewTab,
+    SYSTEM_TAB_ID: SYSTEM_TAB_ID,
     getReviewTopicsForAdmin: getReviewTopicsForAdmin,
     enqueueCustomerReviewGen: enqueueCustomerReviewGen,
     generateCustomerReviewNow: generateCustomerReviewNow,

@@ -30,13 +30,13 @@
     { href: '/parts-register', label: '수입차부품', match: /^\/parts-/ },
     { href: '/partners', label: '제휴업체', match: /^\/partners/ },
     {
-      href: '/reviews-customer',
+      href: '/reviews',
       label: '퍼플리뷰',
-      match: /^\/(reviews-|review-detail)/,
+      match: /^\/(reviews|review-detail|youtube-detail)/,
       children: [
-        { href: '/reviews-youtube', label: '퍼플오토 유튜브', match: /^\/reviews-youtube/ },
-        { href: '/reviews-blog', label: '퍼플오토 블로그', match: /^\/reviews-blog/ },
-        { href: '/reviews-customer', label: '고객후기', match: /^\/(reviews-customer|review-detail)/ }
+        { href: '/reviews?tab=purple-youtube', label: '퍼플오토 유튜브', match: /tab=purple-youtube|\/reviews-youtube/ },
+        { href: '/reviews?tab=purple-blog', label: '퍼플오토 블로그', match: /tab=purple-blog|\/reviews-blog/ },
+        { href: '/reviews?tab=customer-reviews', label: '고객후기', match: /tab=customer-reviews|\/reviews-customer|\/review-detail/ }
       ]
     },
     {
