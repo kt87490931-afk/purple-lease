@@ -212,8 +212,10 @@
       if (played) return;
       played = true;
       var embed = dataApi.youtubeEmbedUrl(dataApi.getIntroVideoId());
-      shell.innerHTML = '<iframe src="' + embed + '" title="제휴업체 소개 영상" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+      shell.innerHTML = '<iframe src="' + embed + '" title="제휴업체 소개 영상" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe>';
       shell.classList.add('is-playing');
+      shell.setAttribute('aria-label', '제휴업체 소개 영상 재생 중');
+      shell.style.cursor = 'default';
     });
   }
 
