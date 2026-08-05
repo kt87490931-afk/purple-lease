@@ -814,7 +814,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     <div class="wrap">
       <div class="section-head">
         <div><span class="eyebrow">PURPLE AUTO BLOG</span><h2 class="section-title">퍼플오토 블로그</h2></div>
-        <a href="/reviews?tab=purple-blog" class="section-more">전체보기 →</a>
+        <a href="/reviews" class="section-more">전체보기 →</a>
       </div>
       <div class="blog-home-block">
         <h3 class="blog-sub-title">최신 글</h3>
@@ -870,7 +870,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="/js/supabase-config.js"></script>
 <script src="/js/youtube-utils.js"></script>
-<script src="/js/supabase-data.js?v=20260716b"></script>
+<script src="/js/supabase-data.js?v=20260805a"></script>
 <script>
   // Supabase 연동 — 메인영상 1개 + 추천영상 캐러셀 (index 전용)
   let mainVideo = null;
@@ -1110,7 +1110,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
           <span class="ext-badge">${extLinkSvg} 블로그</span>
         </div>
         <div class="blog-home-body">
-          <div class="blog-source">퍼플오토 블로그</div>
+          <div class="blog-source">${escapeHtml(b.tabTitle || '블로그')}</div>
           <div class="blog-title">${escapeHtml(b.title)}</div>
           <div class="blog-meta"><span>${escapeHtml(b.date || '')}</span><span>조회 ${(b.viewCount || 0).toLocaleString('ko-KR')}</span></div>
         </div>

@@ -644,7 +644,9 @@
       url: r.external_url,
       date: fmtDate(r.published_at),
       viewCount: r.view_count || 0,
-      publishedAt: r.published_at || null
+      publishedAt: r.published_at || null,
+      tabId: r.tab_id != null ? r.tab_id : null,
+      tabTitle: r.tabTitle || null
     };
   }
 
@@ -663,18 +665,58 @@
     return (res.data || []).map(mapBlogRow);
   }
 
+  var SYSTEM_TAB = {
+    youtube: { id: 1, slug: 'purple-youtube' },
+    blog: { id: 2, slug: 'purple-blog' },
+    board: { id: 3, slug: 'customer-reviews' }
+  };
+
+  /** 활성 blog 타입 탭 id·제목 (시드 + 추가 탭 포함). 메인 최신/인기글용 */
+  async function getActiveBlogTabMeta() {
+    var fallback = {
+      ids: [SYSTEM_TAB.blog.id],
+      titleById: {}
+    };
+    fallback.titleById[SYSTEM_TAB.blog.id] = '퍼플오토 블로그';
+    try {
+      var tabs = await fetchReviewTabs({ activeOnly: true });
+      if (!tabs || !tabs.length) return fallback;
+      var blogTabs = tabs.filter(function (t) { return t.type === 'blog'; });
+      if (!blogTabs.length) return fallback;
+      var titleById = {};
+      var ids = [];
+      blogTabs.forEach(function (t) {
+        ids.push(t.id);
+        titleById[t.id] = t.title || '블로그';
+      });
+      return { ids: ids, titleById: titleById };
+    } catch (err) {
+      console.warn('[PurpleLease] getActiveBlogTabMeta:', err);
+      return fallback;
+    }
+  }
+
+  function mapBlogHomeRows(rows, titleById) {
+    return (rows || []).map(function (r) {
+      var item = mapBlogRow(r);
+      item.tabTitle = (titleById && titleById[r.tab_id]) || item.tabTitle || '블로그';
+      return item;
+    });
+  }
+
   async function fetchBlogHomeLatest(limit) {
     var client = getClient();
     if (!client) return null;
+    var meta = await getActiveBlogTabMeta();
     var res = await client
       .from('blog_posts')
-      .select('id,title,excerpt,thumb_url,external_url,published_at,view_count')
+      .select('id,title,excerpt,thumb_url,external_url,published_at,view_count,tab_id')
       .eq('is_active', true)
-      .eq('tab_id', 2)
+      .in('tab_id', meta.ids)
       .order('published_at', { ascending: false, nullsFirst: false })
       .limit(limit || 4);
     if (res.error) {
-      // tab_id 마이그레이션 전 하위호환
+      // tab_id / review_tabs 마이그레이션 전 하위호환
       var res2 = await client
         .from('blog_posts')
         .select('id,title,excerpt,thumb_url,external_url,published_at,view_count')
@@ -682,19 +724,20 @@
         .order('published_at', { ascending: false, nullsFirst: false })
         .limit(limit || 4);
       if (res2.error) throw res2.error;
-      return (res2.data || []).map(mapBlogRow);
+      return mapBlogHomeRows(res2.data, meta.titleById);
     }
-    return (res.data || []).map(mapBlogRow);
+    return mapBlogHomeRows(res.data, meta.titleById);
   }
 
   async function fetchBlogHomePopular(limit) {
     var client = getClient();
     if (!client) return null;
+    var meta = await getActiveBlogTabMeta();
     var res = await client
       .from('blog_posts')
-      .select('id,title,excerpt,thumb_url,external_url,published_at,view_count')
+      .select('id,title,excerpt,thumb_url,external_url,published_at,view_count,tab_id')
       .eq('is_active', true)
-      .eq('tab_id', 2)
+      .in('tab_id', meta.ids)
       .order('view_count', { ascending: false })
       .order('published_at', { ascending: false, nullsFirst: false })
       .limit(limit || 4);
@@ -707,16 +750,10 @@
         .order('published_at', { ascending: false, nullsFirst: false })
         .limit(limit || 4);
       if (res2.error) throw res2.error;
-      return (res2.data || []).map(mapBlogRow);
+      return mapBlogHomeRows(res2.data, meta.titleById);
     }
-    return (res.data || []).map(mapBlogRow);
+    return mapBlogHomeRows(res.data, meta.titleById);
   }
-
-  var SYSTEM_TAB = {
-    youtube: { id: 1, slug: 'purple-youtube' },
-    blog: { id: 2, slug: 'purple-blog' },
-    board: { id: 3, slug: 'customer-reviews' }
-  };
 
   async function fetchReviewTabs(opts) {
     opts = opts || {};
