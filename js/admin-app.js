@@ -8,6 +8,10 @@
   var editingId = null;
   var youtubeData = [];
   var blogData = [];
+  var blogTabsForSelect = [];
+  var selectedBlogTabId = 2;
+  var blogHomeLatestData = [];
+  var blogHomePopularData = [];
   var reviewTabsData = [];
   var editingReviewTabId = null;
   var extraTabContext = null;
@@ -1367,7 +1371,9 @@
 
   function renderBlogTable() {
     var body = document.getElementById('blogTableBody');
-    document.getElementById('blogCount').textContent = blogData.length;
+    var countEl = document.getElementById('blogCount');
+    if (countEl) countEl.textContent = blogData.length;
+    if (!body) return;
     if (!blogData.length) {
       body.innerHTML = '<tr><td colspan="6"><div class="empty-row">등록된 블로그 글이 없습니다.</div></td></tr>';
       return;
@@ -1396,6 +1402,124 @@
     updateKpis();
   }
 
+  function renderBlogHomePreviewRows(list, bodyId, prefix) {
+    var body = document.getElementById(bodyId);
+    if (!body) return;
+    if (!list || !list.length) {
+      body.innerHTML = '<tr><td colspan="6"><div class="empty-row">노출 예정 글이 없습니다.</div></td></tr>';
+      return;
+    }
+    body.innerHTML = list.map(function (b, idx) {
+      return '<tr>' +
+        '<td class="num-cell">' + (idx + 1) + '</td>' +
+        '<td class="title-cell" title="' + escapeAttr(b.title) + '">' + escapeAttr(b.title) + '</td>' +
+        '<td style="white-space:nowrap;font-size:11.5px;color:var(--ink-600);">' + escapeAttr(b.tabTitle || '') + '</td>' +
+        '<td><input type="text" class="inline-edit-input" data-' + prefix + '-date="' + b.id + '" value="' + escapeAttr(b.date) + '" placeholder="2026.06.25" aria-label="등록일" style="max-width:96px;"></td>' +
+        '<td><input type="number" class="inline-edit-input" data-' + prefix + '-views="' + b.id + '" value="' + (b.viewCount || 0) + '" min="0" step="1" aria-label="조회수" style="max-width:72px;"></td>' +
+        '<td class="row-actions"><button type="button" class="btn btn-primary btn-sm" data-save-' + prefix + '="' + b.id + '">저장</button></td></tr>';
+    }).join('');
+    body.querySelectorAll('[data-save-' + prefix + ']').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = parseInt(btn.getAttribute('data-save-' + prefix), 10);
+        saveBlogHomeMetaInline(id, prefix, btn);
+      });
+    });
+  }
+
+  function renderBlogHomePreview() {
+    renderBlogHomePreviewRows(blogHomeLatestData, 'blogHomeLatestBody', 'bhl');
+    renderBlogHomePreviewRows(blogHomePopularData, 'blogHomePopularBody', 'bhp');
+  }
+
+  async function loadBlogHomePreview() {
+    try {
+      var pair = await Promise.all([
+        API.listBlogHomeLatest(4),
+        API.listBlogHomePopular(4)
+      ]);
+      blogHomeLatestData = pair[0] || [];
+      blogHomePopularData = pair[1] || [];
+      renderBlogHomePreview();
+    } catch (err) {
+      console.warn('[Admin] blog home preview:', err);
+      var latestBody = document.getElementById('blogHomeLatestBody');
+      var popularBody = document.getElementById('blogHomePopularBody');
+      var msg = '<tr><td colspan="6"><div class="empty-row">미리보기를 불러오지 못했습니다.</div></td></tr>';
+      if (latestBody) latestBody.innerHTML = msg;
+      if (popularBody) popularBody.innerHTML = msg;
+    }
+  }
+
+  function fillBlogTabSelect() {
+    var sel = document.getElementById('blogTabSelect');
+    if (!sel) return;
+    var tabs = blogTabsForSelect.filter(function (t) { return t.type === 'blog'; });
+    if (!tabs.length) {
+      tabs = [{ id: selectedBlogTabId || 2, title: '퍼플오토 블로그', type: 'blog' }];
+    }
+    var prev = selectedBlogTabId != null ? String(selectedBlogTabId) : '';
+    sel.innerHTML = tabs.map(function (t) {
+      return '<option value="' + t.id + '">' + escapeAttr(t.title || '블로그') + (t.is_system ? ' (기본)' : '') + '</option>';
+    }).join('');
+    if (prev && tabs.some(function (t) { return String(t.id) === prev; })) {
+      sel.value = prev;
+      selectedBlogTabId = parseInt(prev, 10);
+    } else {
+      selectedBlogTabId = tabs[0].id;
+      sel.value = String(selectedBlogTabId);
+    }
+  }
+
+  async function loadBlogListForSelectedTab() {
+    blogData = await API.listBlog({ tabId: selectedBlogTabId });
+    renderBlogTable();
+  }
+
+  async function loadBlogPanel() {
+    try {
+      blogTabsForSelect = await API.listReviewTabs({});
+    } catch (err) {
+      console.warn('[Admin] blog tabs:', err);
+      blogTabsForSelect = [];
+    }
+    fillBlogTabSelect();
+    await Promise.all([loadBlogListForSelectedTab(), loadBlogHomePreview()]);
+  }
+
+  async function saveBlogHomeMetaInline(id, prefix, btn) {
+    var dateEl = document.querySelector('[data-' + prefix + '-date="' + id + '"]');
+    var viewsEl = document.querySelector('[data-' + prefix + '-views="' + id + '"]');
+    if (!dateEl || !viewsEl) return;
+    var prevText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '저장 중…';
+    try {
+      await API.patchBlogMeta(id, {
+        date: dateEl.value.trim(),
+        viewCount: viewsEl.value.trim()
+      });
+      var item = blogData.find(function (x) { return x.id === id; });
+      if (item) {
+        item.date = dateEl.value.trim();
+        item.viewCount = parseInt(viewsEl.value, 10) || 0;
+        var listDate = document.querySelector('[data-blog-date="' + id + '"]');
+        var listViews = document.querySelector('[data-blog-views="' + id + '"]');
+        if (listDate) listDate.value = item.date;
+        if (listViews) listViews.value = String(item.viewCount);
+      }
+      btn.textContent = '저장됨';
+      await loadBlogHomePreview();
+      setTimeout(function () {
+        btn.textContent = prevText;
+        btn.disabled = false;
+      }, 1000);
+    } catch (err) {
+      btn.textContent = prevText;
+      btn.disabled = false;
+      showError(err);
+    }
+  }
+
   async function saveBlogMetaInline(id, btn) {
     var dateEl = document.querySelector('[data-blog-date="' + id + '"]');
     var viewsEl = document.querySelector('[data-blog-views="' + id + '"]');
@@ -1414,6 +1538,7 @@
         item.viewCount = parseInt(viewsEl.value, 10) || 0;
       }
       btn.textContent = '저장됨';
+      await loadBlogHomePreview();
       setTimeout(function () {
         btn.textContent = prevText;
         btn.disabled = false;
@@ -1427,6 +1552,7 @@
 
   function editBlog(id) {
     var b = blogData.find(function (x) { return x.id === id; });
+    if (!b) return;
     var dateEl = document.querySelector('[data-blog-date="' + id + '"]');
     var viewsEl = document.querySelector('[data-blog-views="' + id + '"]');
     editingId = id;
@@ -1444,8 +1570,8 @@
     if (!confirm('이 글을 삭제하시겠습니까?')) return;
     try {
       await API.deleteBlog(id);
-      blogData = await API.listBlog();
-      renderBlogTable();
+      await loadBlogListForSelectedTab();
+      await loadBlogHomePreview();
     } catch (err) { showError(err); }
   }
 
@@ -2381,7 +2507,8 @@
   function fillExtraTabSelect() {
     var sel = document.getElementById('rtExtraTabSelect');
     if (!sel) return;
-    var extras = reviewTabsData.filter(function (t) { return !t.is_system; });
+    // 블로그 타입 추가 탭은 「블로그」 메뉴에서 관리
+    var extras = reviewTabsData.filter(function (t) { return !t.is_system && t.type !== 'blog'; });
     var prev = sel.value;
     sel.innerHTML = '<option value="">— 추가 탭 선택 —</option>' +
       extras.map(function (t) {
@@ -2397,12 +2524,12 @@
     var hint = document.getElementById('rtExtraHint');
     var addBtn = document.getElementById('btnAddRtExtra');
     var id = sel && sel.value ? parseInt(sel.value, 10) : 0;
-    extraTabContext = reviewTabsData.find(function (t) { return t.id === id && !t.is_system; }) || null;
+    extraTabContext = reviewTabsData.find(function (t) { return t.id === id && !t.is_system && t.type !== 'blog'; }) || null;
     if (addBtn) addBtn.disabled = !extraTabContext;
     if (hint) {
       hint.textContent = extraTabContext
         ? '선택됨: ' + extraTabContext.title + ' — 업로드 방식은 기존 ' + typeLabel(extraTabContext.type) + '과 동일'
-        : '기본 탭 콘텐츠는 「유튜브」「블로그」「고객후기」 메뉴에서 관리합니다.';
+        : '블로그 타입 추가 탭은 「블로그」 메뉴에서, 기본 탭은 각 전용 메뉴에서 관리합니다.';
     }
   }
 
@@ -2418,7 +2545,7 @@
     var thead = document.getElementById('rtExtraThead');
     var body = document.getElementById('rtExtraTableBody');
     if (thead) thead.innerHTML = '<tr><th>제목</th><th></th></tr>';
-    if (body) body.innerHTML = '<tr><td colspan="4"><div class="empty-row">추가 탭을 선택하세요. (기본 블로그/유튜브/고객후기는 기존 메뉴에서 관리)</div></td></tr>';
+    if (body) body.innerHTML = '<tr><td colspan="4"><div class="empty-row">추가 탭을 선택하세요. (블로그 타입은 「블로그」 메뉴 / 기본 탭은 전용 메뉴)</div></td></tr>';
     rtExtraData = [];
   }
 
@@ -2432,43 +2559,11 @@
     var thead = document.getElementById('rtExtraThead');
     var body = document.getElementById('rtExtraTableBody');
     if (type === 'blog') {
-      rtExtraData = await API.listBlog({ tabId: extraTabContext.id });
-      if (thead) thead.innerHTML = '<tr><th>썸네일</th><th>제목</th><th>URL</th><th></th></tr>';
-      if (!rtExtraData.length) {
-        body.innerHTML = '<tr><td colspan="4"><div class="empty-row">등록된 글이 없습니다.</div></td></tr>';
-        return;
-      }
-      body.innerHTML = rtExtraData.map(function (b) {
-        return '<tr><td class="thumb-cell"><img src="' + escapeAttr(b.thumb) + '" onerror="this.style.opacity=0.15"></td>' +
-          '<td class="title-cell">' + b.title + '</td>' +
-          '<td><a href="' + escapeAttr(b.url) + '" target="_blank" rel="noopener">바로가기</a></td>' +
-          '<td class="row-actions"><button type="button" class="btn btn-outline btn-sm" data-rtx-edit-blog="' + b.id + '">수정</button> ' +
-          '<button type="button" class="btn-danger-text" data-rtx-del-blog="' + b.id + '">삭제</button></td></tr>';
-      }).join('');
-      body.querySelectorAll('[data-rtx-edit-blog]').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          var b = rtExtraData.find(function (x) { return x.id === parseInt(btn.dataset.rtxEditBlog, 10); });
-          if (!b) return;
-          extraContentMode = true;
-          editingId = b.id;
-          document.getElementById('modalBlogTitle').textContent = '추가 탭 블로그 수정';
-          document.getElementById('blogTitle').value = b.title;
-          document.getElementById('blogUrl').value = b.url;
-          document.getElementById('blogThumb').value = b.thumb || '';
-          document.getElementById('blogDate').value = b.date || '';
-          document.getElementById('blogViewCount').value = b.viewCount || 0;
-          openModal('modalBlog');
-        });
-      });
-      body.querySelectorAll('[data-rtx-del-blog]').forEach(function (btn) {
-        btn.addEventListener('click', async function () {
-          if (!confirm('삭제할까요?')) return;
-          try {
-            await API.deleteBlog(parseInt(btn.dataset.rtxDelBlog, 10));
-            await loadRtExtraContent();
-          } catch (err) { showError(err); }
-        });
-      });
+      // 블로그 타입은 「블로그」 메뉴로 이관 — 방어적 안내
+      if (thead) thead.innerHTML = '<tr><th>안내</th></tr>';
+      body.innerHTML = '<tr><td><div class="empty-row">블로그 타입 탭 콘텐츠는 좌측 「블로그」 메뉴에서 관리하세요.</div></td></tr>';
+      rtExtraData = [];
+      return;
     } else if (type === 'youtube') {
       rtExtraData = await API.listYoutube({ tabId: extraTabContext.id });
       if (thead) thead.innerHTML = '<tr><th>썸네일</th><th>제목</th><th>URL</th><th></th></tr>';
@@ -2563,14 +2658,13 @@
     var visitorsPromise = loadDashboardVisitors();
     var usedCarAutoSyncPromise = loadDashboardUsedCarAutoSync();
     youtubeData = await API.listYoutube();
-    blogData = await API.listBlog();
+    await loadBlogPanel();
     reviewData = await API.listReviews();
     partsData = await API.listParts();
     usedcarsData = await API.listUsedcars();
     leaseTransfersData = await API.listLeaseTransfers();
     leaseBrands = await API.listLeaseBrands();
     renderYoutubeTable();
-    renderBlogTable();
     renderReviewTable();
     initAiReviewTopicSelect();
     renderPartsTable();
@@ -3129,6 +3223,9 @@
         if (item.dataset.panel === 'review-tabs') {
           await loadReviewTabsPanel();
         }
+        if (item.dataset.panel === 'blog') {
+          await loadBlogPanel();
+        }
       });
     });
 
@@ -3335,7 +3432,9 @@
     document.getElementById('btnAddBlog').addEventListener('click', function () {
       editingId = null;
       extraContentMode = false;
-      document.getElementById('modalBlogTitle').textContent = '블로그 글 등록';
+      var tab = blogTabsForSelect.find(function (t) { return t.id === selectedBlogTabId; });
+      var label = tab ? tab.title : '블로그';
+      document.getElementById('modalBlogTitle').textContent = label + ' — 글 등록';
       ['blogTitle', 'blogUrl', 'blogThumb', 'blogDate', 'blogViewCount'].forEach(function (id) { document.getElementById(id).value = ''; });
       document.getElementById('blogViewCount').value = '0';
       openModal('modalBlog');
@@ -3347,20 +3446,34 @@
           url: document.getElementById('blogUrl').value.trim(),
           thumb: document.getElementById('blogThumb').value.trim(),
           date: document.getElementById('blogDate').value.trim(),
-          viewCount: document.getElementById('blogViewCount').value.trim()
+          viewCount: document.getElementById('blogViewCount').value.trim(),
+          tabId: selectedBlogTabId
         };
         if (extraContentMode && extraTabContext) payload.tabId = extraTabContext.id;
+        else if (editingId) {
+          var existing = blogData.find(function (x) { return x.id === editingId; });
+          if (existing && existing.tabId != null) payload.tabId = existing.tabId;
+        }
         await API.saveBlog(payload, editingId);
         closeModal('modalBlog');
         if (extraContentMode) {
           extraContentMode = false;
           await loadRtExtraContent();
         } else {
-          blogData = await API.listBlog();
-          renderBlogTable();
+          await loadBlogListForSelectedTab();
+          await loadBlogHomePreview();
         }
       } catch (err) { showError(err); }
     });
+    var blogTabSel = document.getElementById('blogTabSelect');
+    if (blogTabSel) {
+      blogTabSel.addEventListener('change', async function () {
+        selectedBlogTabId = parseInt(blogTabSel.value, 10) || selectedBlogTabId;
+        try {
+          await loadBlogListForSelectedTab();
+        } catch (err) { showError(err); }
+      });
+    }
     document.getElementById('btnUploadBlogThumb').addEventListener('click', function () {
       bindUpload('blogThumbFile', 'blogThumb', 'blog');
     });
@@ -3725,14 +3838,13 @@
     }
     bindOptionalClick('btnAddRtExtra', function () {
       if (!extraTabContext) return;
+      if (extraTabContext.type === 'blog') {
+        alert('블로그 타입 탭 글은 좌측 「블로그」 메뉴에서 관리하세요.');
+        return;
+      }
       extraContentMode = true;
       editingId = null;
-      if (extraTabContext.type === 'blog') {
-        document.getElementById('modalBlogTitle').textContent = '추가 탭 블로그 등록';
-        ['blogTitle', 'blogUrl', 'blogThumb', 'blogDate', 'blogViewCount'].forEach(function (id) { document.getElementById(id).value = ''; });
-        document.getElementById('blogViewCount').value = '0';
-        openModal('modalBlog');
-      } else if (extraTabContext.type === 'youtube') {
+      if (extraTabContext.type === 'youtube') {
         document.getElementById('modalYoutubeTitle').textContent = '추가 탭 영상 등록';
         ['ytTitle', 'ytUrl', 'ytThumb', 'ytDuration', 'ytDate'].forEach(function (id) { document.getElementById(id).value = ''; });
         openModal('modalYoutube');
@@ -3789,6 +3901,7 @@
       alert('어드민 스크립트 로드 실패');
       return;
     }
+    if (API.SYSTEM_TAB_ID && API.SYSTEM_TAB_ID.blog) selectedBlogTabId = API.SYSTEM_TAB_ID.blog;
     await window.PurpleAdminAuth.requireAuth();
     var email = await window.PurpleAdminAuth.getUserEmail();
     if (email) document.getElementById('adminUserEmail').textContent = email;

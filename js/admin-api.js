@@ -621,6 +621,87 @@
     if (res.error) throw res.error;
   }
 
+  /** 메인 노출과 동일: 활성 blog 타입 탭 전체 기준 최신/인기 */
+  async function getActiveBlogTabMeta() {
+    var fallback = { ids: [SYSTEM_TAB_ID.blog], titleById: {} };
+    fallback.titleById[SYSTEM_TAB_ID.blog] = '퍼플오토 블로그';
+    try {
+      var tabs = await listReviewTabs({ activeOnly: true });
+      if (!tabs || !tabs.length) return fallback;
+      var blogTabs = tabs.filter(function (t) { return t.type === 'blog'; });
+      if (!blogTabs.length) return fallback;
+      var titleById = {};
+      var ids = [];
+      blogTabs.forEach(function (t) {
+        ids.push(t.id);
+        titleById[t.id] = t.title || '블로그';
+      });
+      return { ids: ids, titleById: titleById };
+    } catch (err) {
+      console.warn('[AdminAPI] getActiveBlogTabMeta:', err);
+      return fallback;
+    }
+  }
+
+  function mapBlogHomeAdminRow(r, titleById) {
+    return {
+      id: r.id,
+      title: r.title,
+      url: r.external_url,
+      thumb: r.thumb_url,
+      date: fmtDate(r.published_at),
+      viewCount: r.view_count || 0,
+      tabId: r.tab_id,
+      tabTitle: (titleById && titleById[r.tab_id]) || '블로그'
+    };
+  }
+
+  async function listBlogHomeLatest(limit) {
+    var meta = await getActiveBlogTabMeta();
+    var res = await db()
+      .from('blog_posts')
+      .select('*')
+      .eq('is_active', true)
+      .in('tab_id', meta.ids)
+      .order('published_at', { ascending: false, nullsFirst: false })
+      .limit(limit || 4);
+    if (res.error) {
+      var res2 = await db()
+        .from('blog_posts')
+        .select('*')
+        .eq('is_active', true)
+        .order('published_at', { ascending: false, nullsFirst: false })
+        .limit(limit || 4);
+      if (res2.error) throw res2.error;
+      return (res2.data || []).map(function (r) { return mapBlogHomeAdminRow(r, meta.titleById); });
+    }
+    return (res.data || []).map(function (r) { return mapBlogHomeAdminRow(r, meta.titleById); });
+  }
+
+  async function listBlogHomePopular(limit) {
+    var meta = await getActiveBlogTabMeta();
+    var res = await db()
+      .from('blog_posts')
+      .select('*')
+      .eq('is_active', true)
+      .in('tab_id', meta.ids)
+      .order('view_count', { ascending: false })
+      .order('published_at', { ascending: false, nullsFirst: false })
+      .limit(limit || 4);
+    if (res.error) {
+      var res2 = await db()
+        .from('blog_posts')
+        .select('*')
+        .eq('is_active', true)
+        .order('view_count', { ascending: false })
+        .order('published_at', { ascending: false, nullsFirst: false })
+        .limit(limit || 4);
+      if (res2.error) throw res2.error;
+      return (res2.data || []).map(function (r) { return mapBlogHomeAdminRow(r, meta.titleById); });
+    }
+    return (res.data || []).map(function (r) { return mapBlogHomeAdminRow(r, meta.titleById); });
+  }
+
   /* ---------- Customer Reviews ---------- */
   async function listReviews(opts) {
     opts = opts || {};
@@ -2531,6 +2612,8 @@
     saveYoutube: saveYoutube,
     deleteYoutube: deleteYoutube,
     listBlog: listBlog,
+    listBlogHomeLatest: listBlogHomeLatest,
+    listBlogHomePopular: listBlogHomePopular,
     saveBlog: saveBlog,
     patchBlogMeta: patchBlogMeta,
     deleteBlog: deleteBlog,
