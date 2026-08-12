@@ -6,6 +6,7 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 const CSS_VER = '20260710b';
+const CATEGORY_NAV_VER = '20260812a';
 const SITE_HEADER_LINK = `<link rel="stylesheet" href="/css/site-header.css?v=${CSS_VER}">`;
 const CATEGORY_NAV_LINK_RE = /<link rel="stylesheet" href="\/css\/category-nav\.css\?v=[^"]+">/;
 
@@ -54,7 +55,7 @@ function stripHeaderCss(content) {
 }
 
 function ensureCssLinks(content) {
-  const catLink = `<link rel="stylesheet" href="/css/category-nav.css?v=${CSS_VER}">`;
+  const catLink = `<link rel="stylesheet" href="/css/category-nav.css?v=${CATEGORY_NAV_VER}">`;
   let out = content;
 
   if (CATEGORY_NAV_LINK_RE.test(out)) {
@@ -64,8 +65,8 @@ function ensureCssLinks(content) {
   if (!out.includes('site-header.css')) {
     if (out.includes('category-nav.css')) {
       out = out.replace(
-        `<link rel="stylesheet" href="/css/category-nav.css?v=${CSS_VER}">`,
-        `${SITE_HEADER_LINK}\n<link rel="stylesheet" href="/css/category-nav.css?v=${CSS_VER}">`
+        `<link rel="stylesheet" href="/css/category-nav.css?v=${CATEGORY_NAV_VER}">`,
+        `${SITE_HEADER_LINK}\n<link rel="stylesheet" href="/css/category-nav.css?v=${CATEGORY_NAV_VER}">`
       );
     } else if (out.includes('</head>')) {
       out = out.replace('</head>', `${SITE_HEADER_LINK}\n${catLink}\n</head>`);

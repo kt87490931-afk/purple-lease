@@ -3,7 +3,7 @@
   background: var(--white, #FFFFFF);
   border-bottom: 1px solid var(--line-soft, #EFEDF6);
   overflow-x: clip;
-  overflow-y: visible;
+  overflow-y: hidden;
 }
 
 .category-nav-inner {
@@ -11,7 +11,7 @@
   align-items: stretch;
   width: 100%;
   min-width: 0;
-  overflow: visible;
+  overflow: hidden;
   box-sizing: border-box;
 }
 
@@ -29,6 +29,7 @@
   min-width: 0;
   flex: 1 1 auto;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
@@ -92,6 +93,9 @@
 .category-nav-trigger svg {
   width: 12px;
   height: 12px;
+  flex-shrink: 0;
+  display: block;
+  overflow: hidden;
   stroke: #fff;
   transition: transform 0.15s ease;
 }
