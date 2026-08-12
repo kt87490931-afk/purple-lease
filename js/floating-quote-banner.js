@@ -11,9 +11,9 @@
   };
 
   var BANNER_HTML =
-    '<div class="pa-float" id="paFloat">' +
+    '<div class="pa-float" id="paFloat" style="position:fixed;right:28px;top:50%;z-index:9990;max-width:268px;overflow:hidden;visibility:hidden">' +
       '<div class="pa-tab" id="paTab" role="button" tabindex="0" aria-label="빠른 견적문의 펼치기">' +
-        '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+        '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
           '<path d="M4 17V9L12 3L20 9V17" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
           '<path d="M9 21V13H15V21" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
         '</svg>' +
@@ -24,7 +24,7 @@
           '<div class="pa-header-top">' +
             '<div class="pa-badge">' +
               '<div class="pa-badge-icon">' +
-                '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+                '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
                   '<rect x="3" y="6" width="18" height="12" rx="2" stroke="#fff" stroke-width="2"/>' +
                   '<path d="M7 6V4H17V6" stroke="#fff" stroke-width="2"/>' +
                 '</svg>' +
@@ -64,7 +64,7 @@
         '<div class="pa-quick">' +
           '<a class="pa-quick-item" id="paQuickTel" href="tel:15556362">' +
             '<div class="pa-quick-icon">' +
-              '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+              '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
                 '<path d="M6.6 10.8C7.9 13.4 10.6 16 13.2 17.4L15.2 15.4C15.5 15.1 15.9 15 16.3 15.2C17.5 15.6 18.8 15.8 20 15.8C20.6 15.8 21 16.2 21 16.8V20C21 20.6 20.6 21 20 21C10.6 21 3 13.4 3 4C3 3.4 3.4 3 4 3H7.2C7.8 3 8.2 3.4 8.2 4C8.2 5.2 8.4 6.5 8.8 7.7C8.9 8.1 8.9 8.5 8.6 8.8L6.6 10.8Z" stroke="#1A1E6E" stroke-width="1.8"/>' +
               '</svg>' +
             '</div>' +
@@ -75,7 +75,7 @@
           '</a>' +
           '<a class="pa-quick-item" id="paQuickKakao" href="https://pf.kakao.com/_vyvHG/chat" target="_blank" rel="noopener noreferrer">' +
             '<div class="pa-quick-icon">' +
-              '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+              '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
                 '<path d="M12 3C6.5 3 2 6.6 2 11C2 13.8 3.9 16.3 6.8 17.7L5.8 21L9.7 18.7C10.4 18.9 11.2 19 12 19C17.5 19 22 15.4 22 11C22 6.6 17.5 3 12 3Z" fill="#1A1E6E"/>' +
               '</svg>' +
             '</div>' +
@@ -86,7 +86,7 @@
           '</a>' +
           '<a class="pa-quick-item" id="paQuickEstimate" href="/estimate">' +
             '<div class="pa-quick-icon">' +
-              '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+              '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
                 '<rect x="3" y="4" width="18" height="17" rx="2" stroke="#1A1E6E" stroke-width="1.8"/>' +
                 '<path d="M3 9H21" stroke="#1A1E6E" stroke-width="1.8"/>' +
                 '<path d="M7 13H9M12 13H14M17 13H17.01M7 17H9M12 17H14" stroke="#1A1E6E" stroke-width="1.8" stroke-linecap="round"/>' +
@@ -285,6 +285,11 @@
     wrap.innerHTML = BANNER_HTML;
     var floatEl = wrap.firstElementChild;
     document.body.appendChild(floatEl);
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        floatEl.style.visibility = '';
+      });
+    });
 
     bindUi(floatEl);
 

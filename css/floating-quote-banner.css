@@ -1,6 +1,4 @@
 /* PC 플로팅 견적문의 배너 — floating-quote-banner.js (원형 FAB와 별도) */
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@700&family=JetBrains+Mono:wght@500;700&display=swap');
-
 .pa-float {
   --pa-purple: #8B2FE0;
   --pa-navy: #1A1E6E;
@@ -18,7 +16,14 @@
   z-index: 9990;
   display: flex;
   align-items: center;
+  max-width: 268px;
+  overflow: hidden;
   font-family: 'Noto Sans KR', sans-serif;
+}
+
+.pa-float svg {
+  flex-shrink: 0;
+  overflow: hidden;
 }
 
 .pa-tab {
