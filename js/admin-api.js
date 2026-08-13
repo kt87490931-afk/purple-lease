@@ -2264,25 +2264,26 @@
       .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
   }
 
-  function normalizeHeroButtons(buttons) {
+  function normalizeHeroCtaZone(zone) {
+    var allowed = {
+      'top-left': 1, top: 1, 'top-right': 1,
+      left: 1, center: 1, right: 1,
+      'bottom-left': 1, bottom: 1, 'bottom-right': 1
+    };
+    var z = String(zone || '').trim();
+    return allowed[z] ? z : 'bottom-left';
+  }
+
+  function normalizeHeroButtons(buttons, ctaZone) {
     if (!Array.isArray(buttons)) return [];
+    var zone = normalizeHeroCtaZone(ctaZone || (buttons[0] && buttons[0].zone));
     return buttons.map(function (b) {
-      var item = {
+      return {
         label: String((b && b.label) || '').trim().slice(0, 80),
         href: String((b && b.href) || '#').trim().slice(0, 500) || '#',
-        style: (b && b.style) === 'outline' ? 'outline' : 'primary'
+        style: (b && b.style) === 'outline' ? 'outline' : 'primary',
+        zone: zone
       };
-      function pair(ax, ay) {
-        var x = b && b[ax] != null && b[ax] !== '' ? parseFloat(b[ax]) : NaN;
-        var y = b && b[ay] != null && b[ay] !== '' ? parseFloat(b[ay]) : NaN;
-        if (!isNaN(x) && !isNaN(y)) {
-          item[ax] = Math.max(0, Math.min(100, Math.round(x * 10) / 10));
-          item[ay] = Math.max(0, Math.min(100, Math.round(y * 10) / 10));
-        }
-      }
-      pair('x', 'y');
-      pair('mx', 'my');
-      return item;
     }).filter(function (b) { return b.label; });
   }
 
@@ -2293,6 +2294,7 @@
     if (res.error) throw res.error;
     return (res.data || []).map(function (row) {
       row.buttons = normalizeHeroButtons(row.buttons);
+      row.cta_zone = normalizeHeroCtaZone(row.buttons[0] && row.buttons[0].zone);
       return row;
     });
   }
@@ -2305,6 +2307,7 @@
       throw new Error('슬라이드는 최대 ' + HERO_MAX_SLIDES + '개까지 등록할 수 있습니다.');
     }
 
+    var zone = normalizeHeroCtaZone(payload.cta_zone);
     var row = {
       is_enabled: payload.is_enabled !== false,
       slide_type: payload.slide_type === 'html' ? 'html' : 'builder',
@@ -2321,7 +2324,7 @@
       desc_font_size: String(payload.desc_font_size || 'md').trim(),
       desc_color: String(payload.desc_color || '').trim(),
       desc_align: String(payload.desc_align || 'left').trim(),
-      buttons: normalizeHeroButtons(payload.buttons),
+      buttons: normalizeHeroButtons(payload.buttons, zone),
       html_content: sanitizeHeroHtmlContent(payload.html_content),
       overlay_opacity: Math.min(0.85, Math.max(0, parseFloat(payload.overlay_opacity) || 0.35)),
       updated_at: new Date().toISOString()
@@ -2331,6 +2334,7 @@
       var up = await db().from('hero_slides').update(row).eq('id', editingId).select().single();
       if (up.error) throw up.error;
       up.data.buttons = normalizeHeroButtons(up.data.buttons);
+      up.data.cta_zone = normalizeHeroCtaZone(up.data.buttons[0] && up.data.buttons[0].zone);
       return up.data;
     }
 
@@ -2341,6 +2345,7 @@
     var ins = await db().from('hero_slides').insert([row]).select().single();
     if (ins.error) throw ins.error;
     ins.data.buttons = normalizeHeroButtons(ins.data.buttons);
+    ins.data.cta_zone = normalizeHeroCtaZone(ins.data.buttons[0] && ins.data.buttons[0].zone);
     return ins.data;
   }
 

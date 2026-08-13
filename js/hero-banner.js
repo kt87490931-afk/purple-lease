@@ -81,60 +81,41 @@
     if (!raw) return [];
     var list = Array.isArray(raw) ? raw : [];
     return list.map(function (b) {
-      var item = {
+      return {
         label: String((b && b.label) || '').trim(),
         href: String((b && b.href) || '#').trim() || '#',
         style: (b && b.style) === 'outline' ? 'outline' : 'primary'
       };
-      function pair(ax, ay) {
-        var x = b && b[ax] != null && b[ax] !== '' ? parseFloat(b[ax]) : NaN;
-        var y = b && b[ay] != null && b[ay] !== '' ? parseFloat(b[ay]) : NaN;
-        if (!isNaN(x) && !isNaN(y)) {
-          item[ax] = Math.max(0, Math.min(100, x));
-          item[ay] = Math.max(0, Math.min(100, y));
-        }
-      }
-      pair('x', 'y');
-      pair('mx', 'my');
-      return item;
     }).filter(function (b) { return b.label; });
   }
 
-  function buttonsHavePcCoords(buttons) {
-    return buttons.some(function (b) { return b.x != null && b.y != null; });
+  var CTA_ZONES = {
+    'top-left': 1, top: 1, 'top-right': 1,
+    left: 1, center: 1, right: 1,
+    'bottom-left': 1, bottom: 1, 'bottom-right': 1
+  };
+
+  function normalizeCtaZone(zone, buttons) {
+    var z = String(zone || '').trim();
+    if (CTA_ZONES[z]) return z;
+    if (buttons && buttons.length) {
+      var fromBtn = String((buttons[0] && buttons[0].zone) || '').trim();
+      if (CTA_ZONES[fromBtn]) return fromBtn;
+    }
+    return 'bottom-left';
   }
 
-  function buttonsHaveMobileCoords(buttons) {
-    return buttons.some(function (b) { return b.mx != null && b.my != null; });
-  }
-
-  function renderButtonsFlow(buttons, flowClass) {
+  function renderButtons(buttons) {
     if (!buttons.length) return '';
-    var cls = 'hero-cta-row' + (flowClass ? ' ' + flowClass : '');
-    return '<div class="' + cls + '">' + buttons.map(function (b) {
-      var btnCls = b.style === 'outline' ? 'btn btn-outline' : 'btn btn-primary';
-      return '<a href="' + escAttr(b.href) + '" class="' + btnCls + '">' + escHtml(b.label) + '</a>';
-    }).join('') + '</div>';
-  }
-
-  function renderButtonsAbs(buttons, mode) {
-    var isMobile = mode === 'mobile';
-    var has = isMobile ? buttonsHaveMobileCoords(buttons) : buttonsHavePcCoords(buttons);
-    if (!buttons.length || !has) return '';
-    var layerCls = 'hero-cta-abs ' + (isMobile ? 'hero-cta-abs--mobile' : 'hero-cta-abs--pc');
-    return '<div class="' + layerCls + '">' + buttons.map(function (b) {
+    return '<div class="hero-cta-row">' + buttons.map(function (b) {
       var cls = b.style === 'outline' ? 'btn btn-outline' : 'btn btn-primary';
-      var left = isMobile ? (b.mx != null ? b.mx : 8) : (b.x != null ? b.x : 8);
-      var top = isMobile ? (b.my != null ? b.my : 72) : (b.y != null ? b.y : 72);
-      return '<a href="' + escAttr(b.href) + '" class="' + cls + ' hero-cta-abs-btn" style="left:' + left + '%;top:' + top + '%;">' + escHtml(b.label) + '</a>';
+      return '<a href="' + escAttr(b.href) + '" class="' + cls + '">' + escHtml(b.label) + '</a>';
     }).join('') + '</div>';
   }
 
   function renderBuilderSlide(slide) {
     var buttons = normalizeButtons(slide.buttons);
-    var usePc = buttonsHavePcCoords(buttons);
-    var useMobile = buttonsHaveMobileCoords(buttons);
-    var useAnyAbs = usePc || useMobile;
+    var zone = normalizeCtaZone(slide.cta_zone, slide.buttons);
     var innerAlign = alignClass('hero-inner', slide.title_align || slide.kicker_align || 'left');
     var kickerStyle = textStyle(slide.kicker_font_size, slide.kicker_color, 'sm');
     var titleStyle = textStyle(slide.title_font_size, slide.title_color || '#ffffff', 'lg');
@@ -143,7 +124,7 @@
     var titleAlign = slide.title_align ? 'text-align:' + slide.title_align + ';' : '';
     var descAlign = slide.desc_align ? 'text-align:' + slide.desc_align + ';' : '';
 
-    var html = '<div class="wrap hero-slide-inner ' + innerAlign + (useAnyAbs ? ' hero-inner-has-abs-cta' : '') + '">';
+    var html = '<div class="wrap hero-slide-inner ' + innerAlign + '">';
     if (slide.kicker_text) {
       html += '<span class="hero-kicker" style="' + kickerStyle + ';' + kickerAlign + 'display:inline-flex;">' + escHtml(slide.kicker_text) + '</span>';
     }
@@ -153,10 +134,10 @@
     if (slide.desc_text) {
       html += '<p style="' + descStyle + ';' + descAlign + '">' + escHtml(slide.desc_text) + '</p>';
     }
-    html += renderButtonsFlow(buttons, useAnyAbs ? 'hero-cta-flow' : '');
     html += '</div>';
-    if (usePc) html += renderButtonsAbs(buttons, 'pc');
-    if (useMobile) html += renderButtonsAbs(buttons, 'mobile');
+    if (buttons.length) {
+      html += '<div class="hero-cta-dock hero-cta-dock--' + zone + '">' + renderButtons(buttons) + '</div>';
+    }
     return html;
   }
 
@@ -171,12 +152,8 @@
     var bg = (slide.bg_image_url || '').trim();
     var overlay = Math.min(0.85, Math.max(0, parseFloat(slide.overlay_opacity)));
     if (isNaN(overlay)) overlay = 0.35;
-    var buttons = type === 'builder' ? normalizeButtons(slide.buttons) : [];
-    var usePc = buttonsHavePcCoords(buttons);
-    var useMobile = buttonsHaveMobileCoords(buttons);
 
-    var cls = 'hero-slide hero-slide-' + type + (bg ? ' has-bg-image' : '') +
-      (usePc ? ' has-abs-cta-pc' : '') + (useMobile ? ' has-abs-cta-mobile' : '');
+    var cls = 'hero-slide hero-slide-' + type + (bg ? ' has-bg-image' : '');
     var html = '<div class="' + cls + '" data-hero-index="' + index + '">';
     if (bg) {
       html += '<div class="hero-slide-bg" style="background-image:url(' + escAttr(bg) + ')"></div>';
