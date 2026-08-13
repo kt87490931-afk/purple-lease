@@ -1,5 +1,6 @@
 /**
  * 어드민 — 히어로 배너 슬라이드 관리 (최대 4개)
+ * 버튼 PC % 좌표 드래그 + PC/모바일 미리보기
  */
 (function () {
   'use strict';
@@ -7,21 +8,11 @@
   var API = null;
   var heroSlides = [];
   var editingHeroId = null;
+  var previewMode = 'pc';
+  var dragState = null;
+  var previewBound = false;
 
-  var FONT_OPTS = [
-    { v: 'xs', l: '아주 작게' },
-    { v: 'sm', l: '작게' },
-    { v: 'md', l: '보통' },
-    { v: 'base', l: '기본' },
-    { v: 'lg', l: '크게' },
-    { v: 'xl', l: '아주 크게' }
-  ];
-
-  var ALIGN_OPTS = [
-    { v: 'left', l: '왼쪽' },
-    { v: 'center', l: '가운데' },
-    { v: 'right', l: '오른쪽' }
-  ];
+  var FONT_SIZES = { xs: '10px', sm: '11px', md: '13px', base: '15px', lg: '18px', xl: '22px' };
 
   function esc(s) {
     return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
@@ -34,18 +25,15 @@
   function openModal(id) { document.getElementById(id).classList.add('open'); }
   function closeModal(id) { document.getElementById(id).classList.remove('open'); editingHeroId = null; }
 
-  function fontSelect(id, val) {
-    return '<select id="' + id + '" class="inline-edit-input" style="max-width:120px;">' +
-      FONT_OPTS.map(function (o) {
-        return '<option value="' + o.v + '"' + (val === o.v ? ' selected' : '') + '>' + o.l + '</option>';
-      }).join('') + '</select>';
+  function clampPct(n) {
+    if (isNaN(n)) return null;
+    return Math.max(0, Math.min(100, Math.round(n * 10) / 10));
   }
 
-  function alignSelect(id, val) {
-    return '<select id="' + id + '" class="inline-edit-input" style="max-width:100px;">' +
-      ALIGN_OPTS.map(function (o) {
-        return '<option value="' + o.v + '"' + (val === o.v ? ' selected' : '') + '>' + o.l + '</option>';
-      }).join('') + '</select>';
+  function parseXy(val) {
+    if (val == null || val === '') return null;
+    var n = parseFloat(val);
+    return clampPct(n);
   }
 
   function slideTypeLabel(t) {
@@ -97,11 +85,36 @@
       var label = (row.querySelector('.hero-btn-label') || {}).value;
       var href = (row.querySelector('.hero-btn-href') || {}).value;
       var style = (row.querySelector('.hero-btn-style') || {}).value;
+      var x = parseXy((row.querySelector('.hero-btn-x') || {}).value);
+      var y = parseXy((row.querySelector('.hero-btn-y') || {}).value);
       label = String(label || '').trim();
       if (!label) return;
-      out.push({ label: label, href: String(href || '#').trim() || '#', style: style === 'outline' ? 'outline' : 'primary' });
+      var item = {
+        label: label,
+        href: String(href || '#').trim() || '#',
+        style: style === 'outline' ? 'outline' : 'primary'
+      };
+      if (x != null && y != null) {
+        item.x = x;
+        item.y = y;
+      }
+      out.push(item);
     });
     return out;
+  }
+
+  function setButtonRowXy(index, x, y) {
+    var rows = document.querySelectorAll('#heroButtonsList .hero-btn-row');
+    var row = rows[index];
+    if (!row) return;
+    var xEl = row.querySelector('.hero-btn-x');
+    var yEl = row.querySelector('.hero-btn-y');
+    if (xEl) xEl.value = x != null ? String(x) : '';
+    if (yEl) yEl.value = y != null ? String(y) : '';
+  }
+
+  function defaultXyForIndex(i) {
+    return { x: 8 + (i % 3) * 18, y: 68 + Math.floor(i / 3) * 10 };
   }
 
   function renderHeroButtonRows(buttons) {
@@ -110,16 +123,20 @@
     var list = buttons && buttons.length ? buttons : [];
     if (!list.length) list = [{ label: '', href: '/estimate', style: 'primary' }];
     wrap.innerHTML = list.map(function (b, i) {
-      return '<div class="hero-btn-row">' +
+      var xy = (b.x != null && b.y != null) ? { x: b.x, y: b.y } : { x: '', y: '' };
+      return '<div class="hero-btn-row" data-btn-index="' + i + '">' +
         '<input type="text" class="inline-edit-input hero-btn-label" placeholder="버튼 문구" value="' + esc(b.label) + '">' +
         '<input type="text" class="inline-edit-input hero-btn-href" placeholder="링크 (/estimate)" value="' + esc(b.href) + '">' +
         '<select class="inline-edit-input hero-btn-style" style="max-width:100px;">' +
         '<option value="primary"' + (b.style !== 'outline' ? ' selected' : '') + '>Primary</option>' +
         '<option value="outline"' + (b.style === 'outline' ? ' selected' : '') + '>Outline</option>' +
         '</select>' +
+        '<input type="number" class="inline-edit-input hero-btn-xy hero-btn-x" min="0" max="100" step="0.1" placeholder="X%" value="' + esc(xy.x) + '" title="PC X%">' +
+        '<input type="number" class="inline-edit-input hero-btn-xy hero-btn-y" min="0" max="100" step="0.1" placeholder="Y%" value="' + esc(xy.y) + '" title="PC Y%">' +
         '<button type="button" class="btn btn-danger-text btn-sm hero-btn-remove">삭제</button>' +
         '</div>';
     }).join('');
+    updateHeroPreview();
   }
 
   function toggleHeroFormSections(type) {
@@ -154,6 +171,7 @@
     renderHeroButtonRows(s.buttons || []);
     toggleHeroFormSections(document.getElementById('heroSlideType').value);
     updateHeroBgPreview();
+    setPreviewMode(previewMode || 'pc');
   }
 
   function updateHeroBgPreview() {
@@ -167,6 +185,139 @@
       img.hidden = true;
       img.removeAttribute('src');
     }
+    updateHeroPreview();
+  }
+
+  function setPreviewMode(mode) {
+    previewMode = mode === 'mobile' ? 'mobile' : 'pc';
+    document.querySelectorAll('[data-hero-preview-mode]').forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-hero-preview-mode') === previewMode);
+    });
+    var hint = document.getElementById('heroPreviewHint');
+    if (hint) {
+      hint.textContent = previewMode === 'pc'
+        ? 'PC: 버튼을 드래그해 위치를 잡으세요. 좌표는 슬라이드 기준 % 입니다. X/Y 입력란에도 반영됩니다.'
+        : '모바일: 자동 정렬 미리보기입니다. 드래그 위치는 PC에만 적용됩니다.';
+    }
+    updateHeroPreview();
+  }
+
+  function fontSizeCss(key, fallback) {
+    return FONT_SIZES[key] || FONT_SIZES[fallback] || FONT_SIZES.md;
+  }
+
+  function updateHeroPreview() {
+    var frame = document.getElementById('heroPreviewFrame');
+    if (!frame) return;
+    if ((document.getElementById('heroSlideType') || {}).value === 'html') {
+      frame.innerHTML = '<div class="hero-preview-inner"><p style="margin:0;opacity:.85;font-size:12px;">HTML 슬라이드는 코드 미리보기를 지원하지 않습니다.</p></div>';
+      frame.classList.toggle('is-pc', previewMode === 'pc');
+      frame.classList.toggle('is-mobile', previewMode === 'mobile');
+      return;
+    }
+
+    var bg = (document.getElementById('heroBgImage') || {}).value.trim();
+    var overlay = parseFloat((document.getElementById('heroOverlay') || {}).value);
+    if (isNaN(overlay)) overlay = 0.35;
+    var kicker = (document.getElementById('heroKicker') || {}).value;
+    var title = (document.getElementById('heroTitle') || {}).value;
+    var desc = (document.getElementById('heroDesc') || {}).value;
+    var kickerSize = (document.getElementById('heroKickerSize') || {}).value;
+    var kickerColor = (document.getElementById('heroKickerColor') || {}).value.trim() || '#ffffff';
+    var kickerAlign = (document.getElementById('heroKickerAlign') || {}).value || 'left';
+    var titleSize = (document.getElementById('heroTitleSize') || {}).value;
+    var titleColor = (document.getElementById('heroTitleColor') || {}).value.trim() || '#ffffff';
+    var titleAlign = (document.getElementById('heroTitleAlign') || {}).value || 'left';
+    var descSize = (document.getElementById('heroDescSize') || {}).value;
+    var descColor = (document.getElementById('heroDescColor') || {}).value.trim() || '#ffffff';
+    var descAlign = (document.getElementById('heroDescAlign') || {}).value || 'left';
+    var buttons = getHeroButtonsFromForm();
+
+    frame.classList.toggle('is-pc', previewMode === 'pc');
+    frame.classList.toggle('is-mobile', previewMode === 'mobile');
+
+    var html = '';
+    if (bg) {
+      html += '<div class="hero-preview-bg" style="background-image:url(\'' + esc(bg).replace(/'/g, '%27') + '\')"></div>';
+      html += '<div class="hero-preview-overlay" style="opacity:' + overlay + '"></div>';
+    }
+    html += '<div class="hero-preview-inner" style="text-align:' + esc(titleAlign) + ';">';
+    if (kicker) {
+      html += '<span class="hero-preview-kicker" style="font-size:' + fontSizeCss(kickerSize, 'sm') + ';color:' + esc(kickerColor) + ';text-align:' + esc(kickerAlign) + ';">' + esc(kicker) + '</span>';
+    }
+    if (title) {
+      html += '<div class="hero-preview-title" style="font-size:' + fontSizeCss(titleSize, 'lg') + ';color:' + esc(titleColor) + ';text-align:' + esc(titleAlign) + ';">' + esc(title) + '</div>';
+    }
+    if (desc) {
+      html += '<p class="hero-preview-desc" style="font-size:' + fontSizeCss(descSize, 'md') + ';color:' + esc(descColor) + ';text-align:' + esc(descAlign) + ';">' + esc(desc) + '</p>';
+    }
+
+    var isPc = previewMode === 'pc';
+
+    if (!isPc) {
+      html += '<div class="hero-preview-cta-flow">';
+      buttons.forEach(function (b, i) {
+        html += '<span class="hero-preview-btn ' + (b.style === 'outline' ? 'outline' : 'primary') + '" data-preview-btn="' + i + '">' + esc(b.label || '버튼') + '</span>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+
+    if (isPc) {
+      html += '<div class="hero-preview-cta-abs">';
+      buttons.forEach(function (b, i) {
+        var pos = (b.x != null && b.y != null) ? { x: b.x, y: b.y } : defaultXyForIndex(i);
+        html += '<span class="hero-preview-btn is-abs ' + (b.style === 'outline' ? 'outline' : 'primary') + '" data-preview-btn="' + i + '" data-has-xy="' + (b.x != null && b.y != null ? '1' : '0') + '" style="left:' + pos.x + '%;top:' + pos.y + '%;">' + esc(b.label || '버튼') + '</span>';
+      });
+      html += '</div>';
+    }
+
+    frame.innerHTML = html;
+  }
+
+  function startDrag(e, btnEl) {
+    if (previewMode !== 'pc') return;
+    var idx = parseInt(btnEl.getAttribute('data-preview-btn'), 10);
+    if (isNaN(idx)) return;
+    var frame = document.getElementById('heroPreviewFrame');
+    if (!frame) return;
+    e.preventDefault();
+    var left = parseFloat(String(btnEl.style.left || '').replace('%', ''));
+    var top = parseFloat(String(btnEl.style.top || '').replace('%', ''));
+    if (isNaN(left) || isNaN(top)) {
+      var def = defaultXyForIndex(idx);
+      left = def.x;
+      top = def.y;
+    }
+    setButtonRowXy(idx, clampPct(left), clampPct(top));
+    btnEl.setAttribute('data-has-xy', '1');
+    dragState = {
+      index: idx,
+      el: btnEl,
+      frame: frame
+    };
+    btnEl.classList.add('is-dragging');
+  }
+
+  function onDragMove(e) {
+    if (!dragState) return;
+    if (e.cancelable) e.preventDefault();
+    var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    var clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    var rect = dragState.frame.getBoundingClientRect();
+    var x = clampPct(((clientX - rect.left) / rect.width) * 100);
+    var y = clampPct(((clientY - rect.top) / rect.height) * 100);
+    if (x == null || y == null) return;
+    dragState.el.style.left = x + '%';
+    dragState.el.style.top = y + '%';
+    dragState.el.setAttribute('data-has-xy', '1');
+    setButtonRowXy(dragState.index, x, y);
+  }
+
+  function endDrag() {
+    if (!dragState) return;
+    dragState.el.classList.remove('is-dragging');
+    dragState = null;
   }
 
   function openHeroEditor(slide) {
@@ -174,6 +325,7 @@
     document.getElementById('modalHeroTitle').textContent = slide ? '슬라이드 편집' : '슬라이드 추가';
     fillHeroForm(slide || {});
     openModal('modalHero');
+    setTimeout(updateHeroPreview, 30);
   }
 
   function collectHeroPayload() {
@@ -215,6 +367,28 @@
     copy[next] = tmp;
     await API.reorderHeroSlides(copy.map(function (s) { return s.id; }));
     await loadHeroPanel();
+  }
+
+  function bindPreviewEvents() {
+    if (previewBound) return;
+    previewBound = true;
+    var frame = document.getElementById('heroPreviewFrame');
+    if (frame) {
+      frame.addEventListener('mousedown', function (e) {
+        var btn = e.target.closest('[data-preview-btn]');
+        if (!btn || !frame.contains(btn)) return;
+        startDrag(e, btn);
+      });
+      frame.addEventListener('touchstart', function (e) {
+        var btn = e.target.closest('[data-preview-btn]');
+        if (!btn || !frame.contains(btn)) return;
+        startDrag(e, btn);
+      }, { passive: false });
+    }
+    document.addEventListener('mousemove', onDragMove);
+    document.addEventListener('mouseup', endDrag);
+    document.addEventListener('touchmove', onDragMove, { passive: false });
+    document.addEventListener('touchend', endDrag);
   }
 
   function bindHeroEvents() {
@@ -260,9 +434,19 @@
 
     document.getElementById('heroSlideType').addEventListener('change', function () {
       toggleHeroFormSections(this.value);
+      updateHeroPreview();
     });
 
     document.getElementById('heroBgImage').addEventListener('input', updateHeroBgPreview);
+
+    ['heroOverlay', 'heroKicker', 'heroKickerSize', 'heroKickerColor', 'heroKickerAlign',
+      'heroTitle', 'heroTitleSize', 'heroTitleColor', 'heroTitleAlign',
+      'heroDesc', 'heroDescSize', 'heroDescColor', 'heroDescAlign'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('input', updateHeroPreview);
+      el.addEventListener('change', updateHeroPreview);
+    });
 
     document.getElementById('btnUploadHeroBg').addEventListener('click', async function () {
       var fileInput = document.getElementById('heroBgFile');
@@ -279,15 +463,41 @@
     });
 
     document.getElementById('btnAddHeroButton').addEventListener('click', function () {
-      renderHeroButtonRows(getHeroButtonsFromForm().concat([{ label: '', href: '/estimate', style: 'primary' }]));
+      var list = getHeroButtonsFromForm();
+      var i = list.length;
+      var pos = defaultXyForIndex(i);
+      list.push({ label: '', href: '/estimate', style: 'primary', x: pos.x, y: pos.y });
+      renderHeroButtonRows(list);
     });
 
     document.getElementById('heroButtonsList').addEventListener('click', function (e) {
       if (e.target.classList.contains('hero-btn-remove')) {
         var row = e.target.closest('.hero-btn-row');
         if (row) row.remove();
+        updateHeroPreview();
       }
     });
+
+    document.getElementById('heroButtonsList').addEventListener('input', function (e) {
+      if (e.target.classList.contains('hero-btn-label') ||
+          e.target.classList.contains('hero-btn-href') ||
+          e.target.classList.contains('hero-btn-style') ||
+          e.target.classList.contains('hero-btn-x') ||
+          e.target.classList.contains('hero-btn-y')) {
+        updateHeroPreview();
+      }
+    });
+    document.getElementById('heroButtonsList').addEventListener('change', function () {
+      updateHeroPreview();
+    });
+
+    document.querySelectorAll('[data-hero-preview-mode]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        setPreviewMode(btn.getAttribute('data-hero-preview-mode'));
+      });
+    });
+
+    bindPreviewEvents();
 
     document.getElementById('heroHtmlFile').addEventListener('change', function () {
       var f = this.files && this.files[0];

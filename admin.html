@@ -302,6 +302,45 @@ body.admin-nav-open { overflow:hidden; }
 .hero-admin-card-actions { display:flex; gap:6px; flex-wrap:wrap; }
 .hero-btn-row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:8px; }
 .hero-btn-row .inline-edit-input { flex:1; min-width:100px; }
+.hero-btn-row .hero-btn-xy { max-width:72px; font-family:var(--font-mono); }
+.hero-preview-box { margin-top:14px; border:1px solid var(--line); border-radius:10px; background:var(--surface-alt,#f8f7fc); padding:12px; }
+.hero-preview-tabs { display:flex; gap:6px; margin-bottom:10px; }
+.hero-preview-tabs button { border:1px solid var(--line); background:#fff; border-radius:8px; padding:7px 12px; font-size:12px; font-weight:700; cursor:pointer; color:var(--ink-600); }
+.hero-preview-tabs button.active { background:var(--navy-900,#11143A); color:#fff; border-color:var(--navy-900,#11143A); }
+.hero-preview-hint { font-size:11.5px; color:var(--ink-500); margin:0 0 10px; line-height:1.5; }
+.hero-preview-frame-wrap { display:flex; justify-content:center; }
+.hero-preview-frame {
+  position:relative; width:100%; max-width:640px; aspect-ratio:16/7;
+  border-radius:10px; overflow:hidden; background:linear-gradient(135deg,#8B2FE0 0%,#5B2FD6 45%,#1A1E6E 100%);
+  box-shadow:var(--shadow-sm); user-select:none;
+}
+.hero-preview-frame.is-mobile { max-width:320px; aspect-ratio:9/14; }
+.hero-preview-bg { position:absolute; inset:0; background-size:cover; background-position:center; }
+.hero-preview-overlay { position:absolute; inset:0; background:#000; pointer-events:none; }
+.hero-preview-inner { position:relative; z-index:2; padding:18px 16px; height:100%; box-sizing:border-box; color:#fff; }
+.hero-preview-frame.is-mobile .hero-preview-inner { padding:16px 14px; }
+.hero-preview-kicker {
+  display:inline-flex; font-size:10px; font-weight:700; letter-spacing:.08em;
+  background:rgba(255,255,255,.14); padding:4px 10px; border-radius:100px; margin-bottom:10px;
+}
+.hero-preview-title { font-size:18px; font-weight:800; line-height:1.3; margin:0 0 8px; white-space:pre-wrap; }
+.hero-preview-frame.is-mobile .hero-preview-title { font-size:15px; }
+.hero-preview-desc { font-size:12px; opacity:.88; margin:0 0 14px; line-height:1.5; }
+.hero-preview-cta-flow { display:flex; flex-wrap:wrap; gap:8px; }
+.hero-preview-frame.is-pc .hero-preview-cta-flow.is-hidden-pc { display:none; }
+.hero-preview-cta-abs { position:absolute; inset:0; z-index:4; pointer-events:none; }
+.hero-preview-frame.is-mobile .hero-preview-cta-abs { display:none; }
+.hero-preview-btn {
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:8px 14px; border-radius:8px; font-size:12px; font-weight:700;
+  border:1.5px solid rgba(255,255,255,.45); cursor:grab; pointer-events:auto;
+  white-space:nowrap; max-width:90%;
+}
+.hero-preview-btn.primary { background:#fff; color:#8B2FE0; border-color:#fff; }
+.hero-preview-btn.outline { background:rgba(255,255,255,.12); color:#fff; }
+.hero-preview-btn.is-dragging { cursor:grabbing; opacity:.92; box-shadow:0 8px 20px rgba(0,0,0,.25); }
+.hero-preview-btn.is-abs { position:absolute; transform:none; }
+.hero-preview-frame.is-mobile .hero-preview-btn { cursor:default; pointer-events:none; }
 .hero-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; }
 @media (max-width:720px){ .hero-form-grid{ grid-template-columns:1fr; } }
 .hero-field-row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:6px; }
@@ -1197,6 +1236,16 @@ body.admin-nav-open { overflow:hidden; }
         <div class="form-row"><label>버튼</label>
           <div id="heroButtonsList"></div>
           <button type="button" class="btn btn-outline btn-sm" id="btnAddHeroButton" style="margin-top:6px;">+ 버튼 추가</button>
+          <div class="hero-preview-box" id="heroPreviewBox">
+            <div class="hero-preview-tabs" role="tablist">
+              <button type="button" class="active" data-hero-preview-mode="pc">PC 미리보기</button>
+              <button type="button" data-hero-preview-mode="mobile">모바일 미리보기</button>
+            </div>
+            <p class="hero-preview-hint" id="heroPreviewHint">PC: 버튼을 드래그해 위치를 잡으세요. 좌표는 슬라이드 기준 % 입니다.</p>
+            <div class="hero-preview-frame-wrap">
+              <div class="hero-preview-frame is-pc" id="heroPreviewFrame" aria-label="히어로 미리보기"></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1575,8 +1624,8 @@ body.admin-nav-open { overflow:hidden; }
 <script src="/js/admin-auth.js?v=20260630d"></script>
 <script src="/js/review-topics.js?v=20260704a"></script>
 <script src="/js/paid-transfer-page.js?v=20260721a"></script>
-<script src="/js/admin-api.js?v=20260805b"></script>
-<script src="/js/admin-hero.js?v=20260703a"></script>
+<script src="/js/admin-api.js?v=20260813a"></script>
+<script src="/js/admin-hero.js?v=20260813a"></script>
 <script src="/js/admin-partners.js?v=20260703a"></script>
 <script src="/js/lease-catalog-map.js"></script>
 <script src="/js/admin-app.js?v=20260805b"></script>

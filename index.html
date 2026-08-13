@@ -285,6 +285,23 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .hero-inner-align-right { text-align: right; }
   .hero-inner-align-right .hero-cta-row { justify-content: flex-end; }
   .hero-cta-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .hero-cta-abs { display: none; }
+  .hero-cta-abs-btn { position: absolute; z-index: 3; white-space: nowrap; }
+  @media (min-width: 860px) {
+    .hero-slide.has-abs-cta .hero-cta-flow { display: none; }
+    .hero-cta-abs {
+      display: block;
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+    }
+    .hero-cta-abs-btn { pointer-events: auto; }
+  }
+  @media (max-width: 859px) {
+    .hero-cta-abs { display: none !important; }
+    .hero-cta-flow { display: flex !important; }
+  }
   .hero-slide::before {
     content: '';
     position: absolute; inset: 0;
@@ -1284,7 +1301,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   initPage();
 </script>
 
-<script src="/js/hero-banner.js"></script>
+<script src="/js/hero-banner.js?v=20260813a"></script>
 <script src="/js/device-type.js"></script>
 <script src="/js/visit-tracker.js"></script>
 

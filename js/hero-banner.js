@@ -81,24 +81,47 @@
     if (!raw) return [];
     var list = Array.isArray(raw) ? raw : [];
     return list.map(function (b) {
-      return {
+      var item = {
         label: String((b && b.label) || '').trim(),
         href: String((b && b.href) || '#').trim() || '#',
         style: (b && b.style) === 'outline' ? 'outline' : 'primary'
       };
+      var x = b && b.x != null && b.x !== '' ? parseFloat(b.x) : NaN;
+      var y = b && b.y != null && b.y !== '' ? parseFloat(b.y) : NaN;
+      if (!isNaN(x) && !isNaN(y)) {
+        item.x = Math.max(0, Math.min(100, x));
+        item.y = Math.max(0, Math.min(100, y));
+      }
+      return item;
     }).filter(function (b) { return b.label; });
   }
 
-  function renderButtons(buttons) {
+  function buttonsHaveCoords(buttons) {
+    return buttons.some(function (b) { return b.x != null && b.y != null; });
+  }
+
+  function renderButtonsFlow(buttons, flowClass) {
     if (!buttons.length) return '';
-    return '<div class="hero-cta-row">' + buttons.map(function (b) {
+    var cls = 'hero-cta-row' + (flowClass ? ' ' + flowClass : '');
+    return '<div class="' + cls + '">' + buttons.map(function (b) {
+      var btnCls = b.style === 'outline' ? 'btn btn-outline' : 'btn btn-primary';
+      return '<a href="' + escAttr(b.href) + '" class="' + btnCls + '">' + escHtml(b.label) + '</a>';
+    }).join('') + '</div>';
+  }
+
+  function renderButtonsAbs(buttons) {
+    if (!buttons.length || !buttonsHaveCoords(buttons)) return '';
+    return '<div class="hero-cta-abs">' + buttons.map(function (b) {
       var cls = b.style === 'outline' ? 'btn btn-outline' : 'btn btn-primary';
-      return '<a href="' + escAttr(b.href) + '" class="' + cls + '">' + escHtml(b.label) + '</a>';
+      var left = b.x != null ? b.x : 8;
+      var top = b.y != null ? b.y : 72;
+      return '<a href="' + escAttr(b.href) + '" class="' + cls + ' hero-cta-abs-btn" style="left:' + left + '%;top:' + top + '%;">' + escHtml(b.label) + '</a>';
     }).join('') + '</div>';
   }
 
   function renderBuilderSlide(slide) {
     var buttons = normalizeButtons(slide.buttons);
+    var useAbs = buttonsHaveCoords(buttons);
     var innerAlign = alignClass('hero-inner', slide.title_align || slide.kicker_align || 'left');
     var kickerStyle = textStyle(slide.kicker_font_size, slide.kicker_color, 'sm');
     var titleStyle = textStyle(slide.title_font_size, slide.title_color || '#ffffff', 'lg');
@@ -107,7 +130,7 @@
     var titleAlign = slide.title_align ? 'text-align:' + slide.title_align + ';' : '';
     var descAlign = slide.desc_align ? 'text-align:' + slide.desc_align + ';' : '';
 
-    var html = '<div class="wrap hero-slide-inner ' + innerAlign + '">';
+    var html = '<div class="wrap hero-slide-inner ' + innerAlign + (useAbs ? ' hero-inner-has-abs-cta' : '') + '">';
     if (slide.kicker_text) {
       html += '<span class="hero-kicker" style="' + kickerStyle + ';' + kickerAlign + 'display:inline-flex;">' + escHtml(slide.kicker_text) + '</span>';
     }
@@ -117,7 +140,13 @@
     if (slide.desc_text) {
       html += '<p style="' + descStyle + ';' + descAlign + '">' + escHtml(slide.desc_text) + '</p>';
     }
-    html += renderButtons(buttons) + '</div>';
+    if (useAbs) {
+      html += renderButtonsFlow(buttons, 'hero-cta-flow');
+    } else {
+      html += renderButtonsFlow(buttons, '');
+    }
+    html += '</div>';
+    if (useAbs) html += renderButtonsAbs(buttons);
     return html;
   }
 
@@ -132,8 +161,9 @@
     var bg = (slide.bg_image_url || '').trim();
     var overlay = Math.min(0.85, Math.max(0, parseFloat(slide.overlay_opacity)));
     if (isNaN(overlay)) overlay = 0.35;
+    var useAbs = type === 'builder' && buttonsHaveCoords(normalizeButtons(slide.buttons));
 
-    var cls = 'hero-slide hero-slide-' + type + (bg ? ' has-bg-image' : '');
+    var cls = 'hero-slide hero-slide-' + type + (bg ? ' has-bg-image' : '') + (useAbs ? ' has-abs-cta' : '');
     var html = '<div class="' + cls + '" data-hero-index="' + index + '">';
     if (bg) {
       html += '<div class="hero-slide-bg" style="background-image:url(' + escAttr(bg) + ')"></div>';

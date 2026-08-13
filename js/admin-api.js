@@ -2267,11 +2267,18 @@
   function normalizeHeroButtons(buttons) {
     if (!Array.isArray(buttons)) return [];
     return buttons.map(function (b) {
-      return {
+      var item = {
         label: String((b && b.label) || '').trim().slice(0, 80),
         href: String((b && b.href) || '#').trim().slice(0, 500) || '#',
         style: (b && b.style) === 'outline' ? 'outline' : 'primary'
       };
+      var x = b && b.x != null && b.x !== '' ? parseFloat(b.x) : NaN;
+      var y = b && b.y != null && b.y !== '' ? parseFloat(b.y) : NaN;
+      if (!isNaN(x) && !isNaN(y)) {
+        item.x = Math.max(0, Math.min(100, Math.round(x * 10) / 10));
+        item.y = Math.max(0, Math.min(100, Math.round(y * 10) / 10));
+      }
+      return item;
     }).filter(function (b) { return b.label; });
   }
 
