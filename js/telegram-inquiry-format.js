@@ -96,7 +96,7 @@ function formatLeaseQuote(record) {
     line('보증금', labels.deposit || cond.deposit) +
     line('선납금', labels.prepay || cond.prepay) +
     line('보험연령', labels.insAge || cond.insAge) +
-    line('자동차세', labels.carTax || cond.carTax) +
+    line('취득세', labels.carTax || cond.carTax) +
     line('연간주행', labels.mileage || cond.mileage) +
     line('신용도', labels.credit || cond.credit) +
     (q.pricing && q.pricing.total ? line('참고합계', q.pricing.total) : '') +

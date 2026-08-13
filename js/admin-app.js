@@ -1050,7 +1050,7 @@
       '<li>보증금: ' + (labels.deposit || cond.deposit || '-') + (cond.deposit_amount ? ' (' + cond.deposit_amount + ')' : '') + '</li>' +
       '<li>선납금: ' + (labels.prepay || cond.prepay || '-') + (cond.prepay_amount ? ' (' + cond.prepay_amount + ')' : '') + '</li>' +
       '<li>보험연령: ' + (labels.insAge || cond.insAge || '-') + '</li>' +
-      '<li>자동차세: ' + (labels.carTax || cond.carTax || '-') + '</li>' +
+      '<li>취득세: ' + (labels.carTax || cond.carTax || '-') + '</li>' +
       '<li>연간 주행: ' + (labels.mileage || cond.mileage || '-') + '</li>' +
       '<li>신용도: ' + (labels.credit || cond.credit || '-') + '</li>' +
       '</ul></div>' +
