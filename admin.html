@@ -1245,6 +1245,10 @@ body.admin-nav-open { overflow:hidden; }
         <span class="hint">큰 이미지도 히어로 영역에 맞게 cover로 잘려 보입니다.</span>
       </div>
       <div class="form-row"><label>배경 어둡게 (0~0.85)</label><input type="number" id="heroOverlay" min="0" max="0.85" step="0.05" value="0.35" class="inline-edit-input" style="max-width:120px;"></div>
+      <div class="form-row"><label>배너 링크 (선택)</label>
+        <input type="text" id="heroLinkUrl" placeholder="예: /estimate 또는 https://... · 비우면 배너 클릭 없음">
+        <span class="hint">설정 시 배너 전체 클릭이 이동합니다. 버튼이 있으면 버튼이 우선입니다.</span>
+      </div>
 
       <div class="hero-builder-fields">
         <div class="form-row"><label>키커 (상단 뱃지)</label><input type="text" id="heroKicker" placeholder="예: 🎉 신규 가입 이벤트"></div>
@@ -1676,8 +1680,8 @@ body.admin-nav-open { overflow:hidden; }
 <script src="/js/admin-auth.js?v=20260630d"></script>
 <script src="/js/review-topics.js?v=20260704a"></script>
 <script src="/js/paid-transfer-page.js?v=20260721a"></script>
-<script src="/js/admin-api.js?v=20260813f"></script>
-<script src="/js/admin-hero.js?v=20260813f"></script>
+<script src="/js/admin-api.js?v=20260813g"></script>
+<script src="/js/admin-hero.js?v=20260813g"></script>
 <script src="/js/admin-partners.js?v=20260703a"></script>
 <script src="/js/lease-catalog-map.js"></script>
 <script src="/js/admin-app.js?v=20260805b"></script>

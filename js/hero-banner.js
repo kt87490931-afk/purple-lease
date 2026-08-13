@@ -156,12 +156,16 @@
     var bg = (slide.bg_image_url || '').trim();
     var overlay = Math.min(0.85, Math.max(0, parseFloat(slide.overlay_opacity)));
     if (isNaN(overlay)) overlay = 0.35;
+    var linkUrl = String(slide.link_url || '').trim();
 
-    var cls = 'hero-slide hero-slide-' + type + (bg ? ' has-bg-image' : '');
+    var cls = 'hero-slide hero-slide-' + type + (bg ? ' has-bg-image' : '') + (linkUrl ? ' has-slide-link' : '');
     var html = '<div class="' + cls + '" data-hero-index="' + index + '">';
     if (bg) {
       html += '<div class="hero-slide-bg" style="background-image:url(' + escAttr(bg) + ')"></div>';
       html += '<div class="hero-slide-overlay" style="opacity:' + overlay + '"></div>';
+    }
+    if (linkUrl) {
+      html += '<a class="hero-slide-link" href="' + escAttr(linkUrl) + '" aria-label="배너 바로가기"></a>';
     }
     html += type === 'html' ? renderHtmlSlide(slide) : renderBuilderSlide(slide);
     html += '</div>';

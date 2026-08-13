@@ -147,6 +147,7 @@
     document.getElementById('heroEnabled').checked = s.is_enabled !== false;
     document.getElementById('heroBgImage').value = s.bg_image_url || '';
     document.getElementById('heroOverlay').value = s.overlay_opacity != null ? s.overlay_opacity : 0.35;
+    document.getElementById('heroLinkUrl').value = s.link_url || '';
     document.getElementById('heroKicker').value = s.kicker_text || '';
     document.getElementById('heroKickerSize').value = s.kicker_font_size || 'sm';
     document.getElementById('heroKickerColor').value = s.kicker_color || '#ffffff';
@@ -268,6 +269,7 @@
       slide_type: document.getElementById('heroSlideType').value,
       bg_image_url: document.getElementById('heroBgImage').value.trim(),
       overlay_opacity: parseFloat(document.getElementById('heroOverlay').value) || 0.35,
+      link_url: (document.getElementById('heroLinkUrl') || {}).value || '',
       kicker_text: document.getElementById('heroKicker').value,
       kicker_font_size: document.getElementById('heroKickerSize').value,
       kicker_color: document.getElementById('heroKickerColor').value.trim(),

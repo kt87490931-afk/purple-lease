@@ -2277,6 +2277,10 @@
     return '11';
   }
 
+  function normalizeHeroLinkUrl(url) {
+    return String(url || '').trim().slice(0, 500);
+  }
+
   function normalizeHeroButtons(buttons, ctaZone) {
     if (!Array.isArray(buttons)) return [];
     var zone = normalizeHeroCtaZone(ctaZone || (buttons[0] && buttons[0].zone));
@@ -2298,6 +2302,7 @@
     return (res.data || []).map(function (row) {
       row.buttons = normalizeHeroButtons(row.buttons);
       row.cta_zone = normalizeHeroCtaZone(row.buttons[0] && row.buttons[0].zone);
+      row.link_url = normalizeHeroLinkUrl(row.link_url);
       return row;
     });
   }
@@ -2330,14 +2335,21 @@
       buttons: normalizeHeroButtons(payload.buttons, zone),
       html_content: sanitizeHeroHtmlContent(payload.html_content),
       overlay_opacity: Math.min(0.85, Math.max(0, parseFloat(payload.overlay_opacity) || 0.35)),
+      link_url: normalizeHeroLinkUrl(payload.link_url),
       updated_at: new Date().toISOString()
     };
 
     if (editingId) {
       var up = await db().from('hero_slides').update(row).eq('id', editingId).select().single();
-      if (up.error) throw up.error;
+      if (up.error) {
+        if (up.error.message && /link_url/i.test(up.error.message)) {
+          throw new Error('배너 링크 저장을 위해 DB 마이그레이션(migration-hero-slide-link.sql)이 필요합니다.');
+        }
+        throw up.error;
+      }
       up.data.buttons = normalizeHeroButtons(up.data.buttons);
       up.data.cta_zone = normalizeHeroCtaZone(up.data.buttons[0] && up.data.buttons[0].zone);
+      up.data.link_url = normalizeHeroLinkUrl(up.data.link_url);
       return up.data;
     }
 
@@ -2346,9 +2358,15 @@
     row.sort_order = ((maxRes.data && maxRes.data[0]) ? maxRes.data[0].sort_order : -1) + 1;
 
     var ins = await db().from('hero_slides').insert([row]).select().single();
-    if (ins.error) throw ins.error;
+    if (ins.error) {
+      if (ins.error.message && /link_url/i.test(ins.error.message)) {
+        throw new Error('배너 링크 저장을 위해 DB 마이그레이션(migration-hero-slide-link.sql)이 필요합니다.');
+      }
+      throw ins.error;
+    }
     ins.data.buttons = normalizeHeroButtons(ins.data.buttons);
     ins.data.cta_zone = normalizeHeroCtaZone(ins.data.buttons[0] && ins.data.buttons[0].zone);
+    ins.data.link_url = normalizeHeroLinkUrl(ins.data.link_url);
     return ins.data;
   }
 
