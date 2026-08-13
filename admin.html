@@ -312,19 +312,24 @@ body.hero-preview-mode-mobile .hero-btn-xy-pc { opacity:.45; }
 .hero-preview-tabs button { border:1px solid var(--line); background:#fff; border-radius:8px; padding:7px 12px; font-size:12px; font-weight:700; cursor:pointer; color:var(--ink-600); }
 .hero-preview-tabs button.active { background:var(--navy-900,#11143A); color:#fff; border-color:var(--navy-900,#11143A); }
 .hero-preview-hint { font-size:11.5px; color:var(--ink-500); margin:0 0 10px; line-height:1.5; }
-.hero-preview-frame-wrap { display:flex; justify-content:center; width:100%; }
-/* 홈 has-abs-cta 와 동일 화면비(PC 1280/380, 모바일 390/280) — cover 크롭 일치 */
+.hero-preview-frame-wrap {
+  display:block; width:100%; overflow:hidden; position:relative;
+}
+/* A안: 홈 PC와 동일 기준 캔버스(1440×576 = 5:2)를 축소 표시 → cover/% 완전 일치 */
 .hero-preview-frame {
-  position:relative; width:100%; max-width:720px;
-  aspect-ratio: 1280 / 380;
-  min-height: unset; height: auto;
+  position:relative;
+  width:1440px;
+  height:576px;
+  max-width:none;
+  aspect-ratio:unset;
   display:flex; align-items:center; padding:40px 0; box-sizing:border-box;
   border-radius:10px; overflow:hidden; background:linear-gradient(135deg,#8B2FE0 0%,#5B2FD6 45%,#1A1E6E 100%);
   box-shadow:var(--shadow-sm); user-select:none;
+  transform-origin: top left;
 }
 .hero-preview-frame.is-mobile {
-  max-width:360px;
-  aspect-ratio: 390 / 280;
+  width:390px;
+  height:280px;
 }
 .hero-preview-bg { position:absolute; inset:0; background-size:cover; background-position:center; z-index:0; }
 .hero-preview-overlay { position:absolute; inset:0; background:#000; pointer-events:none; z-index:1; }
@@ -1202,7 +1207,7 @@ body.hero-preview-mode-mobile .hero-btn-xy-pc { opacity:.45; }
 </div>
 
 <div class="modal-overlay" id="modalHero">
-  <div class="modal-box" style="max-width:720px;">
+  <div class="modal-box modal-box--hero" style="max-width:980px;">
     <div class="modal-head"><h3 id="modalHeroTitle">슬라이드 편집</h3><button class="modal-close" data-close="modalHero">✕</button></div>
     <div class="modal-body" style="max-height:70vh;overflow:auto;">
       <div class="form-grid-2">
@@ -1252,7 +1257,7 @@ body.hero-preview-mode-mobile .hero-btn-xy-pc { opacity:.45; }
               <button type="button" class="active" data-hero-preview-mode="pc">PC 미리보기</button>
               <button type="button" data-hero-preview-mode="mobile">모바일 미리보기</button>
             </div>
-            <p class="hero-preview-hint" id="heroPreviewHint">PC: 버튼을 드래그해 위치를 잡으세요. 좌표는 홈 히어로 슬라이드 기준 % 입니다.</p>
+            <p class="hero-preview-hint" id="heroPreviewHint">PC 미리보기 = 홈 PC와 동일 비율(5:2). 드래그 위치가 홈과 같아야 합니다.</p>
             <div class="hero-preview-frame-wrap">
               <div class="hero-preview-frame is-pc" id="heroPreviewFrame" aria-label="히어로 미리보기"></div>
             </div>
@@ -1635,8 +1640,8 @@ body.hero-preview-mode-mobile .hero-btn-xy-pc { opacity:.45; }
 <script src="/js/admin-auth.js?v=20260630d"></script>
 <script src="/js/review-topics.js?v=20260704a"></script>
 <script src="/js/paid-transfer-page.js?v=20260721a"></script>
-<script src="/js/admin-api.js?v=20260813c"></script>
-<script src="/js/admin-hero.js?v=20260813c"></script>
+<script src="/js/admin-api.js?v=20260813d"></script>
+<script src="/js/admin-hero.js?v=20260813d"></script>
 <script src="/js/admin-partners.js?v=20260703a"></script>
 <script src="/js/lease-catalog-map.js"></script>
 <script src="/js/admin-app.js?v=20260805b"></script>

@@ -290,8 +290,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   @media (min-width: 860px) {
     .hero-slide.has-abs-cta-pc .hero-cta-flow { display: none; }
     .hero-slide.has-abs-cta-pc {
-      /* 미리보기와 동일 화면비 → background cover 크롭/% 좌표 일치 */
-      aspect-ratio: 1280 / 380;
+      /* A안: 어드민 PC 미리보기와 동일 5:2 */
+      aspect-ratio: 5 / 2;
       min-height: unset;
       height: auto;
     }
@@ -1327,7 +1327,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   initPage();
 </script>
 
-<script src="/js/hero-banner.js?v=20260813c"></script>
+<script src="/js/hero-banner.js?v=20260813d"></script>
 <script src="/js/device-type.js"></script>
 <script src="/js/visit-tracker.js"></script>
 
