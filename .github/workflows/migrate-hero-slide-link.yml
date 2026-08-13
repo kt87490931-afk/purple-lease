@@ -1,0 +1,32 @@
+name: Run Hero Slide Link Migration
+
+on:
+  workflow_dispatch:
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Upload migration SQL to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "supabase/migration-hero-slide-link.sql,deploy/run-migration-hero-slide-link.sh"
+          target: /var/www/purple-lease
+          strip_components: 0
+          overwrite: true
+
+      - name: Run migration on server (IPv6 direct DB)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            chmod +x /var/www/purple-lease/deploy/run-migration-hero-slide-link.sh
+            export SUPABASE_DB_PASSWORD="${{ secrets.SUPABASE_DB_PASSWORD }}"
+            bash /var/www/purple-lease/deploy/run-migration-hero-slide-link.sh
