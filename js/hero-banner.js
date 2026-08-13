@@ -79,7 +79,7 @@
 
   function normalizeButtons(raw) {
     if (!raw) return [];
-    var list = Array.isArray(raw) ? raw : [];
+    var list = Array.isArray(raw) ? raw : (raw.items || []);
     return list.map(function (b) {
       return {
         label: String((b && b.label) || '').trim(),
@@ -95,18 +95,30 @@
     'bottom-left': '11', bottom: '13', 'bottom-right': '15'
   };
 
-  function normalizeCtaZone(zone, buttons) {
+  function normalizeCtaZone(zone, buttonsRaw) {
     var z = String(zone || '').trim();
+    if (!z && buttonsRaw && !Array.isArray(buttonsRaw) && buttonsRaw.zone) {
+      z = String(buttonsRaw.zone || '').trim();
+    }
     if (CTA_ZONE_LEGACY[z]) z = CTA_ZONE_LEGACY[z];
     var n = parseInt(z, 10);
     if (!isNaN(n) && n >= 1 && n <= 15) return String(n);
-    if (buttons && buttons.length) {
-      var fromBtn = String((buttons[0] && buttons[0].zone) || '').trim();
+    var list = Array.isArray(buttonsRaw) ? buttonsRaw : (buttonsRaw && buttonsRaw.items) || [];
+    if (list.length) {
+      var fromBtn = String((list[0] && list[0].zone) || '').trim();
       if (CTA_ZONE_LEGACY[fromBtn]) fromBtn = CTA_ZONE_LEGACY[fromBtn];
       var bn = parseInt(fromBtn, 10);
       if (!isNaN(bn) && bn >= 1 && bn <= 15) return String(bn);
     }
     return '11';
+  }
+
+  function getSlideLinkUrl(slide) {
+    var direct = String((slide && slide.link_url) || '').trim();
+    if (direct) return direct;
+    var raw = slide && slide.buttons;
+    if (raw && !Array.isArray(raw) && raw.link_url) return String(raw.link_url || '').trim();
+    return '';
   }
 
   function renderButtons(buttons) {
@@ -156,7 +168,7 @@
     var bg = (slide.bg_image_url || '').trim();
     var overlay = Math.min(0.85, Math.max(0, parseFloat(slide.overlay_opacity)));
     if (isNaN(overlay)) overlay = 0.35;
-    var linkUrl = String(slide.link_url || '').trim();
+    var linkUrl = getSlideLinkUrl(slide);
 
     var cls = 'hero-slide hero-slide-' + type + (bg ? ' has-bg-image' : '') + (linkUrl ? ' has-slide-link' : '');
     var html = '<div class="' + cls + '" data-hero-index="' + index + '">';

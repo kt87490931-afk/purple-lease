@@ -2281,17 +2281,52 @@
     return String(url || '').trim().slice(0, 500);
   }
 
-  function normalizeHeroButtons(buttons, ctaZone) {
+  function normalizeHeroButtonItems(buttons) {
     if (!Array.isArray(buttons)) return [];
-    var zone = normalizeHeroCtaZone(ctaZone || (buttons[0] && buttons[0].zone));
     return buttons.map(function (b) {
       return {
         label: String((b && b.label) || '').trim().slice(0, 80),
         href: String((b && b.href) || '#').trim().slice(0, 500) || '#',
-        style: (b && b.style) === 'outline' ? 'outline' : 'primary',
-        zone: zone
+        style: (b && b.style) === 'outline' ? 'outline' : 'primary'
       };
     }).filter(function (b) { return b.label; });
+  }
+
+  function unpackHeroButtonsState(raw, fallbackLink) {
+    var zone = '11';
+    var link = normalizeHeroLinkUrl(fallbackLink);
+    var items = [];
+    if (Array.isArray(raw)) {
+      items = normalizeHeroButtonItems(raw);
+      zone = normalizeHeroCtaZone(raw[0] && raw[0].zone);
+      if (!link && raw[0] && raw[0].slide_link) link = normalizeHeroLinkUrl(raw[0].slide_link);
+    } else if (raw && typeof raw === 'object') {
+      items = normalizeHeroButtonItems(raw.items || []);
+      zone = normalizeHeroCtaZone(raw.zone || (raw.items && raw.items[0] && raw.items[0].zone));
+      if (!link) link = normalizeHeroLinkUrl(raw.link_url);
+    }
+    return { zone: zone, link_url: link, items: items };
+  }
+
+  function packHeroButtonsState(buttons, ctaZone, linkUrl) {
+    var zone = normalizeHeroCtaZone(ctaZone);
+    var items = normalizeHeroButtonItems(buttons).map(function (b) {
+      b.zone = zone;
+      return b;
+    });
+    return {
+      v: 1,
+      zone: zone,
+      link_url: normalizeHeroLinkUrl(linkUrl),
+      items: items
+    };
+  }
+
+  function normalizeHeroButtons(buttons, ctaZone) {
+    return unpackHeroButtonsState(buttons).items.map(function (b) {
+      b.zone = normalizeHeroCtaZone(ctaZone || b.zone);
+      return b;
+    });
   }
 
   async function listHeroSlides() {
@@ -2300,9 +2335,10 @@
       .order('id', { ascending: true });
     if (res.error) throw res.error;
     return (res.data || []).map(function (row) {
-      row.buttons = normalizeHeroButtons(row.buttons);
-      row.cta_zone = normalizeHeroCtaZone(row.buttons[0] && row.buttons[0].zone);
-      row.link_url = normalizeHeroLinkUrl(row.link_url);
+      var packed = unpackHeroButtonsState(row.buttons, row.link_url);
+      row.buttons = packed.items;
+      row.cta_zone = packed.zone;
+      row.link_url = packed.link_url;
       return row;
     });
   }
@@ -2316,6 +2352,7 @@
     }
 
     var zone = normalizeHeroCtaZone(payload.cta_zone);
+    var linkUrl = normalizeHeroLinkUrl(payload.link_url);
     var row = {
       is_enabled: payload.is_enabled !== false,
       slide_type: payload.slide_type === 'html' ? 'html' : 'builder',
@@ -2332,24 +2369,19 @@
       desc_font_size: String(payload.desc_font_size || 'md').trim(),
       desc_color: String(payload.desc_color || '').trim(),
       desc_align: String(payload.desc_align || 'left').trim(),
-      buttons: normalizeHeroButtons(payload.buttons, zone),
+      buttons: packHeroButtonsState(payload.buttons, zone, linkUrl),
       html_content: sanitizeHeroHtmlContent(payload.html_content),
       overlay_opacity: Math.min(0.85, Math.max(0, parseFloat(payload.overlay_opacity) || 0.35)),
-      link_url: normalizeHeroLinkUrl(payload.link_url),
       updated_at: new Date().toISOString()
     };
 
     if (editingId) {
       var up = await db().from('hero_slides').update(row).eq('id', editingId).select().single();
-      if (up.error) {
-        if (up.error.message && /link_url/i.test(up.error.message)) {
-          throw new Error('배너 링크 저장을 위해 DB 마이그레이션(migration-hero-slide-link.sql)이 필요합니다.');
-        }
-        throw up.error;
-      }
-      up.data.buttons = normalizeHeroButtons(up.data.buttons);
-      up.data.cta_zone = normalizeHeroCtaZone(up.data.buttons[0] && up.data.buttons[0].zone);
-      up.data.link_url = normalizeHeroLinkUrl(up.data.link_url);
+      if (up.error) throw up.error;
+      var packedUp = unpackHeroButtonsState(up.data.buttons, up.data.link_url);
+      up.data.buttons = packedUp.items;
+      up.data.cta_zone = packedUp.zone;
+      up.data.link_url = packedUp.link_url;
       return up.data;
     }
 
@@ -2358,15 +2390,11 @@
     row.sort_order = ((maxRes.data && maxRes.data[0]) ? maxRes.data[0].sort_order : -1) + 1;
 
     var ins = await db().from('hero_slides').insert([row]).select().single();
-    if (ins.error) {
-      if (ins.error.message && /link_url/i.test(ins.error.message)) {
-        throw new Error('배너 링크 저장을 위해 DB 마이그레이션(migration-hero-slide-link.sql)이 필요합니다.');
-      }
-      throw ins.error;
-    }
-    ins.data.buttons = normalizeHeroButtons(ins.data.buttons);
-    ins.data.cta_zone = normalizeHeroCtaZone(ins.data.buttons[0] && ins.data.buttons[0].zone);
-    ins.data.link_url = normalizeHeroLinkUrl(ins.data.link_url);
+    if (ins.error) throw ins.error;
+    var packedIns = unpackHeroButtonsState(ins.data.buttons, ins.data.link_url);
+    ins.data.buttons = packedIns.items;
+    ins.data.cta_zone = packedIns.zone;
+    ins.data.link_url = packedIns.link_url;
     return ins.data;
   }
 
