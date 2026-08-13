@@ -2265,13 +2265,16 @@
   }
 
   function normalizeHeroCtaZone(zone) {
-    var allowed = {
-      'top-left': 1, top: 1, 'top-right': 1,
-      left: 1, center: 1, right: 1,
-      'bottom-left': 1, bottom: 1, 'bottom-right': 1
+    var legacy = {
+      'top-left': '1', top: '3', 'top-right': '5',
+      left: '6', center: '8', right: '10',
+      'bottom-left': '11', bottom: '13', 'bottom-right': '15'
     };
     var z = String(zone || '').trim();
-    return allowed[z] ? z : 'bottom-left';
+    if (legacy[z]) z = legacy[z];
+    var n = parseInt(z, 10);
+    if (!isNaN(n) && n >= 1 && n <= 15) return String(n);
+    return '11';
   }
 
   function normalizeHeroButtons(buttons, ctaZone) {

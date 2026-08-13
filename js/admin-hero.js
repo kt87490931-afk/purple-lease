@@ -11,17 +11,15 @@
   var previewMode = 'pc';
 
   var FONT_SIZES = { xs: '10px', sm: '11px', md: '13.5px', base: '15px', lg: '26px', xl: '36px' };
-  var CTA_ZONE_OPTIONS = [
-    { value: 'top-left', label: '좌상단' },
-    { value: 'top', label: '상단' },
-    { value: 'top-right', label: '우상단' },
-    { value: 'left', label: '좌측' },
-    { value: 'center', label: '중앙' },
-    { value: 'right', label: '우측' },
-    { value: 'bottom-left', label: '좌하단' },
-    { value: 'bottom', label: '하단' },
-    { value: 'bottom-right', label: '우하단' }
-  ];
+  var CTA_ZONE_OPTIONS = [];
+  for (var zi = 1; zi <= 15; zi++) {
+    CTA_ZONE_OPTIONS.push({ value: String(zi), label: String(zi) });
+  }
+  var CTA_ZONE_LEGACY = {
+    'top-left': '1', top: '3', 'top-right': '5',
+    left: '6', center: '8', right: '10',
+    'bottom-left': '11', bottom: '13', 'bottom-right': '15'
+  };
 
   function esc(s) {
     return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
@@ -39,10 +37,11 @@
   }
 
   function normalizeZone(zone) {
-    var map = {};
-    CTA_ZONE_OPTIONS.forEach(function (o) { map[o.value] = 1; });
     var z = String(zone || '').trim();
-    return map[z] ? z : 'bottom-left';
+    if (CTA_ZONE_LEGACY[z]) z = CTA_ZONE_LEGACY[z];
+    var n = parseInt(z, 10);
+    if (!isNaN(n) && n >= 1 && n <= 15) return String(n);
+    return '11';
   }
 
   function getSelectedCtaZone() {
@@ -161,7 +160,7 @@
     document.getElementById('heroDescColor').value = s.desc_color || '#ffffff';
     document.getElementById('heroDescAlign').value = s.desc_align || 'left';
     document.getElementById('heroHtmlContent').value = s.html_content || '';
-    setSelectedCtaZone(s.cta_zone || (s.buttons && s.buttons[0] && s.buttons[0].zone) || 'bottom-left');
+    setSelectedCtaZone(s.cta_zone || (s.buttons && s.buttons[0] && s.buttons[0].zone) || '11');
     renderHeroButtonRows(s.buttons || []);
     toggleHeroFormSections(document.getElementById('heroSlideType').value);
     updateHeroBgPreview();
@@ -189,7 +188,7 @@
     });
     var hint = document.getElementById('heroPreviewHint');
     if (hint) {
-      hint.textContent = '버튼 위치는 9구역 중 하나를 선택합니다. PC·모바일에 동일하게 적용됩니다.';
+      hint.textContent = '버튼 위치는 15구역(3×5) 중 하나를 선택합니다. PC·모바일에 동일 적용되며 히어로 세로 길이는 변하지 않습니다.';
     }
     updateHeroPreview();
   }

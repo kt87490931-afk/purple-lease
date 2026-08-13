@@ -89,20 +89,24 @@
     }).filter(function (b) { return b.label; });
   }
 
-  var CTA_ZONES = {
-    'top-left': 1, top: 1, 'top-right': 1,
-    left: 1, center: 1, right: 1,
-    'bottom-left': 1, bottom: 1, 'bottom-right': 1
+  var CTA_ZONE_LEGACY = {
+    'top-left': '1', top: '3', 'top-right': '5',
+    left: '6', center: '8', right: '10',
+    'bottom-left': '11', bottom: '13', 'bottom-right': '15'
   };
 
   function normalizeCtaZone(zone, buttons) {
     var z = String(zone || '').trim();
-    if (CTA_ZONES[z]) return z;
+    if (CTA_ZONE_LEGACY[z]) z = CTA_ZONE_LEGACY[z];
+    var n = parseInt(z, 10);
+    if (!isNaN(n) && n >= 1 && n <= 15) return String(n);
     if (buttons && buttons.length) {
       var fromBtn = String((buttons[0] && buttons[0].zone) || '').trim();
-      if (CTA_ZONES[fromBtn]) return fromBtn;
+      if (CTA_ZONE_LEGACY[fromBtn]) fromBtn = CTA_ZONE_LEGACY[fromBtn];
+      var bn = parseInt(fromBtn, 10);
+      if (!isNaN(bn) && bn >= 1 && bn <= 15) return String(bn);
     }
-    return 'bottom-left';
+    return '11';
   }
 
   function renderButtons(buttons) {

@@ -305,12 +305,12 @@ body.admin-nav-open { overflow:hidden; }
 .hero-cta-zone-box { margin-top:12px; }
 .hero-cta-zone-label { font-size:12px; font-weight:700; color:var(--ink-700); margin:0 0 8px; }
 .hero-cta-zone-grid {
-  display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px;
-  max-width:360px;
+  display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px;
+  max-width:420px;
 }
 .hero-cta-zone-grid label {
   display:flex; align-items:center; justify-content:center;
-  min-height:40px; border:1px solid var(--line); border-radius:8px;
+  min-height:36px; border:1px solid var(--line); border-radius:8px;
   background:#fff; font-size:12px; font-weight:700; color:var(--ink-600);
   cursor:pointer; user-select:none;
 }
@@ -345,17 +345,26 @@ body.admin-nav-open { overflow:hidden; }
 .hero-preview-title { font-size:22px; font-weight:800; line-height:1.25; margin:0 0 10px; white-space:pre-wrap; }
 .hero-preview-desc { font-size:13px; opacity:.9; margin:0; line-height:1.5; max-width:420px; }
 .hero-preview-cta-dock {
-  position:absolute; inset:0; z-index:4; display:flex; padding:20px 16px 24px; box-sizing:border-box; pointer-events:none;
+  position:absolute; inset:0; z-index:4;
+  display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); grid-template-rows:repeat(3,minmax(0,1fr));
+  padding:20px 16px 24px; box-sizing:border-box; pointer-events:none;
 }
-.hero-preview-cta-dock--top-left { align-items:flex-start; justify-content:flex-start; }
-.hero-preview-cta-dock--top { align-items:flex-start; justify-content:center; }
-.hero-preview-cta-dock--top-right { align-items:flex-start; justify-content:flex-end; }
-.hero-preview-cta-dock--left { align-items:center; justify-content:flex-start; }
-.hero-preview-cta-dock--center { align-items:center; justify-content:center; }
-.hero-preview-cta-dock--right { align-items:center; justify-content:flex-end; }
-.hero-preview-cta-dock--bottom-left { align-items:flex-end; justify-content:flex-start; }
-.hero-preview-cta-dock--bottom { align-items:flex-end; justify-content:center; }
-.hero-preview-cta-dock--bottom-right { align-items:flex-end; justify-content:flex-end; }
+.hero-preview-cta-dock .hero-preview-cta-flow { max-width:100%; }
+.hero-preview-cta-dock--1 .hero-preview-cta-flow { grid-area:1/1; justify-self:start; align-self:start; }
+.hero-preview-cta-dock--2 .hero-preview-cta-flow { grid-area:1/2; justify-self:center; align-self:start; }
+.hero-preview-cta-dock--3 .hero-preview-cta-flow { grid-area:1/3; justify-self:center; align-self:start; }
+.hero-preview-cta-dock--4 .hero-preview-cta-flow { grid-area:1/4; justify-self:center; align-self:start; }
+.hero-preview-cta-dock--5 .hero-preview-cta-flow { grid-area:1/5; justify-self:end; align-self:start; }
+.hero-preview-cta-dock--6 .hero-preview-cta-flow { grid-area:2/1; justify-self:start; align-self:center; }
+.hero-preview-cta-dock--7 .hero-preview-cta-flow { grid-area:2/2; justify-self:center; align-self:center; }
+.hero-preview-cta-dock--8 .hero-preview-cta-flow { grid-area:2/3; justify-self:center; align-self:center; }
+.hero-preview-cta-dock--9 .hero-preview-cta-flow { grid-area:2/4; justify-self:center; align-self:center; }
+.hero-preview-cta-dock--10 .hero-preview-cta-flow { grid-area:2/5; justify-self:end; align-self:center; }
+.hero-preview-cta-dock--11 .hero-preview-cta-flow { grid-area:3/1; justify-self:start; align-self:end; }
+.hero-preview-cta-dock--12 .hero-preview-cta-flow { grid-area:3/2; justify-self:center; align-self:end; }
+.hero-preview-cta-dock--13 .hero-preview-cta-flow { grid-area:3/3; justify-self:center; align-self:end; }
+.hero-preview-cta-dock--14 .hero-preview-cta-flow { grid-area:3/4; justify-self:center; align-self:end; }
+.hero-preview-cta-dock--15 .hero-preview-cta-flow { grid-area:3/5; justify-self:end; align-self:end; }
 .hero-preview-cta-flow { display:flex; flex-wrap:wrap; gap:8px; }
 .hero-preview-btn {
   display:inline-flex; align-items:center; justify-content:center;
@@ -1260,17 +1269,23 @@ body.admin-nav-open { overflow:hidden; }
           <div id="heroButtonsList"></div>
           <button type="button" class="btn btn-outline btn-sm" id="btnAddHeroButton" style="margin-top:6px;">+ 버튼 추가</button>
           <div class="hero-cta-zone-box">
-            <p class="hero-cta-zone-label">버튼 위치 (PC·모바일 공통)</p>
+            <p class="hero-cta-zone-label">버튼 위치 15구역 (3×5, PC·모바일 공통) — 히어로 세로 길이 불변</p>
             <div class="hero-cta-zone-grid" id="heroCtaZoneGrid">
-              <label><input type="radio" name="heroCtaZone" value="top-left"> 좌상단</label>
-              <label><input type="radio" name="heroCtaZone" value="top"> 상단</label>
-              <label><input type="radio" name="heroCtaZone" value="top-right"> 우상단</label>
-              <label><input type="radio" name="heroCtaZone" value="left"> 좌측</label>
-              <label><input type="radio" name="heroCtaZone" value="center"> 중앙</label>
-              <label><input type="radio" name="heroCtaZone" value="right"> 우측</label>
-              <label><input type="radio" name="heroCtaZone" value="bottom-left" checked> 좌하단</label>
-              <label><input type="radio" name="heroCtaZone" value="bottom"> 하단</label>
-              <label><input type="radio" name="heroCtaZone" value="bottom-right"> 우하단</label>
+              <label><input type="radio" name="heroCtaZone" value="1"> 1</label>
+              <label><input type="radio" name="heroCtaZone" value="2"> 2</label>
+              <label><input type="radio" name="heroCtaZone" value="3"> 3</label>
+              <label><input type="radio" name="heroCtaZone" value="4"> 4</label>
+              <label><input type="radio" name="heroCtaZone" value="5"> 5</label>
+              <label><input type="radio" name="heroCtaZone" value="6"> 6</label>
+              <label><input type="radio" name="heroCtaZone" value="7"> 7</label>
+              <label><input type="radio" name="heroCtaZone" value="8"> 8</label>
+              <label><input type="radio" name="heroCtaZone" value="9"> 9</label>
+              <label><input type="radio" name="heroCtaZone" value="10"> 10</label>
+              <label><input type="radio" name="heroCtaZone" value="11" checked> 11</label>
+              <label><input type="radio" name="heroCtaZone" value="12"> 12</label>
+              <label><input type="radio" name="heroCtaZone" value="13"> 13</label>
+              <label><input type="radio" name="heroCtaZone" value="14"> 14</label>
+              <label><input type="radio" name="heroCtaZone" value="15"> 15</label>
             </div>
           </div>
           <div class="hero-preview-box" id="heroPreviewBox">
@@ -1278,7 +1293,7 @@ body.admin-nav-open { overflow:hidden; }
               <button type="button" class="active" data-hero-preview-mode="pc">PC 미리보기</button>
               <button type="button" data-hero-preview-mode="mobile">모바일 미리보기</button>
             </div>
-            <p class="hero-preview-hint" id="heroPreviewHint">버튼 위치는 9구역 중 하나를 선택합니다. PC·모바일에 동일하게 적용됩니다.</p>
+            <p class="hero-preview-hint" id="heroPreviewHint">버튼 위치는 15구역(3×5) 중 선택. PC·모바일 동일 적용, 히어로 세로는 변하지 않습니다.</p>
             <div class="hero-preview-frame-wrap">
               <div class="hero-preview-frame is-pc" id="heroPreviewFrame" aria-label="히어로 미리보기"></div>
             </div>
@@ -1661,8 +1676,8 @@ body.admin-nav-open { overflow:hidden; }
 <script src="/js/admin-auth.js?v=20260630d"></script>
 <script src="/js/review-topics.js?v=20260704a"></script>
 <script src="/js/paid-transfer-page.js?v=20260721a"></script>
-<script src="/js/admin-api.js?v=20260813e"></script>
-<script src="/js/admin-hero.js?v=20260813e"></script>
+<script src="/js/admin-api.js?v=20260813f"></script>
+<script src="/js/admin-hero.js?v=20260813f"></script>
 <script src="/js/admin-partners.js?v=20260703a"></script>
 <script src="/js/lease-catalog-map.js"></script>
 <script src="/js/admin-app.js?v=20260805b"></script>
