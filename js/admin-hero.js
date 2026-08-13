@@ -1,6 +1,6 @@
 /**
  * 어드민 — 히어로 배너 슬라이드 관리 (최대 4개)
- * 버튼 PC % 좌표 드래그 + PC/모바일 미리보기
+ * 버튼 PC(x/y)·모바일(mx/my) 별도 % 좌표 드래그 + 홈과 동일 미리보기
  */
 (function () {
   'use strict';
@@ -12,7 +12,8 @@
   var dragState = null;
   var previewBound = false;
 
-  var FONT_SIZES = { xs: '10px', sm: '11px', md: '13px', base: '15px', lg: '18px', xl: '22px' };
+  /* 홈 hero-banner.js 와 동일 */
+  var FONT_SIZES = { xs: '10px', sm: '11px', md: '13.5px', base: '15px', lg: '26px', xl: '36px' };
 
   function esc(s) {
     return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
@@ -87,6 +88,8 @@
       var style = (row.querySelector('.hero-btn-style') || {}).value;
       var x = parseXy((row.querySelector('.hero-btn-x') || {}).value);
       var y = parseXy((row.querySelector('.hero-btn-y') || {}).value);
+      var mx = parseXy((row.querySelector('.hero-btn-mx') || {}).value);
+      var my = parseXy((row.querySelector('.hero-btn-my') || {}).value);
       label = String(label || '').trim();
       if (!label) return;
       var item = {
@@ -98,23 +101,36 @@
         item.x = x;
         item.y = y;
       }
+      if (mx != null && my != null) {
+        item.mx = mx;
+        item.my = my;
+      }
       out.push(item);
     });
     return out;
   }
 
-  function setButtonRowXy(index, x, y) {
+  function setButtonRowXy(index, x, y, mode) {
     var rows = document.querySelectorAll('#heroButtonsList .hero-btn-row');
     var row = rows[index];
     if (!row) return;
-    var xEl = row.querySelector('.hero-btn-x');
-    var yEl = row.querySelector('.hero-btn-y');
+    var isMobile = mode === 'mobile';
+    var xEl = row.querySelector(isMobile ? '.hero-btn-mx' : '.hero-btn-x');
+    var yEl = row.querySelector(isMobile ? '.hero-btn-my' : '.hero-btn-y');
     if (xEl) xEl.value = x != null ? String(x) : '';
     if (yEl) yEl.value = y != null ? String(y) : '';
   }
 
   function defaultXyForIndex(i) {
     return { x: 8 + (i % 3) * 18, y: 68 + Math.floor(i / 3) * 10 };
+  }
+
+  function syncXyLabelActive() {
+    document.body.classList.toggle('hero-preview-mode-pc', previewMode === 'pc');
+    document.body.classList.toggle('hero-preview-mode-mobile', previewMode === 'mobile');
+    document.querySelectorAll('.hero-btn-xy-label[data-xy-mode]').forEach(function (el) {
+      el.classList.toggle('is-active', el.getAttribute('data-xy-mode') === previewMode);
+    });
   }
 
   function renderHeroButtonRows(buttons) {
@@ -124,6 +140,7 @@
     if (!list.length) list = [{ label: '', href: '/estimate', style: 'primary' }];
     wrap.innerHTML = list.map(function (b, i) {
       var xy = (b.x != null && b.y != null) ? { x: b.x, y: b.y } : { x: '', y: '' };
+      var mxy = (b.mx != null && b.my != null) ? { x: b.mx, y: b.my } : { x: '', y: '' };
       return '<div class="hero-btn-row" data-btn-index="' + i + '">' +
         '<input type="text" class="inline-edit-input hero-btn-label" placeholder="버튼 문구" value="' + esc(b.label) + '">' +
         '<input type="text" class="inline-edit-input hero-btn-href" placeholder="링크 (/estimate)" value="' + esc(b.href) + '">' +
@@ -131,11 +148,16 @@
         '<option value="primary"' + (b.style !== 'outline' ? ' selected' : '') + '>Primary</option>' +
         '<option value="outline"' + (b.style === 'outline' ? ' selected' : '') + '>Outline</option>' +
         '</select>' +
-        '<input type="number" class="inline-edit-input hero-btn-xy hero-btn-x" min="0" max="100" step="0.1" placeholder="X%" value="' + esc(xy.x) + '" title="PC X%">' +
-        '<input type="number" class="inline-edit-input hero-btn-xy hero-btn-y" min="0" max="100" step="0.1" placeholder="Y%" value="' + esc(xy.y) + '" title="PC Y%">' +
+        '<span class="hero-btn-xy-label hero-btn-xy-pc" data-xy-mode="pc">PC</span>' +
+        '<input type="number" class="inline-edit-input hero-btn-xy hero-btn-xy-pc hero-btn-x" min="0" max="100" step="0.1" placeholder="X%" value="' + esc(xy.x) + '" title="PC X%">' +
+        '<input type="number" class="inline-edit-input hero-btn-xy hero-btn-xy-pc hero-btn-y" min="0" max="100" step="0.1" placeholder="Y%" value="' + esc(xy.y) + '" title="PC Y%">' +
+        '<span class="hero-btn-xy-label hero-btn-xy-mobile" data-xy-mode="mobile">모바일</span>' +
+        '<input type="number" class="inline-edit-input hero-btn-xy hero-btn-xy-mobile hero-btn-mx" min="0" max="100" step="0.1" placeholder="X%" value="' + esc(mxy.x) + '" title="모바일 X%">' +
+        '<input type="number" class="inline-edit-input hero-btn-xy hero-btn-xy-mobile hero-btn-my" min="0" max="100" step="0.1" placeholder="Y%" value="' + esc(mxy.y) + '" title="모바일 Y%">' +
         '<button type="button" class="btn btn-danger-text btn-sm hero-btn-remove">삭제</button>' +
         '</div>';
     }).join('');
+    syncXyLabelActive();
     updateHeroPreview();
   }
 
@@ -196,9 +218,10 @@
     var hint = document.getElementById('heroPreviewHint');
     if (hint) {
       hint.textContent = previewMode === 'pc'
-        ? 'PC: 버튼을 드래그해 위치를 잡으세요. 좌표는 슬라이드 기준 % 입니다. X/Y 입력란에도 반영됩니다.'
-        : '모바일: 자동 정렬 미리보기입니다. 드래그 위치는 PC에만 적용됩니다.';
+        ? 'PC: 홈과 같은 화면비(1280×380)로 미리봅니다. 드래그 좌표는 슬라이드 전체 기준 % → PC X/Y에 저장됩니다.'
+        : '모바일: 홈과 같은 화면비(390×280)로 미리봅니다. 드래그 좌표는 슬라이드 전체 기준 % → 모바일 X/Y에 저장됩니다.';
     }
+    syncXyLabelActive();
     updateHeroPreview();
   }
 
@@ -206,11 +229,16 @@
     return FONT_SIZES[key] || FONT_SIZES[fallback] || FONT_SIZES.md;
   }
 
+  function buttonHasModeCoords(b, mode) {
+    if (mode === 'mobile') return b.mx != null && b.my != null;
+    return b.x != null && b.y != null;
+  }
+
   function updateHeroPreview() {
     var frame = document.getElementById('heroPreviewFrame');
     if (!frame) return;
     if ((document.getElementById('heroSlideType') || {}).value === 'html') {
-      frame.innerHTML = '<div class="hero-preview-inner"><p style="margin:0;opacity:.85;font-size:12px;">HTML 슬라이드는 코드 미리보기를 지원하지 않습니다.</p></div>';
+      frame.innerHTML = '<div class="hero-preview-wrap"><p style="margin:0;opacity:.85;font-size:12px;">HTML 슬라이드는 코드 미리보기를 지원하지 않습니다.</p></div>';
       frame.classList.toggle('is-pc', previewMode === 'pc');
       frame.classList.toggle('is-mobile', previewMode === 'mobile');
       return;
@@ -232,16 +260,17 @@
     var descColor = (document.getElementById('heroDescColor') || {}).value.trim() || '#ffffff';
     var descAlign = (document.getElementById('heroDescAlign') || {}).value || 'left';
     var buttons = getHeroButtonsFromForm();
+    var isMobile = previewMode === 'mobile';
 
-    frame.classList.toggle('is-pc', previewMode === 'pc');
-    frame.classList.toggle('is-mobile', previewMode === 'mobile');
+    frame.classList.toggle('is-pc', !isMobile);
+    frame.classList.toggle('is-mobile', isMobile);
 
     var html = '';
     if (bg) {
       html += '<div class="hero-preview-bg" style="background-image:url(\'' + esc(bg).replace(/'/g, '%27') + '\')"></div>';
       html += '<div class="hero-preview-overlay" style="opacity:' + overlay + '"></div>';
     }
-    html += '<div class="hero-preview-inner" style="text-align:' + esc(titleAlign) + ';">';
+    html += '<div class="hero-preview-wrap" style="text-align:' + esc(titleAlign) + ';">';
     if (kicker) {
       html += '<span class="hero-preview-kicker" style="font-size:' + fontSizeCss(kickerSize, 'sm') + ';color:' + esc(kickerColor) + ';text-align:' + esc(kickerAlign) + ';">' + esc(kicker) + '</span>';
     }
@@ -251,32 +280,27 @@
     if (desc) {
       html += '<p class="hero-preview-desc" style="font-size:' + fontSizeCss(descSize, 'md') + ';color:' + esc(descColor) + ';text-align:' + esc(descAlign) + ';">' + esc(desc) + '</p>';
     }
-
-    var isPc = previewMode === 'pc';
-
-    if (!isPc) {
-      html += '<div class="hero-preview-cta-flow">';
-      buttons.forEach(function (b, i) {
-        html += '<span class="hero-preview-btn ' + (b.style === 'outline' ? 'outline' : 'primary') + '" data-preview-btn="' + i + '">' + esc(b.label || '버튼') + '</span>';
-      });
-      html += '</div>';
-    }
     html += '</div>';
 
-    if (isPc) {
-      html += '<div class="hero-preview-cta-abs">';
-      buttons.forEach(function (b, i) {
-        var pos = (b.x != null && b.y != null) ? { x: b.x, y: b.y } : defaultXyForIndex(i);
-        html += '<span class="hero-preview-btn is-abs ' + (b.style === 'outline' ? 'outline' : 'primary') + '" data-preview-btn="' + i + '" data-has-xy="' + (b.x != null && b.y != null ? '1' : '0') + '" style="left:' + pos.x + '%;top:' + pos.y + '%;">' + esc(b.label || '버튼') + '</span>';
-      });
-      html += '</div>';
-    }
+    /* 관리자 미리보기는 홈과 같은 슬라이드 박스에 abs 배치(드래그용). 미입력 시 기본 %로 표시 */
+    html += '<div class="hero-preview-cta-abs">';
+    buttons.forEach(function (b, i) {
+      var has = buttonHasModeCoords(b, previewMode);
+      var pos;
+      if (isMobile) {
+        pos = has ? { x: b.mx, y: b.my } : defaultXyForIndex(i);
+      } else {
+        pos = has ? { x: b.x, y: b.y } : defaultXyForIndex(i);
+      }
+      html += '<span class="hero-preview-btn is-abs ' + (b.style === 'outline' ? 'outline' : 'primary') + '" data-preview-btn="' + i + '" data-has-xy="' + (has ? '1' : '0') + '" style="left:' + pos.x + '%;top:' + pos.y + '%;">' + esc(b.label || '버튼') + '</span>';
+    });
+    html += '</div>';
 
     frame.innerHTML = html;
   }
 
   function startDrag(e, btnEl) {
-    if (previewMode !== 'pc') return;
+    if (!btnEl.classList.contains('is-abs')) return;
     var idx = parseInt(btnEl.getAttribute('data-preview-btn'), 10);
     if (isNaN(idx)) return;
     var frame = document.getElementById('heroPreviewFrame');
@@ -289,14 +313,16 @@
       left = def.x;
       top = def.y;
     }
-    setButtonRowXy(idx, clampPct(left), clampPct(top));
+    setButtonRowXy(idx, clampPct(left), clampPct(top), previewMode);
     btnEl.setAttribute('data-has-xy', '1');
     dragState = {
       index: idx,
       el: btnEl,
-      frame: frame
+      frame: frame,
+      mode: previewMode
     };
     btnEl.classList.add('is-dragging');
+    /* flow 숨기고 abs 편집 모드로 — 첫 드래그 시 폼에 좌표가 생기므로 미리보기 갱신은 end에서 */
   }
 
   function onDragMove(e) {
@@ -311,13 +337,15 @@
     dragState.el.style.left = x + '%';
     dragState.el.style.top = y + '%';
     dragState.el.setAttribute('data-has-xy', '1');
-    setButtonRowXy(dragState.index, x, y);
+    dragState.el.style.opacity = '1';
+    setButtonRowXy(dragState.index, x, y, dragState.mode);
   }
 
   function endDrag() {
     if (!dragState) return;
     dragState.el.classList.remove('is-dragging');
     dragState = null;
+    updateHeroPreview();
   }
 
   function openHeroEditor(slide) {
@@ -466,7 +494,15 @@
       var list = getHeroButtonsFromForm();
       var i = list.length;
       var pos = defaultXyForIndex(i);
-      list.push({ label: '', href: '/estimate', style: 'primary', x: pos.x, y: pos.y });
+      list.push({
+        label: '',
+        href: '/estimate',
+        style: 'primary',
+        x: pos.x,
+        y: pos.y,
+        mx: pos.x,
+        my: Math.min(100, pos.y + 4)
+      });
       renderHeroButtonRows(list);
     });
 
@@ -483,7 +519,9 @@
           e.target.classList.contains('hero-btn-href') ||
           e.target.classList.contains('hero-btn-style') ||
           e.target.classList.contains('hero-btn-x') ||
-          e.target.classList.contains('hero-btn-y')) {
+          e.target.classList.contains('hero-btn-y') ||
+          e.target.classList.contains('hero-btn-mx') ||
+          e.target.classList.contains('hero-btn-my')) {
         updateHeroPreview();
       }
     });

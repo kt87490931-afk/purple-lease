@@ -2272,12 +2272,16 @@
         href: String((b && b.href) || '#').trim().slice(0, 500) || '#',
         style: (b && b.style) === 'outline' ? 'outline' : 'primary'
       };
-      var x = b && b.x != null && b.x !== '' ? parseFloat(b.x) : NaN;
-      var y = b && b.y != null && b.y !== '' ? parseFloat(b.y) : NaN;
-      if (!isNaN(x) && !isNaN(y)) {
-        item.x = Math.max(0, Math.min(100, Math.round(x * 10) / 10));
-        item.y = Math.max(0, Math.min(100, Math.round(y * 10) / 10));
+      function pair(ax, ay) {
+        var x = b && b[ax] != null && b[ax] !== '' ? parseFloat(b[ax]) : NaN;
+        var y = b && b[ay] != null && b[ay] !== '' ? parseFloat(b[ay]) : NaN;
+        if (!isNaN(x) && !isNaN(y)) {
+          item[ax] = Math.max(0, Math.min(100, Math.round(x * 10) / 10));
+          item[ay] = Math.max(0, Math.min(100, Math.round(y * 10) / 10));
+        }
       }
+      pair('x', 'y');
+      pair('mx', 'my');
       return item;
     }).filter(function (b) { return b.label; });
   }

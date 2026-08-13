@@ -288,19 +288,40 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .hero-cta-abs { display: none; }
   .hero-cta-abs-btn { position: absolute; z-index: 3; white-space: nowrap; }
   @media (min-width: 860px) {
-    .hero-slide.has-abs-cta .hero-cta-flow { display: none; }
-    .hero-cta-abs {
+    .hero-slide.has-abs-cta-pc .hero-cta-flow { display: none; }
+    .hero-slide.has-abs-cta-pc {
+      /* 미리보기와 동일 화면비 → background cover 크롭/% 좌표 일치 */
+      aspect-ratio: 1280 / 380;
+      min-height: unset;
+      height: auto;
+    }
+    .hero-cta-abs--pc {
       display: block;
       position: absolute;
       inset: 0;
       z-index: 3;
       pointer-events: none;
     }
-    .hero-cta-abs-btn { pointer-events: auto; }
+    .hero-cta-abs--pc .hero-cta-abs-btn { pointer-events: auto; }
+    .hero-cta-abs--mobile { display: none !important; }
   }
   @media (max-width: 859px) {
-    .hero-cta-abs { display: none !important; }
-    .hero-cta-flow { display: flex !important; }
+    .hero-slide.has-abs-cta-mobile .hero-cta-flow { display: none; }
+    .hero-slide.has-abs-cta-mobile {
+      aspect-ratio: 390 / 280;
+      min-height: unset;
+      height: auto;
+    }
+    .hero-cta-abs--mobile {
+      display: block !important;
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+    }
+    .hero-cta-abs--mobile .hero-cta-abs-btn { pointer-events: auto; }
+    .hero-cta-abs--pc { display: none !important; }
+    .hero-slide:not(.has-abs-cta-mobile) .hero-cta-flow { display: flex !important; }
   }
   .hero-slide::before {
     content: '';
@@ -329,6 +350,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .hero-cta-row .btn-outline:hover { background: rgba(255,255,255,0.2); border-color: #fff; }
   .hero-cta-row .btn-primary { background: #fff; color: var(--purple-600); box-shadow: none; }
   .hero-cta-row .btn-primary:hover { opacity: 0.92; }
+  .hero-cta-abs .btn-outline { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.4); color: #fff; }
+  .hero-cta-abs .btn-outline:hover { background: rgba(255,255,255,0.2); border-color: #fff; }
+  .hero-cta-abs .btn-primary { background: #fff; color: var(--purple-600); box-shadow: none; }
+  .hero-cta-abs .btn-primary:hover { opacity: 0.92; }
 
   .hero-dots {
     position: absolute; bottom: 14px; left: 0; right: 0;
@@ -645,6 +670,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
   @media (min-width: 860px) {
     .hero-slide { min-height: 380px; }
+    .hero-slide.has-abs-cta-pc { min-height: unset; }
     .hero-slide h1 { font-size: 36px; max-width: 540px; }
     .hero-slide p { font-size: 15px; max-width: 460px; }
     .video-quote-grid {
@@ -1301,7 +1327,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   initPage();
 </script>
 
-<script src="/js/hero-banner.js?v=20260813a"></script>
+<script src="/js/hero-banner.js?v=20260813c"></script>
 <script src="/js/device-type.js"></script>
 <script src="/js/visit-tracker.js"></script>
 
