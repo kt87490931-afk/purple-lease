@@ -121,27 +121,25 @@
     return '';
   }
 
-  function getSlideDevice(slide) {
+  function getSlideBgMobile(slide) {
+    var direct = String((slide && slide.bg_image_url_mobile) || '').trim();
+    if (direct) return direct;
     var raw = slide && slide.buttons;
-    if (raw && !Array.isArray(raw) && raw.device) {
-      return String(raw.device).toLowerCase() === 'mobile' ? 'mobile' : 'pc';
+    if (raw && !Array.isArray(raw) && raw.bg_image_url_mobile) {
+      return String(raw.bg_image_url_mobile || '').trim();
     }
-    if (slide && slide.device === 'mobile') return 'mobile';
-    return 'pc';
+    return '';
   }
 
   function currentHeroDevice() {
     return window.matchMedia('(min-width: 860px)').matches ? 'pc' : 'mobile';
   }
 
-  function slidesForDevice(all) {
-    var device = currentHeroDevice();
-    var matched = (all || []).filter(function (s) { return getSlideDevice(s) === device; });
-    if (matched.length) return matched.slice(0, 4);
-    if (device === 'mobile') {
-      return (all || []).filter(function (s) { return getSlideDevice(s) === 'pc'; }).slice(0, 4);
-    }
-    return [];
+  function getSlideBgUrl(slide) {
+    var pc = String((slide && slide.bg_image_url) || '').trim();
+    var mobile = getSlideBgMobile(slide);
+    if (currentHeroDevice() === 'mobile' && mobile) return mobile;
+    return pc;
   }
 
   function renderButtons(buttons) {
@@ -188,7 +186,7 @@
 
   function renderSlideShell(slide, index) {
     var type = slide.slide_type === 'html' ? 'html' : 'builder';
-    var bg = (slide.bg_image_url || '').trim();
+    var bg = getSlideBgUrl(slide);
     var overlay = Math.min(0.85, Math.max(0, parseFloat(slide.overlay_opacity)));
     if (isNaN(overlay)) overlay = 0.35;
     var linkUrl = getSlideLinkUrl(slide);
@@ -270,7 +268,7 @@
       .eq('is_enabled', true)
       .order('sort_order', { ascending: true })
       .order('id', { ascending: true })
-      .limit(8);
+      .limit(4);
     if (res.error) throw res.error;
     return res.data || [];
   }
@@ -281,7 +279,7 @@
     var onChange = function () {
       if (!allLoadedSlides.length) return;
       if (currentHeroDevice() === lastRenderedDevice) return;
-      renderBanner(slidesForDevice(allLoadedSlides));
+      renderBanner(allLoadedSlides.slice(0, 4));
     };
     if (mq.addEventListener) mq.addEventListener('change', onChange);
     else if (mq.addListener) mq.addListener(onChange);
@@ -297,7 +295,7 @@
     if (!slides || !slides.length) slides = FALLBACK_SLIDES;
     allLoadedSlides = slides;
     bindDeviceChange();
-    renderBanner(slidesForDevice(allLoadedSlides));
+    renderBanner(allLoadedSlides.slice(0, 4));
   }
 
   if (document.readyState === 'loading') {

@@ -1,6 +1,6 @@
 /**
  * 어드민 — 히어로 배너 슬라이드 관리
- * PC/모바일 각각 최대 4개, 이미지 개별 업로드
+ * 배너(슬라이드)마다 PC·모바일 배경 이미지를 개별 업로드
  */
 (function () {
   'use strict';
@@ -8,17 +8,9 @@
   var API = null;
   var heroSlides = [];
   var editingHeroId = null;
-  var listDevice = 'pc';
+  var previewMode = 'pc';
 
   var FONT_SIZES = { xs: '10px', sm: '11px', md: '13.5px', base: '15px', lg: '26px', xl: '36px' };
-  var HERO_SIZE_HINT = {
-    pc: '권장 제작 사이즈: 1920 × 380 px (홈 PC 히어로 높이 380px, 가로 풀폭)',
-    mobile: '권장 제작 사이즈: 780 × 560 px (홈 모바일 높이 280px · 고해상도 2배, 표시 약 390 × 280 px)'
-  };
-  var CTA_ZONE_OPTIONS = [];
-  for (var zi = 1; zi <= 15; zi++) {
-    CTA_ZONE_OPTIONS.push({ value: String(zi), label: String(zi) });
-  }
   var CTA_ZONE_LEGACY = {
     'top-left': '1', top: '3', 'top-right': '5',
     left: '6', center: '8', right: '10',
@@ -61,88 +53,65 @@
     });
   }
 
-  function getSelectedDevice() {
-    var checked = document.querySelector('input[name="heroDevice"]:checked');
-    return (checked && checked.value === 'mobile') ? 'mobile' : 'pc';
+  function getBgUrl(id) {
+    return String((document.getElementById(id) || {}).value || '').trim();
   }
 
-  function setSelectedDevice(device) {
-    var d = device === 'mobile' ? 'mobile' : 'pc';
-    document.querySelectorAll('input[name="heroDevice"]').forEach(function (el) {
-      el.checked = el.value === d;
+  function setPreviewMode(mode) {
+    previewMode = mode === 'mobile' ? 'mobile' : 'pc';
+    document.querySelectorAll('[data-hero-preview-mode]').forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-hero-preview-mode') === previewMode);
     });
-    syncDeviceHints();
-  }
-
-  function syncDeviceHints() {
-    var d = getSelectedDevice();
-    var hint = document.getElementById('heroBgSizeHint');
-    if (hint) hint.innerHTML = HERO_SIZE_HINT[d];
-    var previewHint = document.getElementById('heroPreviewHint');
-    if (previewHint) {
-      previewHint.textContent = d === 'mobile'
-        ? '모바일 슬라이드 미리보기입니다. 권장 이미지 780 × 560 px.'
-        : 'PC 슬라이드 미리보기입니다. 권장 이미지 1920 × 380 px.';
+    var hint = document.getElementById('heroPreviewHint');
+    if (hint) {
+      hint.textContent = previewMode === 'mobile'
+        ? '모바일 미리보기 — 이 배너의 모바일 이미지를 사용합니다. 권장 780 × 560 px.'
+        : 'PC 미리보기 — 이 배너의 PC 이미지를 사용합니다. 권장 1920 × 380 px.';
     }
+    updateHeroPreview();
   }
 
-  function slidesForList() {
-    return heroSlides.filter(function (s) {
-      return (s.device || 'pc') === listDevice;
-    });
+  function thumbHtml(url, w, h) {
+    if (url) {
+      return '<img src="' + esc(url) + '" alt="" style="width:' + w + 'px;height:' + h + 'px;object-fit:cover;border-radius:6px;">';
+    }
+    return '<span style="display:inline-block;width:' + w + 'px;height:' + h + 'px;border-radius:6px;background:var(--grad-main);"></span>';
   }
 
   function renderHeroList() {
     var body = document.getElementById('heroSlideList');
     var countEl = document.getElementById('heroSlideCount');
     var addBtn = document.getElementById('btnAddHeroSlide');
-    var pcCountEl = document.getElementById('heroPcCount');
-    var mobileCountEl = document.getElementById('heroMobileCount');
-    var listHint = document.getElementById('heroListSizeHint');
     if (!body) return;
 
     var max = (API && API.HERO_MAX_SLIDES) || 4;
-    var pcCount = heroSlides.filter(function (s) { return (s.device || 'pc') === 'pc'; }).length;
-    var mobileCount = heroSlides.filter(function (s) { return s.device === 'mobile'; }).length;
-    var list = slidesForList();
-    if (pcCountEl) pcCountEl.textContent = pcCount;
-    if (mobileCountEl) mobileCountEl.textContent = mobileCount;
-    if (countEl) countEl.textContent = list.length;
-    if (addBtn) addBtn.disabled = list.length >= max;
-    document.querySelectorAll('[data-hero-list-device]').forEach(function (btn) {
-      btn.classList.toggle('active', btn.getAttribute('data-hero-list-device') === listDevice);
-    });
-    if (listHint) {
-      listHint.innerHTML = listDevice === 'mobile'
-        ? '모바일 권장 제작 사이즈: <b>780 × 560 px</b> (표시 약 390 × 280 px, 히어로 높이 280px)'
-        : 'PC 권장 제작 사이즈: <b>1920 × 380 px</b> (홈 PC 히어로 높이 380px)';
-    }
+    if (countEl) countEl.textContent = heroSlides.length;
+    if (addBtn) addBtn.disabled = heroSlides.length >= max;
 
-    if (!list.length) {
-      body.innerHTML = '<p style="padding:24px;color:var(--ink-400);font-size:13px;">' +
-        (listDevice === 'mobile' ? '등록된 모바일 슬라이드가 없습니다. 「+ 슬라이드 추가」로 모바일 전용 배너를 등록하세요.' : '등록된 PC 슬라이드가 없습니다. 「+ 슬라이드 추가」로 PC 전용 배너를 등록하세요.') +
-        '</p>';
+    if (!heroSlides.length) {
+      body.innerHTML = '<p style="padding:24px;color:var(--ink-400);font-size:13px;">등록된 슬라이드가 없습니다. 「+ 슬라이드 추가」로 배너를 등록하고, PC·모바일 이미지를 각각 업로드하세요.</p>';
       return;
     }
 
-    body.innerHTML = list.map(function (s, idx) {
-      var thumb = s.bg_image_url
-        ? '<img src="' + esc(s.bg_image_url) + '" alt="" style="width:72px;height:48px;object-fit:cover;border-radius:6px;">'
-        : '<span style="display:inline-block;width:72px;height:48px;border-radius:6px;background:var(--grad-main);"></span>';
+    body.innerHTML = heroSlides.map(function (s, idx) {
       var title = s.slide_type === 'html'
         ? '(HTML 슬라이드)'
         : (s.title_text || s.kicker_text || '제목 없음').split('\n')[0];
-      var deviceLabel = (s.device === 'mobile' ? '모바일' : 'PC');
+      var hasMobile = !!(s.bg_image_url_mobile);
       return '<div class="hero-admin-card" data-hero-id="' + s.id + '">' +
         '<div class="hero-admin-card-top">' +
-        thumb +
+        '<div style="display:flex;gap:6px;">' +
+        thumbHtml(s.bg_image_url, 72, 48) +
+        thumbHtml(s.bg_image_url_mobile, 48, 48) +
+        '</div>' +
         '<div class="hero-admin-card-meta">' +
         '<b>#' + (idx + 1) + ' ' + esc(title.slice(0, 40)) + '</b>' +
-        '<span>' + deviceLabel + ' · ' + slideTypeLabel(s.slide_type) + ' · ' + (s.is_enabled ? '노출' : '숨김') + '</span>' +
+        '<span>' + slideTypeLabel(s.slide_type) + ' · ' + (s.is_enabled ? '노출' : '숨김') +
+        ' · PC' + (s.bg_image_url ? '✓' : '—') + ' / 모바일' + (hasMobile ? '✓' : '—') + '</span>' +
         '</div>' +
         '<div class="hero-admin-card-actions">' +
         '<button type="button" class="btn btn-outline btn-sm" data-hero-up="' + s.id + '"' + (idx === 0 ? ' disabled' : '') + '>↑</button>' +
-        '<button type="button" class="btn btn-outline btn-sm" data-hero-down="' + s.id + '"' + (idx === list.length - 1 ? ' disabled' : '') + '>↓</button>' +
+        '<button type="button" class="btn btn-outline btn-sm" data-hero-down="' + s.id + '"' + (idx === heroSlides.length - 1 ? ' disabled' : '') + '>↓</button>' +
         '<button type="button" class="btn btn-outline btn-sm" data-hero-edit="' + s.id + '">편집</button>' +
         '<button type="button" class="btn btn-danger-text btn-sm" data-hero-del="' + s.id + '">삭제</button>' +
         '</div></div></div>';
@@ -199,8 +168,8 @@
     var s = slide || {};
     document.getElementById('heroSlideType').value = s.slide_type === 'html' ? 'html' : 'builder';
     document.getElementById('heroEnabled').checked = s.is_enabled !== false;
-    setSelectedDevice(s.device || listDevice || 'pc');
     document.getElementById('heroBgImage').value = s.bg_image_url || '';
+    document.getElementById('heroBgImageMobile').value = s.bg_image_url_mobile || '';
     document.getElementById('heroOverlay').value = s.overlay_opacity != null ? s.overlay_opacity : 0.35;
     document.getElementById('heroLinkUrl').value = s.link_url || '';
     document.getElementById('heroKicker').value = s.kicker_text || '';
@@ -220,12 +189,12 @@
     renderHeroButtonRows(s.buttons || []);
     toggleHeroFormSections(document.getElementById('heroSlideType').value);
     updateHeroBgPreview();
-    updateHeroPreview();
+    setPreviewMode('pc');
   }
 
-  function updateHeroBgPreview() {
-    var img = document.getElementById('heroBgPreview');
-    var url = (document.getElementById('heroBgImage') || {}).value.trim();
+  function updateOneBgPreview(inputId, imgId) {
+    var img = document.getElementById(imgId);
+    var url = getBgUrl(inputId);
     if (!img) return;
     if (url) {
       img.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now();
@@ -234,6 +203,11 @@
       img.hidden = true;
       img.removeAttribute('src');
     }
+  }
+
+  function updateHeroBgPreview() {
+    updateOneBgPreview('heroBgImage', 'heroBgPreview');
+    updateOneBgPreview('heroBgImageMobile', 'heroBgPreviewMobile');
     updateHeroPreview();
   }
 
@@ -244,16 +218,19 @@
   function updateHeroPreview() {
     var frame = document.getElementById('heroPreviewFrame');
     if (!frame) return;
-    var isMobile = getSelectedDevice() === 'mobile';
-    syncDeviceHints();
+    var isMobile = previewMode === 'mobile';
+    var pcBg = getBgUrl('heroBgImage');
+    var mobileBg = getBgUrl('heroBgImageMobile');
+    var bg = isMobile ? (mobileBg || pcBg) : pcBg;
+
+    frame.classList.toggle('is-pc', !isMobile);
+    frame.classList.toggle('is-mobile', isMobile);
+
     if ((document.getElementById('heroSlideType') || {}).value === 'html') {
       frame.innerHTML = '<div class="hero-preview-wrap"><p style="margin:0;opacity:.85;font-size:12px;">HTML 슬라이드는 코드 미리보기를 지원하지 않습니다.</p></div>';
-      frame.classList.toggle('is-pc', !isMobile);
-      frame.classList.toggle('is-mobile', isMobile);
       return;
     }
 
-    var bg = (document.getElementById('heroBgImage') || {}).value.trim();
     var overlay = parseFloat((document.getElementById('heroOverlay') || {}).value);
     if (isNaN(overlay)) overlay = 0.35;
     var kicker = (document.getElementById('heroKicker') || {}).value;
@@ -270,10 +247,6 @@
     var descAlign = (document.getElementById('heroDescAlign') || {}).value || 'left';
     var buttons = getHeroButtonsFromForm();
     var zone = getSelectedCtaZone();
-    var isMobilePreview = getSelectedDevice() === 'mobile';
-
-    frame.classList.toggle('is-pc', !isMobilePreview);
-    frame.classList.toggle('is-mobile', isMobilePreview);
 
     var html = '';
     if (bg) {
@@ -298,6 +271,9 @@
       });
       html += '</div></div>';
     }
+    if (isMobile && !mobileBg && pcBg) {
+      html += '<p style="position:absolute;left:8px;bottom:8px;z-index:4;margin:0;padding:3px 6px;border-radius:4px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;">모바일 이미지 없음 · PC 이미지로 표시</p>';
+    }
     frame.innerHTML = html;
   }
 
@@ -313,7 +289,8 @@
     return {
       is_enabled: document.getElementById('heroEnabled').checked,
       slide_type: document.getElementById('heroSlideType').value,
-      bg_image_url: document.getElementById('heroBgImage').value.trim(),
+      bg_image_url: getBgUrl('heroBgImage'),
+      bg_image_url_mobile: getBgUrl('heroBgImageMobile'),
       overlay_opacity: parseFloat(document.getElementById('heroOverlay').value) || 0.35,
       link_url: (document.getElementById('heroLinkUrl') || {}).value || '',
       kicker_text: document.getElementById('heroKicker').value,
@@ -328,7 +305,6 @@
       desc_font_size: document.getElementById('heroDescSize').value,
       desc_color: document.getElementById('heroDescColor').value.trim(),
       desc_align: document.getElementById('heroDescAlign').value,
-      device: getSelectedDevice(),
       cta_zone: getSelectedCtaZone(),
       buttons: getHeroButtonsFromForm(),
       html_content: document.getElementById('heroHtmlContent').value
@@ -341,13 +317,24 @@
   }
 
   async function moveHeroSlide(id, dir) {
-    var list = slidesForList();
-    var idx = list.findIndex(function (s) { return s.id === id; });
+    var idx = heroSlides.findIndex(function (s) { return s.id === id; });
     if (idx < 0) return;
     var next = idx + dir;
-    if (next < 0 || next >= list.length) return;
-    await API.swapHeroSlideOrder(list[idx].id, list[next].id);
+    if (next < 0 || next >= heroSlides.length) return;
+    await API.swapHeroSlideOrder(heroSlides[idx].id, heroSlides[next].id);
     await loadHeroPanel();
+  }
+
+  async function uploadHeroBg(fileInputId, urlInputId) {
+    var fileInput = document.getElementById(fileInputId);
+    if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+      alert('이미지 파일을 선택하세요.');
+      return;
+    }
+    var url = await API.uploadImage(fileInput.files[0], 'hero');
+    document.getElementById(urlInputId).value = url;
+    fileInput.value = '';
+    updateHeroBgPreview();
   }
 
   function bindHeroEvents() {
@@ -356,11 +343,11 @@
 
     document.getElementById('btnAddHeroSlide').addEventListener('click', function () {
       var max = API.HERO_MAX_SLIDES || 4;
-      if (slidesForList().length >= max) {
-        alert((listDevice === 'mobile' ? '모바일' : 'PC') + ' 슬라이드는 최대 ' + max + '개까지 등록할 수 있습니다.');
+      if (heroSlides.length >= max) {
+        alert('슬라이드는 최대 ' + max + '개까지 등록할 수 있습니다.');
         return;
       }
-      openHeroEditor({ device: listDevice });
+      openHeroEditor(null);
     });
 
     panel.addEventListener('click', async function (e) {
@@ -396,7 +383,7 @@
       updateHeroPreview();
     });
 
-    ['heroBgImage', 'heroOverlay', 'heroKicker', 'heroKickerSize', 'heroKickerColor', 'heroKickerAlign',
+    ['heroBgImage', 'heroBgImageMobile', 'heroOverlay', 'heroKicker', 'heroKickerSize', 'heroKickerColor', 'heroKickerAlign',
       'heroTitle', 'heroTitleSize', 'heroTitleColor', 'heroTitleAlign',
       'heroDesc', 'heroDescSize', 'heroDescColor', 'heroDescAlign'].forEach(function (id) {
       var el = document.getElementById(id);
@@ -405,32 +392,18 @@
       el.addEventListener('change', updateHeroPreview);
     });
 
-    document.querySelectorAll('input[name="heroDevice"]').forEach(function (el) {
-      el.addEventListener('change', function () {
-        syncDeviceHints();
-        updateHeroPreview();
-      });
-    });
-
-    document.querySelectorAll('[data-hero-list-device]').forEach(function (btn) {
+    document.querySelectorAll('[data-hero-preview-mode]').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        listDevice = btn.getAttribute('data-hero-list-device') === 'mobile' ? 'mobile' : 'pc';
-        renderHeroList();
+        setPreviewMode(btn.getAttribute('data-hero-preview-mode'));
       });
     });
 
     document.getElementById('btnUploadHeroBg').addEventListener('click', async function () {
-      var fileInput = document.getElementById('heroBgFile');
-      if (!fileInput || !fileInput.files || !fileInput.files[0]) {
-        alert('배경 이미지 파일을 선택하세요.');
-        return;
-      }
-      try {
-        var url = await API.uploadImage(fileInput.files[0], 'hero');
-        document.getElementById('heroBgImage').value = url;
-        fileInput.value = '';
-        updateHeroBgPreview();
-      } catch (err) { showError(err); }
+      try { await uploadHeroBg('heroBgFile', 'heroBgImage'); } catch (err) { showError(err); }
+    });
+
+    document.getElementById('btnUploadHeroBgMobile').addEventListener('click', async function () {
+      try { await uploadHeroBg('heroBgFileMobile', 'heroBgImageMobile'); } catch (err) { showError(err); }
     });
 
     document.getElementById('btnAddHeroButton').addEventListener('click', function () {

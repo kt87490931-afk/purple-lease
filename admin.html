@@ -607,17 +607,10 @@ body.admin-nav-open { overflow:hidden; }
 
       <section class="panel" id="panel-hero">
         <div class="toolbar">
-          <div class="toolbar-left">히어로 배너 — PC 슬라이드와 모바일 슬라이드를 각각 등록·업로드합니다.</div>
-        </div>
-        <div class="hero-preview-tabs" role="tablist" style="margin:0 0 12px;">
-          <button type="button" class="active" data-hero-list-device="pc">PC 슬라이드 <b id="heroPcCount">0</b>/4</button>
-          <button type="button" data-hero-list-device="mobile">모바일 슬라이드 <b id="heroMobileCount">0</b>/4</button>
-        </div>
-        <p class="hint" id="heroListSizeHint" style="margin:0 0 12px;">PC 권장 제작 사이즈: <b>1920 × 380 px</b> (홈 PC 히어로 높이 380px)</p>
-        <div class="toolbar">
-          <div class="toolbar-left">현재 목록 <b id="heroSlideCount">0</b> / 4</div>
+          <div class="toolbar-left">메인 히어로 슬라이드 <b id="heroSlideCount">0</b> / 4 — 배너마다 PC·모바일 이미지를 각각 업로드합니다.</div>
           <button class="btn btn-primary" type="button" id="btnAddHeroSlide">+ 슬라이드 추가</button>
         </div>
+        <p class="hint" style="margin:0 0 12px;">PC 권장 <b>1920 × 380 px</b> · 모바일 권장 <b>780 × 560 px</b> (표시 약 390 × 280, 히어로 높이 280px)</p>
         <div id="heroSlideList"></div>
       </section>
 
@@ -1243,21 +1236,23 @@ body.admin-nav-open { overflow:hidden; }
         </div>
         <div class="form-row"><label>노출</label><label style="display:flex;align-items:center;gap:8px;font-weight:600;"><input type="checkbox" id="heroEnabled" checked> 메인에 표시</label></div>
       </div>
-      <div class="form-row"><label>적용 화면</label>
-        <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;">
-          <label style="display:flex;align-items:center;gap:6px;font-weight:600;"><input type="radio" name="heroDevice" value="pc" checked> PC 전용</label>
-          <label style="display:flex;align-items:center;gap:6px;font-weight:600;"><input type="radio" name="heroDevice" value="mobile"> 모바일 전용</label>
-        </div>
-        <span class="hint">PC와 모바일은 서로 다른 슬라이드입니다. 이미지도 각각 따로 업로드하세요.</span>
-      </div>
-      <div class="form-row"><label>배경 이미지 (개별 업로드)</label>
+      <div class="form-row"><label>PC 배경 이미지 (개별 업로드)</label>
         <input type="text" id="heroBgImage" placeholder="비우면 보라 그라데이션">
         <div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;">
           <input type="file" id="heroBgFile" accept="image/jpeg,image/png,image/webp,image/gif">
-          <button type="button" class="btn btn-outline btn-sm" id="btnUploadHeroBg">업로드</button>
+          <button type="button" class="btn btn-outline btn-sm" id="btnUploadHeroBg">PC 업로드</button>
         </div>
         <img id="heroBgPreview" alt="" hidden style="margin-top:10px;max-width:100%;max-height:120px;object-fit:cover;border-radius:8px;">
-        <span class="hint" id="heroBgSizeHint">권장 제작 사이즈: 1920 × 380 px (PC 히어로 높이 380px, 가로 풀폭)</span>
+        <span class="hint">권장 제작 사이즈: <b>1920 × 380 px</b> (홈 PC 히어로 높이 380px, 가로 풀폭)</span>
+      </div>
+      <div class="form-row"><label>모바일 배경 이미지 (개별 업로드)</label>
+        <input type="text" id="heroBgImageMobile" placeholder="비우면 PC 이미지를 그대로 사용">
+        <div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;">
+          <input type="file" id="heroBgFileMobile" accept="image/jpeg,image/png,image/webp,image/gif">
+          <button type="button" class="btn btn-outline btn-sm" id="btnUploadHeroBgMobile">모바일 업로드</button>
+        </div>
+        <img id="heroBgPreviewMobile" alt="" hidden style="margin-top:10px;max-width:100%;max-height:120px;object-fit:cover;border-radius:8px;">
+        <span class="hint">권장 제작 사이즈: <b>780 × 560 px</b> (표시 약 390 × 280, 히어로 높이 280px). PC와 다른 이미지를 따로 올리세요.</span>
       </div>
       <div class="form-row"><label>배경 어둡게 (0~0.85)</label><input type="number" id="heroOverlay" min="0" max="0.85" step="0.05" value="0.35" class="inline-edit-input" style="max-width:120px;"></div>
       <div class="form-row"><label>배너 링크 (선택)</label>
@@ -1288,7 +1283,7 @@ body.admin-nav-open { overflow:hidden; }
           <div id="heroButtonsList"></div>
           <button type="button" class="btn btn-outline btn-sm" id="btnAddHeroButton" style="margin-top:6px;">+ 버튼 추가</button>
           <div class="hero-cta-zone-box">
-            <p class="hero-cta-zone-label">버튼 위치 15구역 (3×5) — 히어로 세로 길이 불변</p>
+            <p class="hero-cta-zone-label">버튼 위치 15구역 (3×5, PC·모바일 공통) — 히어로 세로 길이 불변</p>
             <div class="hero-cta-zone-grid" id="heroCtaZoneGrid">
               <label><input type="radio" name="heroCtaZone" value="1"> 1</label>
               <label><input type="radio" name="heroCtaZone" value="2"> 2</label>
@@ -1308,7 +1303,11 @@ body.admin-nav-open { overflow:hidden; }
             </div>
           </div>
           <div class="hero-preview-box" id="heroPreviewBox">
-            <p class="hero-preview-hint" id="heroPreviewHint">선택한 화면(PC 또는 모바일) 비율로 미리봅니다. 이미지는 해당 슬라이드에만 적용됩니다.</p>
+            <div class="hero-preview-tabs" role="tablist">
+              <button type="button" class="active" data-hero-preview-mode="pc">PC 미리보기</button>
+              <button type="button" data-hero-preview-mode="mobile">모바일 미리보기</button>
+            </div>
+            <p class="hero-preview-hint" id="heroPreviewHint">PC 미리보기 — 이 배너의 PC 이미지를 사용합니다. 권장 1920 × 380 px.</p>
             <div class="hero-preview-frame-wrap">
               <div class="hero-preview-frame is-pc" id="heroPreviewFrame" aria-label="히어로 미리보기"></div>
             </div>
@@ -1319,7 +1318,7 @@ body.admin-nav-open { overflow:hidden; }
       <div class="hero-html-fields" style="display:none;">
         <div class="form-row"><label>HTML 코드</label><textarea id="heroHtmlContent" rows="10" placeholder="&lt;div&gt;...&lt;/div&gt; 형태의 HTML"></textarea></div>
         <div class="form-row"><label>HTML 파일 불러오기</label><input type="file" id="heroHtmlFile" accept=".html,.htm,text/html"></div>
-        <span class="hint">&lt;script&gt; 태그는 저장 시 제거됩니다. 배경 이미지는 위 「배경 이미지」로 설정하세요.</span>
+        <span class="hint">&lt;script&gt; 태그는 저장 시 제거됩니다. 배경 이미지는 위 PC·모바일 「배경 이미지」로 각각 설정하세요.</span>
       </div>
     </div>
     <div class="modal-foot"><button class="btn btn-outline" data-close="modalHero">취소</button><button class="btn btn-primary" id="btnSaveHero">저장</button></div>
@@ -1691,8 +1690,8 @@ body.admin-nav-open { overflow:hidden; }
 <script src="/js/admin-auth.js?v=20260630d"></script>
 <script src="/js/review-topics.js?v=20260704a"></script>
 <script src="/js/paid-transfer-page.js?v=20260721a"></script>
-<script src="/js/admin-api.js?v=20260818a"></script>
-<script src="/js/admin-hero.js?v=20260818a"></script>
+<script src="/js/admin-api.js?v=20260819a"></script>
+<script src="/js/admin-hero.js?v=20260819a"></script>
 <script src="/js/admin-partners.js?v=20260703a"></script>
 <script src="/js/lease-catalog-map.js"></script>
 <script src="/js/admin-app.js?v=20260805b"></script>
