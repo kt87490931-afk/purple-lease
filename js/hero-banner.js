@@ -121,6 +121,29 @@
     return '';
   }
 
+  function getSlideDevice(slide) {
+    var raw = slide && slide.buttons;
+    if (raw && !Array.isArray(raw) && raw.device) {
+      return String(raw.device).toLowerCase() === 'mobile' ? 'mobile' : 'pc';
+    }
+    if (slide && slide.device === 'mobile') return 'mobile';
+    return 'pc';
+  }
+
+  function currentHeroDevice() {
+    return window.matchMedia('(min-width: 860px)').matches ? 'pc' : 'mobile';
+  }
+
+  function slidesForDevice(all) {
+    var device = currentHeroDevice();
+    var matched = (all || []).filter(function (s) { return getSlideDevice(s) === device; });
+    if (matched.length) return matched.slice(0, 4);
+    if (device === 'mobile') {
+      return (all || []).filter(function (s) { return getSlideDevice(s) === 'pc'; }).slice(0, 4);
+    }
+    return [];
+  }
+
   function renderButtons(buttons) {
     if (!buttons.length) return '';
     return '<div class="hero-cta-row">' + buttons.map(function (b) {
@@ -209,12 +232,16 @@
     }, 5000);
   }
 
+  var allLoadedSlides = [];
+  var lastRenderedDevice = '';
+
   function renderBanner(slides) {
     var banner = document.getElementById('heroBanner');
     if (!banner) return;
 
     if (!slides.length) {
       banner.style.display = 'none';
+      banner.innerHTML = '';
       return;
     }
 
@@ -228,6 +255,7 @@
       '<div class="hero-slide-track" id="heroTrack">' + trackHtml + '</div>' +
       '<div class="hero-dots" id="heroDots">' + dotsHtml + '</div>';
 
+    lastRenderedDevice = currentHeroDevice();
     initCarousel(banner);
   }
 
@@ -242,9 +270,21 @@
       .eq('is_enabled', true)
       .order('sort_order', { ascending: true })
       .order('id', { ascending: true })
-      .limit(4);
+      .limit(8);
     if (res.error) throw res.error;
     return res.data || [];
+  }
+
+  function bindDeviceChange() {
+    if (!window.matchMedia) return;
+    var mq = window.matchMedia('(min-width: 860px)');
+    var onChange = function () {
+      if (!allLoadedSlides.length) return;
+      if (currentHeroDevice() === lastRenderedDevice) return;
+      renderBanner(slidesForDevice(allLoadedSlides));
+    };
+    if (mq.addEventListener) mq.addEventListener('change', onChange);
+    else if (mq.addListener) mq.addListener(onChange);
   }
 
   async function init() {
@@ -255,7 +295,9 @@
       console.warn('[HeroBanner] load failed, using fallback:', err);
     }
     if (!slides || !slides.length) slides = FALLBACK_SLIDES;
-    renderBanner(slides);
+    allLoadedSlides = slides;
+    bindDeviceChange();
+    renderBanner(slidesForDevice(allLoadedSlides));
   }
 
   if (document.readyState === 'loading') {

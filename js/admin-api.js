@@ -2292,30 +2292,40 @@
     }).filter(function (b) { return b.label; });
   }
 
+  function normalizeHeroDevice(device) {
+    var d = String(device || '').trim().toLowerCase();
+    return d === 'mobile' ? 'mobile' : 'pc';
+  }
+
   function unpackHeroButtonsState(raw, fallbackLink) {
     var zone = '11';
     var link = normalizeHeroLinkUrl(fallbackLink);
     var items = [];
+    var device = 'pc';
     if (Array.isArray(raw)) {
       items = normalizeHeroButtonItems(raw);
       zone = normalizeHeroCtaZone(raw[0] && raw[0].zone);
       if (!link && raw[0] && raw[0].slide_link) link = normalizeHeroLinkUrl(raw[0].slide_link);
+      if (raw[0] && raw[0].device) device = normalizeHeroDevice(raw[0].device);
     } else if (raw && typeof raw === 'object') {
       items = normalizeHeroButtonItems(raw.items || []);
       zone = normalizeHeroCtaZone(raw.zone || (raw.items && raw.items[0] && raw.items[0].zone));
       if (!link) link = normalizeHeroLinkUrl(raw.link_url);
+      device = normalizeHeroDevice(raw.device);
     }
-    return { zone: zone, link_url: link, items: items };
+    return { zone: zone, link_url: link, items: items, device: device };
   }
 
-  function packHeroButtonsState(buttons, ctaZone, linkUrl) {
+  function packHeroButtonsState(buttons, ctaZone, linkUrl, device) {
     var zone = normalizeHeroCtaZone(ctaZone);
+    var dev = normalizeHeroDevice(device);
     var items = normalizeHeroButtonItems(buttons).map(function (b) {
       b.zone = zone;
       return b;
     });
     return {
-      v: 1,
+      v: 2,
+      device: dev,
       zone: zone,
       link_url: normalizeHeroLinkUrl(linkUrl),
       items: items
@@ -2339,16 +2349,19 @@
       row.buttons = packed.items;
       row.cta_zone = packed.zone;
       row.link_url = packed.link_url;
+      row.device = packed.device;
       return row;
     });
   }
 
   async function saveHeroSlide(payload, editingId) {
-    var countRes = await db().from('hero_slides').select('id', { count: 'exact', head: true });
-    if (countRes.error) throw countRes.error;
-    var total = countRes.count || 0;
-    if (!editingId && total >= HERO_MAX_SLIDES) {
-      throw new Error('슬라이드는 최대 ' + HERO_MAX_SLIDES + '개까지 등록할 수 있습니다.');
+    var device = normalizeHeroDevice(payload.device);
+    var all = await listHeroSlides();
+    var sameDeviceCount = all.filter(function (s) {
+      return s.device === device && (!editingId || s.id !== editingId);
+    }).length;
+    if (sameDeviceCount >= HERO_MAX_SLIDES) {
+      throw new Error((device === 'mobile' ? '모바일' : 'PC') + ' 슬라이드는 최대 ' + HERO_MAX_SLIDES + '개까지 등록할 수 있습니다.');
     }
 
     var zone = normalizeHeroCtaZone(payload.cta_zone);
@@ -2369,7 +2382,7 @@
       desc_font_size: String(payload.desc_font_size || 'md').trim(),
       desc_color: String(payload.desc_color || '').trim(),
       desc_align: String(payload.desc_align || 'left').trim(),
-      buttons: packHeroButtonsState(payload.buttons, zone, linkUrl),
+      buttons: packHeroButtonsState(payload.buttons, zone, linkUrl, device),
       html_content: sanitizeHeroHtmlContent(payload.html_content),
       overlay_opacity: Math.min(0.85, Math.max(0, parseFloat(payload.overlay_opacity) || 0.35)),
       updated_at: new Date().toISOString()
@@ -2382,6 +2395,7 @@
       up.data.buttons = packedUp.items;
       up.data.cta_zone = packedUp.zone;
       up.data.link_url = packedUp.link_url;
+      up.data.device = packedUp.device;
       return up.data;
     }
 
@@ -2395,6 +2409,7 @@
     ins.data.buttons = packedIns.items;
     ins.data.cta_zone = packedIns.zone;
     ins.data.link_url = packedIns.link_url;
+    ins.data.device = packedIns.device;
     return ins.data;
   }
 
@@ -2403,12 +2418,17 @@
     if (res.error) throw res.error;
   }
 
-  async function reorderHeroSlides(orderedIds) {
-    if (!orderedIds || !orderedIds.length) return;
-    for (var i = 0; i < orderedIds.length; i++) {
-      var res = await db().from('hero_slides').update({ sort_order: i, updated_at: new Date().toISOString() }).eq('id', orderedIds[i]);
-      if (res.error) throw res.error;
-    }
+  async function swapHeroSlideOrder(idA, idB) {
+    var res = await db().from('hero_slides').select('id,sort_order').in('id', [idA, idB]);
+    if (res.error) throw res.error;
+    var rows = res.data || [];
+    if (rows.length !== 2) return;
+    var a = rows[0];
+    var b = rows[1];
+    var upA = await db().from('hero_slides').update({ sort_order: b.sort_order, updated_at: new Date().toISOString() }).eq('id', a.id);
+    if (upA.error) throw upA.error;
+    var upB = await db().from('hero_slides').update({ sort_order: a.sort_order, updated_at: new Date().toISOString() }).eq('id', b.id);
+    if (upB.error) throw upB.error;
   }
 
   /* ---------- Partners (제휴업체) ---------- */
@@ -2757,7 +2777,7 @@
     listHeroSlides: listHeroSlides,
     saveHeroSlide: saveHeroSlide,
     deleteHeroSlide: deleteHeroSlide,
-    reorderHeroSlides: reorderHeroSlides,
+    swapHeroSlideOrder: swapHeroSlideOrder,
     HERO_MAX_SLIDES: HERO_MAX_SLIDES,
     getPartnerPageSettings: getPartnerPageSettings,
     savePartnerPageSettings: savePartnerPageSettings,
