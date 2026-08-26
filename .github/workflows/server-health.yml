@@ -1,0 +1,52 @@
+name: Server Health Check
+
+on:
+  workflow_dispatch:
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Diagnose and repair origin
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 5m
+          script: |
+            set +e
+            echo "===== HOST ====="
+            hostname
+            uptime
+            free -h | head -n 2
+            df -h / | tail -n 1
+            echo "===== NGINX ====="
+            systemctl is-active nginx
+            systemctl status nginx --no-pager -l | head -n 40
+            echo "===== LISTEN ====="
+            ss -lntp | grep -E ':80|:443' || true
+            echo "===== LOCAL CURL ====="
+            curl -sI -m 5 http://127.0.0.1/ | head -n 15 || echo "local http failed"
+            curl -skI -m 5 https://127.0.0.1/ | head -n 15 || echo "local https failed"
+            echo "===== UFW ====="
+            ufw status numbered 2>/dev/null | head -n 40 || echo "ufw n/a"
+            echo "===== REPAIR ====="
+            if ! systemctl is-active --quiet nginx; then
+              echo "nginx inactive — starting"
+              systemctl start nginx
+            fi
+            nginx -t
+            if [ $? -eq 0 ]; then
+              systemctl reload nginx || systemctl restart nginx
+            else
+              echo "nginx -t FAILED — attempting restart anyway"
+              systemctl restart nginx
+            fi
+            sleep 2
+            echo "===== AFTER ====="
+            systemctl is-active nginx
+            ss -lntp | grep -E ':80|:443' || true
+            curl -sI -m 5 http://127.0.0.1/ | head -n 10 || echo "local http still failed"
+            curl -skI -m 5 https://127.0.0.1/ | head -n 10 || echo "local https still failed"
+            echo "===== DONE ====="
