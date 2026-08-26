@@ -39,6 +39,10 @@ else
   echo "[swautopia-proxy] include added to $FOUND"
 fi
 
-nginx -t
-systemctl reload nginx
-echo "[swautopia-proxy] nginx reloaded OK"
+if nginx -t; then
+  systemctl reload nginx 2>/dev/null || systemctl restart nginx
+  echo "[swautopia-proxy] nginx reloaded OK"
+else
+  echo "[swautopia-proxy] nginx -t failed — not reloading"
+  exit 1
+fi

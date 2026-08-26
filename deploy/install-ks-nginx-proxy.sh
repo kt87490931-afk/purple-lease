@@ -46,6 +46,10 @@ else
   echo "[ks-proxy] include added to $FOUND"
 fi
 
-nginx -t
-systemctl reload nginx
-echo "[ks-proxy] nginx reloaded OK"
+if nginx -t; then
+  systemctl reload nginx 2>/dev/null || systemctl restart nginx
+  echo "[ks-proxy] nginx reloaded OK"
+else
+  echo "[ks-proxy] nginx -t failed — not reloading"
+  exit 1
+fi
