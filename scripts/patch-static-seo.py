@@ -113,6 +113,16 @@ def patch_verification_meta(content, settings):
     return content
 
 
+def read_html(html_path):
+    with open(html_path, 'r', encoding='utf-8-sig') as f:
+        return f.read()
+
+
+def write_html(html_path, content):
+    with open(html_path, 'w', encoding='utf-8', newline='\n') as f:
+        f.write(content)
+
+
 def list_public_html_files():
     skip = {'admin.html', 'admin-login.html'}
     out = []
@@ -122,20 +132,30 @@ def list_public_html_files():
     return sorted(out)
 
 
+def strip_bom_from_all_html():
+    """UTF-8 BOM(EF BB BF) 제거 — 네이버·구글 소유확인 파서 호환"""
+    stripped = []
+    for html_path in list_public_html_files():
+        raw = open(html_path, 'rb').read()
+        if not raw.startswith(b'\xef\xbb\xbf'):
+            continue
+        write_html(html_path, raw[3:].decode('utf-8'))
+        stripped.append(os.path.basename(html_path))
+        print(f'[patch-seo] stripped BOM {os.path.basename(html_path)}')
+    return stripped
+
+
 def patch_html_verification(html_path, settings):
-    with open(html_path, 'r', encoding='utf-8') as f:
-        content = f.read()
+    content = read_html(html_path)
     new_content = patch_verification_meta(content, settings)
     if new_content == content:
         return False
-    with open(html_path, 'w', encoding='utf-8', newline='\n') as f:
-        f.write(new_content)
+    write_html(html_path, new_content)
     return True
 
 
 def patch_html_file(html_path, meta_block, title):
-    with open(html_path, 'r', encoding='utf-8') as f:
-        content = f.read()
+    content = read_html(html_path)
     pattern = re.compile(
         r'(<link rel="apple-touch-icon"[^>]*>\n)(.*?)(<title>[^<]*</title>)',
         re.DOTALL,
@@ -147,8 +167,7 @@ def patch_html_file(html_path, meta_block, title):
     new_content = pattern.sub(r'\1' + meta_block + new_title, content, count=1)
     if new_content == content:
         return False
-    with open(html_path, 'w', encoding='utf-8', newline='\n') as f:
-        f.write(new_content)
+    write_html(html_path, new_content)
     return True
 
 
@@ -189,6 +208,7 @@ def main():
         return 0
     patched = []
     verify_patched = []
+    bom_stripped = strip_bom_from_all_html()
     for html_path in list_public_html_files():
         html_name = os.path.basename(html_path)
         if patch_html_verification(html_path, settings):
@@ -208,8 +228,10 @@ def main():
         if patch_html_file(html_path, meta, title):
             patched.append(html_name)
             print(f'[patch-seo] patched {html_name}')
-    save_stamp(signature, patched + verify_patched)
-    print(f'[patch-seo] OK — meta {len(patched)} · verification {len(verify_patched)} file(s)')
+    save_stamp(signature, patched + verify_patched + bom_stripped)
+    print(
+        f'[patch-seo] OK — meta {len(patched)} · verification {len(verify_patched)} · BOM {len(bom_stripped)} file(s)'
+    )
     return 0
 
 
