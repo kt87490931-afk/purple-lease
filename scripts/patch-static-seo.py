@@ -89,6 +89,50 @@ def sb_get(path):
         return json.loads(res.read().decode('utf-8'))
 
 
+def patch_verification_meta(content, settings):
+    google = (settings.get('google_verification') or '').strip()
+    naver = (settings.get('naver_verification') or '').strip()
+    content = re.sub(r'\s*<meta name="google-site-verification"[^>]*>\n?', '\n', content, flags=re.IGNORECASE)
+    content = re.sub(r'\s*<meta name="naver-site-verification"[^>]*>\n?', '\n', content, flags=re.IGNORECASE)
+    if not google and not naver:
+        return content
+    lines = []
+    if google:
+        lines.append(f'<meta name="google-site-verification" content="{esc_attr(google)}">')
+    if naver:
+        lines.append(f'<meta name="naver-site-verification" content="{esc_attr(naver)}">')
+    block = '\n'.join(lines) + '\n'
+    vp = re.search(r'<meta name="viewport"[^>]*>\n?', content, re.IGNORECASE)
+    if vp:
+        insert_at = vp.end()
+        return content[:insert_at] + block + content[insert_at:]
+    cs = re.search(r'<meta charset="[^"]*">\n?', content, re.IGNORECASE)
+    if cs:
+        insert_at = cs.end()
+        return content[:insert_at] + block + content[insert_at:]
+    return content
+
+
+def list_public_html_files():
+    skip = {'admin.html', 'admin-login.html'}
+    out = []
+    for name in os.listdir(WEB_ROOT):
+        if name.endswith('.html') and name not in skip:
+            out.append(os.path.join(WEB_ROOT, name))
+    return sorted(out)
+
+
+def patch_html_verification(html_path, settings):
+    with open(html_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+    new_content = patch_verification_meta(content, settings)
+    if new_content == content:
+        return False
+    with open(html_path, 'w', encoding='utf-8', newline='\n') as f:
+        f.write(new_content)
+    return True
+
+
 def patch_html_file(html_path, meta_block, title):
     with open(html_path, 'r', encoding='utf-8') as f:
         content = f.read()
@@ -144,6 +188,12 @@ def main():
         print('[patch-seo] unchanged — skip')
         return 0
     patched = []
+    verify_patched = []
+    for html_path in list_public_html_files():
+        html_name = os.path.basename(html_path)
+        if patch_html_verification(html_path, settings):
+            verify_patched.append(html_name)
+            print(f'[patch-seo] verification {html_name}')
     for row in pages:
         page_path = row.get('page_path')
         html_name = PAGE_TO_HTML.get(page_path)
@@ -158,8 +208,8 @@ def main():
         if patch_html_file(html_path, meta, title):
             patched.append(html_name)
             print(f'[patch-seo] patched {html_name}')
-    save_stamp(signature, patched)
-    print(f'[patch-seo] OK — {len(patched)} file(s)')
+    save_stamp(signature, patched + verify_patched)
+    print(f'[patch-seo] OK — meta {len(patched)} · verification {len(verify_patched)} file(s)')
     return 0
 
 

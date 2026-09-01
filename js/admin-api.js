@@ -1940,6 +1940,21 @@
     return res.data;
   }
 
+  function normalizeSeoVerificationValue(raw, provider) {
+    var label = provider === 'naver' ? '네이버 서치어드바이저' : 'Google Search Console';
+    var s = String(raw || '').trim();
+    if (!s) return '';
+    if (/\.htm(l)?$/i.test(s)) {
+      throw new Error(label + '는 「HTML 태그」 방식 content 값만 입력하세요. (.htm 파일명은 HTML 파일 업로드 방식입니다)');
+    }
+    var metaMatch = s.match(/content\s*=\s*["']([^"']+)["']/i);
+    if (metaMatch) return metaMatch[1].trim();
+    if (/<meta/i.test(s)) {
+      throw new Error(label + ' meta 태그에서 content 값을 찾지 못했습니다. content="..." 안의 코드만 입력하세요.');
+    }
+    return s.replace(/[<>"']/g, '').trim();
+  }
+
   async function saveSeoSettings(payload) {
     var row = {
       id: 1,
@@ -1947,8 +1962,8 @@
       site_url: payload.site_url || 'https://purpleauto.co.kr',
       default_description: payload.default_description || '',
       og_image_url: payload.og_image_url || '',
-      google_verification: payload.google_verification || '',
-      naver_verification: payload.naver_verification || '',
+      google_verification: normalizeSeoVerificationValue(payload.google_verification, 'google'),
+      naver_verification: normalizeSeoVerificationValue(payload.naver_verification, 'naver'),
       robots_extra: payload.robots_extra || '',
       updated_at: new Date().toISOString()
     };

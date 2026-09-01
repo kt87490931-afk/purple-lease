@@ -1000,11 +1000,11 @@ body.admin-nav-open { overflow:hidden; }
               <img id="seoOgPreview" class="seo-og-preview" alt="OG 미리보기" hidden>
             </div>
             <div class="form-grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;">
-              <div class="form-row"><label>Google Search Console verification</label><input type="text" id="seoGoogleVerify" placeholder="meta content 값"><span class="hint">HTML 정적 meta — 변경 시 배포 필요</span></div>
-              <div class="form-row"><label>Naver 서치어드바이저 verification</label><input type="text" id="seoNaverVerify" placeholder="meta content 값"><span class="hint">HTML 정적 meta — 변경 시 배포 필요</span></div>
+              <div class="form-row"><label>Google Search Console verification</label><input type="text" id="seoGoogleVerify" placeholder='예: -Nhhyq_0e1K4GLtbs7TA4KuIknfAK9RnyMulOcMTnCc'><span class="hint">HTML 태그 방식 — meta <b>content</b> 값만 입력 (전체 &lt;meta&gt; 태그 붙여넣기 가능)</span></div>
+              <div class="form-row"><label>Naver 서치어드바이저 verification</label><input type="text" id="seoNaverVerify" placeholder='예: 8cfb0493a09f3e07ffd4af9306faee510d9e3e3f'><span class="hint">HTML 태그 방식 — .htm 파일명이 아닌 <b>content</b> 값 · 저장 후 「SNS·정적 HTML 지금 반영」 필수</span></div>
             </div>
             <div class="form-row"><label>robots.txt 추가 규칙</label><textarea id="seoRobotsExtra" rows="2" placeholder="선택"></textarea></div>
-            <p class="seo-note">브라우저·검색: DB 저장 즉시 <code>seo-head.js</code> 반영 · 카카오·SNS: 저장 후 3분 이내 서버 HTML 자동 동기화</p>
+            <p class="seo-note">브라우저·검색: DB 저장 즉시 <code>seo-head.js</code> 반영 · <b>네이버·Google 소유확인</b>: 저장 후 「SNS·정적 HTML 지금 반영」 → 3분 이내 홈 HTML &lt;head&gt;에 meta 태그 삽입</p>
             <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:10px;">
               <button class="btn btn-primary" type="button" id="btnSaveSeoSettings">기본 설정 저장</button>
               <button class="btn btn-outline" type="button" id="btnPublishStaticSeo">SNS·정적 HTML 지금 반영</button>
@@ -1036,8 +1036,9 @@ body.admin-nav-open { overflow:hidden; }
               3. Sitemaps → <code>sitemap.xml</code> 제출</p>
             <p style="margin-top:14px;"><b>Naver 서치어드바이저</b><br>
               1. <a href="https://searchadvisor.naver.com/" target="_blank" rel="noopener">searchadvisor.naver.com</a> → 사이트 등록<br>
-              2. HTML 태그 verification → 위 「기본 설정」에 코드 저장<br>
-              3. 요청 → 사이트맵 제출 <code>https://purpleauto.co.kr/sitemap.xml</code></p>
+              2. 소유확인 → <b>HTML 태그</b> 선택 → content 값만 위 「기본 설정」에 저장<br>
+              3. 「SNS·정적 HTML 지금 반영」 클릭 후 3분 이내 「소유확인」 재시도<br>
+              4. 요청 → 사이트맵 제출 <code>https://purpleauto.co.kr/sitemap.xml</code></p>
             <p style="margin-top:14px;color:var(--ink-500);font-size:12px;">콘텐츠(후기·중고차·부품) 추가·수정 후 「사이트맵 생성」을 눌러 검색엔진용 URL 목록을 갱신하세요.</p>
             <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
               <button class="btn btn-primary" type="button" id="btnGenerateSitemap">사이트맵 생성</button>
@@ -1690,11 +1691,11 @@ body.admin-nav-open { overflow:hidden; }
 <script src="/js/admin-auth.js?v=20260630d"></script>
 <script src="/js/review-topics.js?v=20260704a"></script>
 <script src="/js/paid-transfer-page.js?v=20260721a"></script>
-<script src="/js/admin-api.js?v=20260819a"></script>
+<script src="/js/admin-api.js?v=20260901a"></script>
 <script src="/js/admin-hero.js?v=20260819a"></script>
 <script src="/js/admin-partners.js?v=20260703a"></script>
 <script src="/js/lease-catalog-map.js"></script>
-<script src="/js/admin-app.js?v=20260805b"></script>
+<script src="/js/admin-app.js?v=20260901a"></script>
 <script>
 /* 퍼플오토 어드민 — 견적서 작성 (부품 / 장기렌트·리스) : #panel-estimate 자체 초기화 */
 (function () {

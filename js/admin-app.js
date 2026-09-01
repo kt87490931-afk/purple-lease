@@ -2777,7 +2777,7 @@
     var result = await API.queueStaticSeoPatch();
     if (statusEl) {
       if (result.queued) {
-        statusEl.textContent = '요청 완료 — 서버에서 3분 이내 HTML meta가 갱신됩니다. 카카오 디버거는 「캐시 초기화」 후 재스크랩하세요.';
+        statusEl.textContent = '요청 완료 — 서버에서 3분 이내 HTML meta·Google/네이버 verification 태그가 갱신됩니다.';
       } else {
         statusEl.textContent = '반영 요청은 건너뛰었지만 DB 변경은 3분 이내 cron으로 HTML에 자동 반영됩니다.';
       }
@@ -2787,9 +2787,9 @@
 
   function seoPatchStatusSuffix(result) {
     if (result && result.queued) {
-      return ' SNS·정적 HTML 3분 이내 반영됩니다.';
+      return ' SNS·정적 HTML 3분 이내 반영됩니다. (네이버 소유확인은 반영 후 「소유확인」 재시도)';
     }
-    return ' DB 저장 완료 — HTML meta는 3분 이내 서버 cron으로 자동 반영됩니다.';
+    return ' DB 저장 완료 — HTML meta·verification은 3분 이내 서버 cron으로 자동 반영됩니다.';
   }
 
   function renderSeoPageTable() {
