@@ -24,7 +24,14 @@ if [ -f "$ENV_FILE" ]; then
 fi
 
 TG_BOT="${TELEGRAM_BOT_TOKEN:-$PRESERVE_TELEGRAM_BOT}"
-TG_CHAT="${TELEGRAM_CHAT_ID:-$PRESERVE_TELEGRAM_CHAT}"
+# 서버에 슈퍼그룹(-100…) chat_id가 있으면 GitHub 구 그룹 ID보다 우선 (승격 후 회귀 방지)
+if [[ "${PRESERVE_TELEGRAM_CHAT}" == -100* ]] && [[ "${TELEGRAM_CHAT_ID:-}" != -100* ]]; then
+  TG_CHAT="$PRESERVE_TELEGRAM_CHAT"
+elif [[ "${TELEGRAM_CHAT_ID:-}" == -100* ]]; then
+  TG_CHAT="$TELEGRAM_CHAT_ID"
+else
+  TG_CHAT="${TELEGRAM_CHAT_ID:-$PRESERVE_TELEGRAM_CHAT}"
+fi
 TG_SECRET="${TELEGRAM_WEBHOOK_SECRET:-$PRESERVE_TELEGRAM_SECRET}"
 GEMINI_KEY="${GEMINI_API_KEY:-$PRESERVE_GEMINI}"
 ANON_KEY="${SUPABASE_ANON_KEY:-$PRESERVE_ANON}"
@@ -52,4 +59,10 @@ umask 077
 } > "$ENV_FILE"
 chmod 600 "$ENV_FILE"
 chown root:root "$ENV_FILE"
+# 런타임 마이그레이션용 사이드카 (www-data 쓰기 가능)
+if [ -n "$TG_CHAT" ]; then
+  printf '%s\n' "$TG_CHAT" > /var/www/purple-lease/.telegram-chat-id
+  chown www-data:www-data /var/www/purple-lease/.telegram-chat-id
+  chmod 644 /var/www/purple-lease/.telegram-chat-id
+fi
 echo "[env-sync] wrote $ENV_FILE"

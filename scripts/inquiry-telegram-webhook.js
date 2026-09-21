@@ -14,12 +14,39 @@ var crypto = require('crypto');
 var Formatter = require(path.join(__dirname, '..', 'js', 'telegram-inquiry-format.js'));
 var List = require(path.join(__dirname, '..', 'js', 'telegram-inquiry-list.js'));
 
+var fs = require('fs');
+
 var PORT = parseInt(process.env.INQUIRY_TELEGRAM_PORT || '8793', 10) || 8793;
 var BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 var CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
 var WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || '';
 var SUPABASE_URL = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
 var SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+var ROOT_DIR = path.join(__dirname, '..');
+var CHAT_ID_FILE = path.join(ROOT_DIR, '.telegram-chat-id');
+
+function loadPersistedChatId() {
+  try {
+    var raw = fs.readFileSync(CHAT_ID_FILE, 'utf8').trim();
+    if (raw) return raw;
+  } catch (e) { /* optional */ }
+  return '';
+}
+
+function persistChatId(newId) {
+  var id = String(newId);
+  CHAT_ID = id;
+  try {
+    fs.writeFileSync(CHAT_ID_FILE, id + '\n', { encoding: 'utf8', mode: 0o644 });
+  } catch (e) {
+    console.warn('[inquiry-telegram] persist chat_id failed:', e.message || e);
+  }
+}
+
+(function initChatId() {
+  var persisted = loadPersistedChatId();
+  if (persisted) CHAT_ID = persisted;
+})();
 
 var ALLOWED_TABLES = {
   inquiries: true,
@@ -135,7 +162,7 @@ async function sendTelegram(text, chatId) {
     if (migrateId != null) {
       console.warn('[inquiry-telegram] chat migrated:', targetChat, '->', migrateId);
       lastHealth.last_error = 'chat_migrated:' + migrateId;
-      if (chatId == null) CHAT_ID = String(migrateId);
+      if (chatId == null) persistChatId(migrateId);
       return sendTelegram(text, migrateId);
     }
     throw new Error((data.description || 'Telegram API error') + ' (http ' + res.status + ')');

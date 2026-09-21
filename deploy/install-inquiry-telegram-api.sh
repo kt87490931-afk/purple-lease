@@ -37,6 +37,16 @@ EOF
 
 systemctl daemon-reload
 systemctl enable purple-inquiry-telegram.service
+
+# 런타임 chat_id 마이그레이션 파일 (www-data 쓰기)
+CHAT_FILE="$ROOT/.telegram-chat-id"
+if [ ! -f "$CHAT_FILE" ] && [ -f "$ROOT/.env.sync" ]; then
+  grep '^TELEGRAM_CHAT_ID=' "$ROOT/.env.sync" | cut -d= -f2- > "$CHAT_FILE" || true
+fi
+touch "$CHAT_FILE"
+chown www-data:www-data "$CHAT_FILE"
+chmod 644 "$CHAT_FILE"
+
 systemctl restart purple-inquiry-telegram.service
 
 if [ -f "$SNIPPET_SRC" ]; then

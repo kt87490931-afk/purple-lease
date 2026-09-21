@@ -79,9 +79,14 @@ jobs:
                 || echo "TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}" >> "$ENV"
             fi
             if [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
-              grep -q '^TELEGRAM_CHAT_ID=' "$ENV" 2>/dev/null \
-                && sed -i "s|^TELEGRAM_CHAT_ID=.*|TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}|" "$ENV" \
-                || echo "TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}" >> "$ENV"
+              # 슈퍼그룹 ID(-100…)만 강제 반영; 구 그룹 ID는 migrate 스크립트가 갱신
+              if [[ "${TELEGRAM_CHAT_ID}" == -100* ]]; then
+                grep -q '^TELEGRAM_CHAT_ID=' "$ENV" 2>/dev/null \
+                  && sed -i "s|^TELEGRAM_CHAT_ID=.*|TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}|" "$ENV" \
+                  || echo "TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}" >> "$ENV"
+                printf '%s\n' "${TELEGRAM_CHAT_ID}" > "$ROOT/.telegram-chat-id"
+                chown www-data:www-data "$ROOT/.telegram-chat-id" 2>/dev/null || true
+              fi
             fi
             if [ -n "${TELEGRAM_WEBHOOK_SECRET:-}" ]; then
               grep -q '^TELEGRAM_WEBHOOK_SECRET=' "$ENV" 2>/dev/null \
