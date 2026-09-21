@@ -9,11 +9,18 @@ jobs:
     steps:
       - name: Diagnose and repair origin
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           command_timeout: 5m
+          envs: TELEGRAM_BOT_TOKEN,TELEGRAM_CHAT_ID,TELEGRAM_WEBHOOK_SECRET,SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY
           script: |
             set +e
             echo "===== HOST ====="
@@ -25,7 +32,7 @@ jobs:
             systemctl is-active nginx
             systemctl status nginx --no-pager -l | head -n 40
             echo "===== LISTEN ====="
-            ss -lntp | grep -E ':80|:443' || true
+            ss -lntp | grep -E ':80|:443|:8793' || true
             echo "===== LOCAL CURL ====="
             curl -sI -m 5 http://127.0.0.1/ | head -n 15 || echo "local http failed"
             curl -skI -m 5 https://127.0.0.1/ | head -n 15 || echo "local https failed"
@@ -46,7 +53,84 @@ jobs:
             sleep 2
             echo "===== AFTER ====="
             systemctl is-active nginx
-            ss -lntp | grep -E ':80|:443' || true
+            ss -lntp | grep -E ':80|:443|:8793' || true
             curl -sI -m 5 http://127.0.0.1/ | head -n 10 || echo "local http still failed"
             curl -skI -m 5 https://127.0.0.1/ | head -n 10 || echo "local https still failed"
+
+            echo "===== TELEGRAM DIAG ====="
+            systemctl is-active purple-inquiry-telegram.service
+            systemctl status purple-inquiry-telegram.service --no-pager -l | head -n 30
+            journalctl -u purple-inquiry-telegram.service -n 40 --no-pager
+            curl -sS -m 5 http://127.0.0.1:8793/health || echo "local telegram health failed"
+            curl -sS -m 5 https://purpleauto.co.kr/api/webhook/inquiry-telegram/health || echo "public telegram health failed"
+
+            ROOT=/var/www/purple-lease
+            ENV=$ROOT/.env.sync
+            if [ -f "$ENV" ]; then
+              set -a
+              # shellcheck disable=SC1090
+              source "$ENV"
+              set +a
+            fi
+            # GitHub secrets로 .env.sync 보강 (비어 있거나 불일치 시)
+            if [ -n "${TELEGRAM_BOT_TOKEN:-}" ]; then
+              grep -q '^TELEGRAM_BOT_TOKEN=' "$ENV" 2>/dev/null \
+                && sed -i "s|^TELEGRAM_BOT_TOKEN=.*|TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}|" "$ENV" \
+                || echo "TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}" >> "$ENV"
+            fi
+            if [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
+              grep -q '^TELEGRAM_CHAT_ID=' "$ENV" 2>/dev/null \
+                && sed -i "s|^TELEGRAM_CHAT_ID=.*|TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}|" "$ENV" \
+                || echo "TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}" >> "$ENV"
+            fi
+            if [ -n "${TELEGRAM_WEBHOOK_SECRET:-}" ]; then
+              grep -q '^TELEGRAM_WEBHOOK_SECRET=' "$ENV" 2>/dev/null \
+                && sed -i "s|^TELEGRAM_WEBHOOK_SECRET=.*|TELEGRAM_WEBHOOK_SECRET=${TELEGRAM_WEBHOOK_SECRET}|" "$ENV" \
+                || echo "TELEGRAM_WEBHOOK_SECRET=${TELEGRAM_WEBHOOK_SECRET}" >> "$ENV"
+            fi
+            if [ -n "${SUPABASE_URL:-}" ]; then
+              grep -q '^SUPABASE_URL=' "$ENV" 2>/dev/null \
+                && sed -i "s|^SUPABASE_URL=.*|SUPABASE_URL=${SUPABASE_URL}|" "$ENV" \
+                || echo "SUPABASE_URL=${SUPABASE_URL}" >> "$ENV"
+            fi
+            if [ -n "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
+              grep -q '^SUPABASE_SERVICE_ROLE_KEY=' "$ENV" 2>/dev/null \
+                && sed -i "s|^SUPABASE_SERVICE_ROLE_KEY=.*|SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}|" "$ENV" \
+                || echo "SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}" >> "$ENV"
+            fi
+            chmod 600 "$ENV" 2>/dev/null || true
+
+            echo "===== TELEGRAM REPAIR ====="
+            chmod +x $ROOT/deploy/install-inquiry-telegram-api.sh 2>/dev/null || true
+            bash $ROOT/deploy/install-inquiry-telegram-api.sh 2>&1 || echo "install skipped"
+            chmod +x $ROOT/deploy/fix-telegram-migrate-chat.sh 2>/dev/null || true
+            bash $ROOT/deploy/fix-telegram-migrate-chat.sh 2>&1 || echo "migrate fix exit=$?"
+            chmod +x $ROOT/deploy/sync-telegram-webhook-secret.sh 2>/dev/null || true
+            bash $ROOT/deploy/sync-telegram-webhook-secret.sh 2>&1 || echo "secret sync exit=$?"
+            chmod +x $ROOT/deploy/register-telegram-bot-webhook.sh 2>/dev/null || true
+            bash $ROOT/deploy/register-telegram-bot-webhook.sh 2>&1 || echo "bot webhook exit=$?"
+            systemctl restart purple-inquiry-telegram.service
+            sleep 2
+
+            echo "===== TELEGRAM TEST ====="
+            set -a
+            # shellcheck disable=SC1090
+            source "$ENV"
+            set +a
+            if [ -n "${TELEGRAM_BOT_TOKEN:-}" ]; then
+              curl -sS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMe" | head -c 400
+              echo ""
+              curl -sS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getWebhookInfo" | head -c 800
+              echo ""
+              curl -sS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getChat?chat_id=${TELEGRAM_CHAT_ID}" | head -c 500
+              echo ""
+            fi
+            if [ -n "${TELEGRAM_WEBHOOK_SECRET:-}" ]; then
+              curl -sS -X POST http://127.0.0.1:8793/api/webhook/inquiry-telegram/test \
+                -H "X-Webhook-Secret: ${TELEGRAM_WEBHOOK_SECRET}" \
+                -H "Content-Type: application/json" || true
+              echo ""
+            fi
+            curl -sS -m 5 http://127.0.0.1:8793/health || true
+            echo ""
             echo "===== DONE ====="
