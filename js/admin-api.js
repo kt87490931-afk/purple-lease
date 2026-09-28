@@ -2106,7 +2106,18 @@
     if (res.error) {
       var msg = String(res.error.message || '');
       if (/company_info|nav_labels|label_terms|label_privacy|label_certificate/.test(msg)) {
-        throw new Error('DB에 회사정보 컬럼이 없습니다. supabase/migration-footer-settings.sql 을 실행한 뒤 다시 저장하세요.');
+        var legacyRow = {
+          id: 1,
+          terms_of_service: row.terms_of_service,
+          privacy_policy: row.privacy_policy,
+          disclaimer_text: row.disclaimer_text,
+          certificate_url: row.certificate_url,
+          certificate_mime: row.certificate_mime,
+          updated_at: row.updated_at
+        };
+        var legacyRes = await db().from('footer_settings').upsert(legacyRow, { onConflict: 'id' });
+        if (legacyRes.error) throw legacyRes.error;
+        throw new Error('약관 · 개인정보 · 고지문 · 등록증은 저장됐지만, 회사정보(주소) · 메뉴 이름은 DB 업데이트 전이라 저장되지 않았습니다. supabase/migration-footer-settings.sql 실행이 필요합니다.');
       }
       throw res.error;
     }
