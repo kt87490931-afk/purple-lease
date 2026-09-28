@@ -1,4 +1,4 @@
--- 퍼플오토 푸터 설정 (약관 / 개인정보 / 고지문 / 등록증)
+-- 퍼플오토 푸터 설정 (약관 / 개인정보 / 고지문 / 등록증 / 회사정보 / 메뉴·법적 링크 이름)
 -- Supabase SQL Editor 또는 psql 로 실행 (idempotent)
 
 CREATE TABLE IF NOT EXISTS footer_settings (
@@ -12,6 +12,15 @@ CREATE TABLE IF NOT EXISTS footer_settings (
 );
 
 INSERT INTO footer_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
+
+-- v2: 회사정보(주소 등) · 메뉴 링크 이름 · 법적 링크 이름
+ALTER TABLE footer_settings ADD COLUMN IF NOT EXISTS company_info TEXT NOT NULL DEFAULT
+  E'퍼플오토 | 오토리스&장기렌트 승계매입전문업체\n대표 : 이호준 | 주소 : 경기도 용인시 기흥구 강남서로9, 7층 703호\n사업자등록번호 : 885-68-00449\n대표번호 : 1555-6362 | 평일 09:00~18:00';
+ALTER TABLE footer_settings ADD COLUMN IF NOT EXISTS nav_labels JSONB NOT NULL DEFAULT
+  '{"/":"신차·리스·렌트","/used-cars":"중고차 매물","/lease-transfers":"일반승계 매물","/lease-calculator":"계산기","/parts-register":"수입차부품","/partners":"제휴업체","/reviews":"후기관리","/reviews-youtube":"퍼플오토 유튜브"}'::jsonb;
+ALTER TABLE footer_settings ADD COLUMN IF NOT EXISTS label_terms TEXT NOT NULL DEFAULT '이용약관';
+ALTER TABLE footer_settings ADD COLUMN IF NOT EXISTS label_privacy TEXT NOT NULL DEFAULT '개인정보처리방침';
+ALTER TABLE footer_settings ADD COLUMN IF NOT EXISTS label_certificate TEXT NOT NULL DEFAULT '금융상품판매대리 · 중개업자 등록증';
 
 ALTER TABLE footer_settings ENABLE ROW LEVEL SECURITY;
 

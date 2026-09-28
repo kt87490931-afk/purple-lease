@@ -570,6 +570,18 @@
     var statusEl = document.getElementById('footerSaveStatus');
     try {
       var s = await API.getFooterSettings();
+      var companyEl = document.getElementById('footerCompanyInfo');
+      if (companyEl) companyEl.value = s.company_info || '';
+      var navLabels = s.nav_labels || {};
+      panel.querySelectorAll('[data-footer-nav]').forEach(function (input) {
+        input.value = navLabels[input.getAttribute('data-footer-nav')] || '';
+      });
+      var lblTerms = document.getElementById('footerLabelTerms');
+      if (lblTerms) lblTerms.value = s.label_terms || '';
+      var lblPrivacy = document.getElementById('footerLabelPrivacy');
+      if (lblPrivacy) lblPrivacy.value = s.label_privacy || '';
+      var lblCert = document.getElementById('footerLabelCertificate');
+      if (lblCert) lblCert.value = s.label_certificate || '';
       document.getElementById('footerTerms').value = s.terms_of_service || '';
       document.getElementById('footerPrivacy').value = s.privacy_policy || '';
       document.getElementById('footerDisclaimer').value = s.disclaimer_text || '';
@@ -832,13 +844,28 @@
         renderFooterCertPreview(certUrl, certMime);
         fileInput.value = '';
       }
+      var navLabels = {};
+      document.querySelectorAll('#panel-footer [data-footer-nav]').forEach(function (input) {
+        navLabels[input.getAttribute('data-footer-nav')] = input.value;
+      });
+      var optVal = function (id) {
+        var el = document.getElementById(id);
+        return el ? el.value : '';
+      };
       var row = await API.saveFooterSettings({
         terms_of_service: document.getElementById('footerTerms').value,
         privacy_policy: document.getElementById('footerPrivacy').value,
         disclaimer_text: document.getElementById('footerDisclaimer').value,
         certificate_url: certUrl,
-        certificate_mime: certMime
+        certificate_mime: certMime,
+        company_info: optVal('footerCompanyInfo'),
+        nav_labels: navLabels,
+        label_terms: optVal('footerLabelTerms'),
+        label_privacy: optVal('footerLabelPrivacy'),
+        label_certificate: optVal('footerLabelCertificate')
       });
+      var companyEl = document.getElementById('footerCompanyInfo');
+      if (companyEl) companyEl.value = row.company_info;
       var upd = document.getElementById('footerUpdatedAt');
       if (upd) upd.textContent = row.updated_at ? '마지막 저장: ' + fmtAdminDateTime(row.updated_at) : '';
       if (statusEl) {

@@ -2026,11 +2026,52 @@
       '금융상품판매대리 · 중개업자 성명 및 등록번호 소속 법인(또는 제휴 법인) ' +
       '계약 체결 권한은 금융회사에 있으며, 당사는 금융상품판매대리 · 중개업자로서 모집 업무',
     certificate_url: '',
-    certificate_mime: ''
+    certificate_mime: '',
+    company_info:
+      '퍼플오토 | 오토리스&장기렌트 승계매입전문업체\n' +
+      '대표 : 이호준 | 주소 : 경기도 용인시 기흥구 강남서로9, 7층 703호\n' +
+      '사업자등록번호 : 885-68-00449\n' +
+      '대표번호 : 1555-6362 | 평일 09:00~18:00',
+    nav_labels: {
+      '/': '신차·리스·렌트',
+      '/used-cars': '중고차 매물',
+      '/lease-transfers': '일반승계 매물',
+      '/lease-calculator': '계산기',
+      '/parts-register': '수입차부품',
+      '/partners': '제휴업체',
+      '/reviews': '후기관리',
+      '/reviews-youtube': '퍼플오토 유튜브'
+    },
+    label_terms: '이용약관',
+    label_privacy: '개인정보처리방침',
+    label_certificate: '금융상품판매대리 · 중개업자 등록증'
   };
 
   function normalizeFooterDisclaimer(text) {
     return String(text || FOOTER_DEFAULTS.disclaimer_text).replace(/\s+/g, ' ').trim() || FOOTER_DEFAULTS.disclaimer_text;
+  }
+
+  function normalizeFooterCompanyInfo(text) {
+    return String(text == null ? '' : text)
+      .replace(/\r\n?/g, '\n')
+      .split('\n')
+      .map(function (line) { return line.replace(/\s+$/g, ''); })
+      .join('\n')
+      .replace(/^\n+|\n+$/g, '');
+  }
+
+  function normalizeFooterNavLabels(raw) {
+    var out = {};
+    var src = raw && typeof raw === 'object' ? raw : {};
+    Object.keys(FOOTER_DEFAULTS.nav_labels).forEach(function (href) {
+      var v = String(src[href] == null ? '' : src[href]).trim();
+      out[href] = v || FOOTER_DEFAULTS.nav_labels[href];
+    });
+    return out;
+  }
+
+  function normalizeFooterLabel(text, key) {
+    return String(text == null ? '' : text).trim() || FOOTER_DEFAULTS[key];
   }
 
   async function getFooterSettings() {
@@ -2038,6 +2079,11 @@
     if (res.error) throw res.error;
     var merged = Object.assign({}, FOOTER_DEFAULTS, res.data || {});
     merged.disclaimer_text = normalizeFooterDisclaimer(merged.disclaimer_text);
+    merged.company_info = normalizeFooterCompanyInfo(merged.company_info);
+    merged.nav_labels = normalizeFooterNavLabels(merged.nav_labels);
+    merged.label_terms = normalizeFooterLabel(merged.label_terms, 'label_terms');
+    merged.label_privacy = normalizeFooterLabel(merged.label_privacy, 'label_privacy');
+    merged.label_certificate = normalizeFooterLabel(merged.label_certificate, 'label_certificate');
     return merged;
   }
 
@@ -2049,10 +2095,21 @@
       disclaimer_text: normalizeFooterDisclaimer(payload.disclaimer_text),
       certificate_url: String(payload.certificate_url || '').trim(),
       certificate_mime: String(payload.certificate_mime || '').trim(),
+      company_info: normalizeFooterCompanyInfo(payload.company_info),
+      nav_labels: normalizeFooterNavLabels(payload.nav_labels),
+      label_terms: normalizeFooterLabel(payload.label_terms, 'label_terms'),
+      label_privacy: normalizeFooterLabel(payload.label_privacy, 'label_privacy'),
+      label_certificate: normalizeFooterLabel(payload.label_certificate, 'label_certificate'),
       updated_at: new Date().toISOString()
     };
     var res = await db().from('footer_settings').upsert(row, { onConflict: 'id' });
-    if (res.error) throw res.error;
+    if (res.error) {
+      var msg = String(res.error.message || '');
+      if (/company_info|nav_labels|label_terms|label_privacy|label_certificate/.test(msg)) {
+        throw new Error('DB에 회사정보 컬럼이 없습니다. supabase/migration-footer-settings.sql 을 실행한 뒤 다시 저장하세요.');
+      }
+      throw res.error;
+    }
     return row;
   }
 

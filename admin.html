@@ -1187,7 +1187,34 @@ body.admin-nav-open { overflow:hidden; }
 
       <section class="panel" id="panel-footer">
         <div class="seo-basic-panel" style="max-width:860px">
-          <p class="seo-note" style="margin-bottom:16px;">전 페이지 푸터에 표시되는 이용약관 · 개인정보처리방침 · 등록증 · 금융 고지문을 수정합니다. 링크 클릭 시 별도 페이지 이동 없이 모달로 표시됩니다.</p>
+          <p class="seo-note" style="margin-bottom:16px;">전 페이지 푸터에 표시되는 회사정보(상호 · 대표 · 주소 · 사업자등록번호 · 대표번호) · 메뉴 링크 이름 · 이용약관 · 개인정보처리방침 · 등록증 · 금융 고지문을 수정합니다. 링크 클릭 시 별도 페이지 이동 없이 모달로 표시됩니다.</p>
+          <div class="form-row">
+            <label for="footerCompanyInfo">회사정보 (상호 · 대표 · 주소 · 사업자등록번호 · 대표번호)</label>
+            <textarea id="footerCompanyInfo" rows="5" placeholder="퍼플오토 | 오토리스&amp;장기렌트 승계매입전문업체&#10;대표 : 홍길동 | 주소 : 경기도 ..."></textarea>
+            <span class="hint">입력한 줄바꿈 그대로 푸터에 표시됩니다. 주소 · 전화번호 · 영업시간 등을 자유롭게 수정하세요. 비워두면 페이지에 기본 저장된 문구가 표시됩니다.</span>
+          </div>
+          <div class="form-row">
+            <label>푸터 메뉴 링크 이름</label>
+            <div class="form-grid-2">
+              <div class="form-row"><label for="footerNav_home" style="font-weight:600;">홈 (/)</label><input type="text" id="footerNav_home" data-footer-nav="/"></div>
+              <div class="form-row"><label for="footerNav_usedcars" style="font-weight:600;">중고차 (/used-cars)</label><input type="text" id="footerNav_usedcars" data-footer-nav="/used-cars"></div>
+              <div class="form-row"><label for="footerNav_leasetransfers" style="font-weight:600;">일반승계 (/lease-transfers)</label><input type="text" id="footerNav_leasetransfers" data-footer-nav="/lease-transfers"></div>
+              <div class="form-row"><label for="footerNav_calc" style="font-weight:600;">계산기 (/lease-calculator)</label><input type="text" id="footerNav_calc" data-footer-nav="/lease-calculator"></div>
+              <div class="form-row"><label for="footerNav_parts" style="font-weight:600;">수입차부품 (/parts-register)</label><input type="text" id="footerNav_parts" data-footer-nav="/parts-register"></div>
+              <div class="form-row"><label for="footerNav_partners" style="font-weight:600;">제휴업체 (/partners)</label><input type="text" id="footerNav_partners" data-footer-nav="/partners"></div>
+              <div class="form-row"><label for="footerNav_reviews" style="font-weight:600;">후기 (/reviews)</label><input type="text" id="footerNav_reviews" data-footer-nav="/reviews"></div>
+              <div class="form-row"><label for="footerNav_youtube" style="font-weight:600;">유튜브 (/reviews-youtube)</label><input type="text" id="footerNav_youtube" data-footer-nav="/reviews-youtube"></div>
+            </div>
+            <span class="hint">페이지마다 표시되는 메뉴 구성은 그대로 두고, 이름만 바뀝니다. 비워두면 기본 이름이 표시됩니다.</span>
+          </div>
+          <div class="form-row">
+            <label>법적 링크 이름 (모달 제목 동일)</label>
+            <div class="form-grid-2">
+              <div class="form-row"><label for="footerLabelTerms" style="font-weight:600;">이용약관</label><input type="text" id="footerLabelTerms"></div>
+              <div class="form-row"><label for="footerLabelPrivacy" style="font-weight:600;">개인정보처리방침</label><input type="text" id="footerLabelPrivacy"></div>
+              <div class="form-row"><label for="footerLabelCertificate" style="font-weight:600;">등록증</label><input type="text" id="footerLabelCertificate"></div>
+            </div>
+          </div>
           <div class="form-row">
             <label for="footerTerms">이용약관</label>
             <textarea id="footerTerms" rows="12" placeholder="이용약관 전문을 입력하세요."></textarea>
@@ -1691,11 +1718,11 @@ body.admin-nav-open { overflow:hidden; }
 <script src="/js/admin-auth.js?v=20260630d"></script>
 <script src="/js/review-topics.js?v=20260704a"></script>
 <script src="/js/paid-transfer-page.js?v=20260721a"></script>
-<script src="/js/admin-api.js?v=20260901a"></script>
+<script src="/js/admin-api.js?v=20260928a"></script>
 <script src="/js/admin-hero.js?v=20260819a"></script>
 <script src="/js/admin-partners.js?v=20260703a"></script>
 <script src="/js/lease-catalog-map.js"></script>
-<script src="/js/admin-app.js?v=20260901a"></script>
+<script src="/js/admin-app.js?v=20260928a"></script>
 <script>
 /* 퍼플오토 어드민 — 견적서 작성 (부품 / 장기렌트·리스) : #panel-estimate 자체 초기화 */
 (function () {
