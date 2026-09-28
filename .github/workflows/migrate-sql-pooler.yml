@@ -33,10 +33,11 @@ jobs:
           for PREFIX in aws-0 aws-1; do
             for REGION in ap-northeast-2 ap-northeast-1 ap-southeast-1 ap-southeast-2 ap-south-1 us-east-1 us-east-2 us-west-1 us-west-2 eu-central-1 eu-west-1 eu-west-2 ca-central-1 sa-east-1; do
               HOST="${PREFIX}-${REGION}.pooler.supabase.com"
-              if psql "host=${HOST} port=5432 dbname=postgres user=postgres.${PROJECT_REF} sslmode=require connect_timeout=5" -tAc "select 1" >/dev/null 2>&1; then
+              if ERR=$(psql "host=${HOST} port=5432 dbname=postgres user=postgres.${PROJECT_REF} sslmode=require connect_timeout=5" -tAc "select 1" 2>&1 >/dev/null); then
                 FOUND="$HOST"
                 break 2
               fi
+              echo "[try] ${HOST}: $(echo "$ERR" | tail -n 1 | cut -c1-160)"
             done
           done
           if [ -z "$FOUND" ]; then
