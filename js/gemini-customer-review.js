@@ -12,7 +12,8 @@ var GEMINI_TEMPERATURE = parseFloat(process.env.GEMINI_TEMPERATURE || '0.92') ||
 var GEMINI_TOP_P = parseFloat(process.env.GEMINI_TOP_P || '0.9') || 0.9;
 var GEMINI_MAX_OUTPUT_TOKENS = parseInt(process.env.GEMINI_MAX_OUTPUT_TOKENS || '8192', 10) || 8192;
 // 2.5 계열은 구글이 용량을 제한 중(high demand 503 빈발) → 실패 시 3.x 안정판으로 대체. 'none' 이면 비활성
-var GEMINI_FALLBACK_MODELS = String(process.env.GEMINI_FALLBACK_MODELS || 'gemini-3.8-flash')
+// flash-lite 는 본문이 짧게 나오는 편이라 마지막 순서
+var GEMINI_FALLBACK_MODELS = String(process.env.GEMINI_FALLBACK_MODELS || 'gemini-3.8-flash,gemini-3.5-flash-lite')
   .split(',').map(function (s) { return s.trim(); })
   .filter(function (s) { return s && s !== 'none' && s !== GEMINI_MODEL; });
 var GEMINI_FALLBACK_MAX_OUTPUT_TOKENS = parseInt(process.env.GEMINI_FALLBACK_MAX_OUTPUT_TOKENS || '16384', 10) || 16384;
