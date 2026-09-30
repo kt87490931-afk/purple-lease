@@ -1,0 +1,54 @@
+name: Review Gen Diag
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'dry-run 1건 생성 (DB 후기 미저장, 생성 로그만 기록)'
+        type: boolean
+        default: false
+      topic_id:
+        description: 'dry-run 주제 번호 (비우면 자동 선택)'
+        required: false
+        default: ''
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Review generation diagnostics
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+          TOPIC_ID: ${{ inputs.topic_id }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 5m
+          envs: DRY_RUN,TOPIC_ID
+          script: |
+            set +e
+            ROOT=/var/www/purple-lease
+            echo "===== CRON ====="
+            cat /etc/cron.d/purple-review-gen 2>/dev/null || echo "no_cron"
+            echo "===== ENV (masked) ====="
+            grep -E '^(GEMINI|SUPABASE_URL|REVIEW)' "$ROOT/.env.sync" | sed -E 's/^(GEMINI_API_KEY|SUPABASE_URL)=.*/\1=***/' || true
+            echo "===== LOG: FAIL/SKIP (last 60) ====="
+            grep -E 'FAIL|SKIP|fatal|gate=' /var/log/purple-review-gen.log 2>/dev/null | tail -n 60 || echo "no_log"
+            echo "===== LOG: tail 40 ====="
+            tail -n 40 /var/log/purple-review-gen.log 2>/dev/null || echo "no_log"
+            echo "===== GEN LOGS (DB, last 25) ====="
+            cd "$ROOT"
+            set -a; source "$ROOT/.env.sync"; set +a
+            node -e "const G=require('./js/customer-review-generator'); G.sbFetch('customer_review_gen_logs?select=started_at,ok,source,topic_id,char_count,msg,diag&order=started_at.desc&limit=25',{method:'GET'}).then(r=>{(r||[]).forEach(x=>console.log(x.started_at,x.ok?'OK ':'ERR',x.source,'topic='+x.topic_id,x.char_count+'자',String(x.msg||'').slice(0,120),'kw='+((x.diag&&x.diag.main_keyword)||'')))}).catch(e=>console.error('db_err',e.message));"
+            node -e "const G=require('./js/customer-review-generator'); Promise.all([G.getTodayAiCount(),G.canAutoPublish()]).then(a=>console.log('today_ai',a[0],'dailyMax',G.getDailyMax(),'gate',JSON.stringify(a[1]))).catch(e=>console.error('gate_err',e.message));"
+            if [ "${DRY_RUN:-false}" = "true" ]; then
+              echo "===== DRY-RUN ====="
+              if [ -n "${TOPIC_ID:-}" ]; then
+                bash "$ROOT/deploy/run-generate-review.sh" --dry-run --topic-id="${TOPIC_ID}"
+              else
+                bash "$ROOT/deploy/run-generate-review.sh" --dry-run
+              fi
+            fi
+            echo "===== DONE ====="
