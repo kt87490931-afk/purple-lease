@@ -1691,6 +1691,8 @@
           html += '<li>' + (l.ok ? '✓' : '✗') + ' ' + fmtReviewGenTime(l.started_at) +
             ' · ' + (l.msg || '') +
             (l.topic_id ? ' · topic#' + l.topic_id : '') +
+            (l.diag && l.diag.main_keyword ? ' · 키워드: ' + l.diag.main_keyword : '') +
+            (l.diag && l.diag.model && l.diag.model !== 'gemini-2.5-flash' ? ' · ' + l.diag.model : '') +
             (l.char_count ? ' · ' + l.char_count + '자' : '') +
             (l.listing_id ? ' · 후기#' + l.listing_id : '') + '</li>';
         });

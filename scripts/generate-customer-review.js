@@ -16,7 +16,7 @@
  *   # 랜덤 주제 1건
  *   node scripts/generate-customer-review.js --publish
  *
- *   # cron 자동 생성 (일 2건·12시간 간격)
+ *   # cron 자동 생성 (평소 일 2건·12시간 간격, 한시 증량 기간 일 4건·4시간 간격)
  *   node scripts/generate-customer-review.js --auto-publish
  */
 'use strict';
@@ -93,6 +93,9 @@ async function main() {
   console.log('[review-gen] OK:', result.msg);
   console.log('[review-gen] topic_id=', result.topic && result.topic.id, 'category=', result.topic && result.topic.category);
   console.log('[review-gen] tone=', result.tone && result.tone.name);
+  console.log('[review-gen] mode=', result.mode, 'model=', result.model);
+  console.log('[review-gen] keyword=', result.mainKeyword || '-', 'sub=', (result.subKeywords || []).join('|') || '-',
+    'in_title=', result.keywordInTitle, 'body_count=', result.keywordCountInBody);
   console.log('[review-gen] title=', result.title);
   console.log('[review-gen] char_count=', result.charCount, 'elapsed_ms=', result.elapsedMs);
   if (result.listingId) console.log('[review-gen] listing_id=', result.listingId);

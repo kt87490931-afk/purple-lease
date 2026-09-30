@@ -50,13 +50,64 @@ async function getRecentToneIds(limit) {
   }).filter(Boolean);
 }
 
+/** 최근 AI 후기의 category·main_keyword (8:2 비중·키워드 순환용, 최신순) */
+async function getRecentAiMeta(limit) {
+  var rows = await sbFetch(
+    'customer_reviews?select=category,topic_id,generation_meta&is_ai_generated=eq.true&order=created_at.desc&limit=' + (limit || 30),
+    { method: 'GET' }
+  );
+  rows = rows || [];
+  return {
+    categories: rows.map(function (r) { return r.category || ''; }),
+    keywords: rows.map(function (r) {
+      return (r.generation_meta && r.generation_meta.main_keyword) || '';
+    }).filter(Boolean)
+  };
+}
+
+function getSellRatio() {
+  var v = parseFloat(process.env.REVIEW_SELL_RATIO || '0.8');
+  return isNaN(v) ? 0.8 : Math.min(1, Math.max(0, v));
+}
+
+/**
+ * 키워드 개편 후 DB가 쌓일 때까지 한시 증량. 종료일(KST) 다음 날부터 자동으로 평소 값 복귀.
+ * env 로 조정 가능: REVIEW_BOOST_UNTIL=YYYY-MM-DD (빈 값·none 이면 비활성)
+ */
+var REVIEW_BOOST_UNTIL_DEFAULT = '2026-10-28';
+
+function getBoostUntil() {
+  var v = process.env.REVIEW_BOOST_UNTIL;
+  if (v === undefined) v = REVIEW_BOOST_UNTIL_DEFAULT;
+  v = String(v || '').trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : '';
+}
+
+function isBoostActive() {
+  var until = getBoostUntil();
+  return !!until && kstDateString() <= until;
+}
+
 function getDailyMax() {
-  return parseInt(process.env.REVIEW_DAILY_MAX || '2', 10) || 2;
+  var base = parseInt(process.env.REVIEW_DAILY_MAX || '2', 10) || 2;
+  if (isBoostActive()) {
+    var boost = parseInt(process.env.REVIEW_BOOST_DAILY_MAX || '4', 10) || 4;
+    return Math.max(base, boost);
+  }
+  return base;
 }
 
 function getAutoIntervalMs() {
-  return parseInt(process.env.REVIEW_AUTO_INTERVAL_HOURS || '12', 10) * 60 * 60 * 1000 || 12 * 60 * 60 * 1000;
+  var hours = parseInt(process.env.REVIEW_AUTO_INTERVAL_HOURS || '12', 10) || 12;
+  if (isBoostActive()) {
+    var boostHours = parseInt(process.env.REVIEW_BOOST_INTERVAL_HOURS || '4', 10) || 4;
+    hours = Math.min(hours, boostHours);
+  }
+  return hours * 60 * 60 * 1000;
 }
+
+/** cron 정각 실행 vs 직전 생성 완료 시각 차이(수십 초)로 간격 판정이 빗나가지 않도록 */
+var AUTO_INTERVAL_GRACE_MS = 15 * 60 * 1000;
 
 async function getTodayAiCount() {
   var today = kstDateString();
@@ -94,17 +145,17 @@ async function canAutoPublish() {
   if (last) {
     var intervalMs = getAutoIntervalMs();
     var elapsed = Date.now() - new Date(last).getTime();
-    if (elapsed < intervalMs) {
+    if (elapsed < intervalMs - AUTO_INTERVAL_GRACE_MS) {
       return {
         ok: false,
         reason: 'interval',
         todayCount: todayCount,
         dailyMax: dailyMax,
-        waitMinutes: Math.ceil((intervalMs - elapsed) / 60000)
+        waitMinutes: Math.ceil((intervalMs - AUTO_INTERVAL_GRACE_MS - elapsed) / 60000)
       };
     }
   }
-  return { ok: true, todayCount: todayCount, dailyMax: dailyMax };
+  return { ok: true, todayCount: todayCount, dailyMax: dailyMax, boost: isBoostActive() };
 }
 
 async function runAutoPublish() {
@@ -179,8 +230,18 @@ async function runOneGeneration(opts) {
 
     var recentTopics = await getRecentTopicIds(15);
     var recentTones = await getRecentToneIds(8);
-    var topic = Topics.pickTopic(recentTopics, Date.now(), opts.topicId || null);
+    var recentMeta = await getRecentAiMeta(30);
+    var plan = Topics.pickReviewPlan({
+      recentTopicIds: recentTopics,
+      recentCategories: recentMeta.categories,
+      recentKeywords: recentMeta.keywords,
+      seed: Date.now(),
+      forcedTopicId: opts.topicId || null,
+      sellRatio: getSellRatio()
+    });
+    var topic = plan && plan.topic;
     if (!topic) throw new Error('주제를 찾을 수 없습니다.');
+    var mainKeyword = plan.keyword ? plan.keyword.keyword : '';
 
     var tone = null;
     if (opts.toneId) {
@@ -191,13 +252,24 @@ async function runOneGeneration(opts) {
     diag.topic_id = topic.id;
     diag.topic_category = topic.category;
     diag.tone_id = tone.id;
+    diag.review_mode = plan.mode;
+    diag.main_keyword = mainKeyword;
+    diag.sub_keywords = plan.subKeywords || [];
+    diag.boost_active = isBoostActive();
 
-    var gen = await Gemini.generateCustomerReview(topic, tone);
+    // 어드민 즉시 생성은 Cloudflare 100초 제한 → 85초 예산
+    var gen = await Gemini.generateCustomerReview(topic, tone, plan, {
+      maxTotalMs: source === 'admin' ? 85000 : undefined
+    });
+    diag.gemini_attempts = gen.attempts || [];
     if (!gen.success) throw new Error(gen.message);
 
     diag.char_count = gen.charCount;
     diag.elapsed_ms = gen.elapsedMs;
     diag.sample_title = gen.title;
+    diag.model = gen.model || Gemini.GEMINI_MODEL;
+    diag.keyword_in_title = gen.keywordInTitle;
+    diag.keyword_count_body = gen.keywordCountInBody;
 
     var result = {
       ok: true,
@@ -208,7 +280,13 @@ async function runOneGeneration(opts) {
       body: gen.body,
       charCount: gen.charCount,
       elapsedMs: gen.elapsedMs,
-      listingId: null
+      listingId: null,
+      mode: plan.mode,
+      mainKeyword: mainKeyword,
+      subKeywords: plan.subKeywords || [],
+      keywordInTitle: gen.keywordInTitle,
+      keywordCountInBody: gen.keywordCountInBody,
+      model: gen.model || Gemini.GEMINI_MODEL
     };
 
     if (publish && !dryRun) {
@@ -254,9 +332,14 @@ async function runOneGeneration(opts) {
           title_sample: topic.titleSample,
           core_keywords: gen.coreKeywords || [],
           customer_type: gen.customerType || '',
-          model: Gemini.GEMINI_MODEL,
+          model: gen.model || Gemini.GEMINI_MODEL,
           generated_at: startedAt,
-          source: source
+          source: source,
+          review_mode: plan.mode,
+          main_keyword: mainKeyword,
+          sub_keywords: plan.subKeywords || [],
+          keyword_in_title: gen.keywordInTitle,
+          keyword_count_body: gen.keywordCountInBody
         }
       };
       await sbFetch('customer_reviews', {
@@ -355,5 +438,7 @@ module.exports = {
   getTodayAiCount: getTodayAiCount,
   getDailyMax: getDailyMax,
   getLastAiPublishedAt: getLastAiPublishedAt,
+  getRecentAiMeta: getRecentAiMeta,
+  isBoostActive: isBoostActive,
   sbFetch: sbFetch
 };

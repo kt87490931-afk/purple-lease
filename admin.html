@@ -786,12 +786,12 @@ body.admin-nav-open { overflow:hidden; }
             <div style="font-weight:700;font-size:13.5px;">AI 후기 자동 생성 (Gemini)</div>
             <div id="aiReviewGenToday" style="font-size:12px;color:var(--ink-600);font-weight:700;">오늘 AI 후기: —</div>
           </div>
-          <p style="margin:0 0 10px;font-size:12px;color:var(--ink-500);line-height:1.6;">주제를 선택하고 「즉시 생성·게시」를 누르면 Gemini가 후기를 작성해 <code>customer_reviews</code>에 저장됩니다. 자동 생성은 <b>매일 10:00·16:00 (KST)</b> 하루 2건까지 실행됩니다.</p>
+          <p style="margin:0 0 10px;font-size:12px;color:var(--ink-500);line-height:1.6;">주제를 선택하고 「즉시 생성·게시」를 누르면 Gemini가 후기를 작성해 <code>customer_reviews</code>에 저장됩니다. 자동 생성은 <b>매일 09:00·13:00·17:00·21:00 (KST)</b>에 시도하며, 10/28까지는 하루 4건, 이후에는 하루 2건까지 게시됩니다. 랜덤 생성 시 <b>장기렌트카·리스차 매입·처분 키워드 80% : 일반 주제 20%</b> 비중으로 선택됩니다.</p>
           <div class="form-grid-2" style="margin-bottom:10px;">
             <div class="form-row" style="margin:0;">
-              <label>주제 (50개 풀)</label>
+              <label>주제 (매입·처분 20개 + 일반 38개)</label>
               <select id="aiReviewTopicId" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--ink-100);">
-                <option value="">랜덤 (최근 주제 회피)</option>
+                <option value="">랜덤 (8:2 비중 · 키워드 순환)</option>
               </select>
             </div>
             <div class="form-row" style="margin:0;">
@@ -1716,13 +1716,13 @@ body.admin-nav-open { overflow:hidden; }
 <script src="/js/sitemap-builder.js?v=20260627e"></script>
 <script src="/js/seo-static-meta.js?v=20260627e"></script>
 <script src="/js/admin-auth.js?v=20260630d"></script>
-<script src="/js/review-topics.js?v=20260704a"></script>
+<script src="/js/review-topics.js?v=20260930a"></script>
 <script src="/js/paid-transfer-page.js?v=20260721a"></script>
 <script src="/js/admin-api.js?v=20260928b"></script>
 <script src="/js/admin-hero.js?v=20260819a"></script>
 <script src="/js/admin-partners.js?v=20260703a"></script>
 <script src="/js/lease-catalog-map.js"></script>
-<script src="/js/admin-app.js?v=20260928a"></script>
+<script src="/js/admin-app.js?v=20260930a"></script>
 <script>
 /* 퍼플오토 어드민 — 견적서 작성 (부품 / 장기렌트·리스) : #panel-estimate 자체 초기화 */
 (function () {
