@@ -11,6 +11,10 @@ on:
         description: 'dry-run 주제 번호 (비우면 자동 선택)'
         required: false
         default: ''
+      model:
+        description: 'dry-run 모델 강제 지정 (예: gemini-3.8-flash, 비우면 기본)'
+        required: false
+        default: ''
 
 jobs:
   diag:
@@ -21,12 +25,13 @@ jobs:
         env:
           DRY_RUN: ${{ inputs.dry_run }}
           TOPIC_ID: ${{ inputs.topic_id }}
+          FORCE_MODEL: ${{ inputs.model }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           command_timeout: 5m
-          envs: DRY_RUN,TOPIC_ID
+          envs: DRY_RUN,TOPIC_ID,FORCE_MODEL
           script: |
             set +e
             ROOT=/var/www/purple-lease
@@ -45,6 +50,11 @@ jobs:
             node -e "const G=require('./js/customer-review-generator'); Promise.all([G.getTodayAiCount(),G.canAutoPublish()]).then(a=>console.log('today_ai',a[0],'dailyMax',G.getDailyMax(),'gate',JSON.stringify(a[1]))).catch(e=>console.error('gate_err',e.message));"
             if [ "${DRY_RUN:-false}" = "true" ]; then
               echo "===== DRY-RUN ====="
+              if [ -n "${FORCE_MODEL:-}" ]; then
+                export GEMINI_MODEL="${FORCE_MODEL}"
+                export GEMINI_FALLBACK_MODELS=none
+                echo "force model=${GEMINI_MODEL}"
+              fi
               if [ -n "${TOPIC_ID:-}" ]; then
                 bash "$ROOT/deploy/run-generate-review.sh" --dry-run --topic-id="${TOPIC_ID}"
               else
