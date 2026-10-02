@@ -788,6 +788,24 @@
     return res.data;
   }
 
+  var ADS_LEAD_CONVERSION_SEND_TO = 'AW-18480141178/BPe-CPWD_ogdEPqmguxE';
+
+  /** Google Ads "리드 양식 제출" 전환 — DB 저장 성공 직후에만 호출. 개인정보는 보내지 않음 */
+  function trackLeadConversion() {
+    try {
+      if (typeof window.gtag !== 'function') return false;
+      window.gtag('event', 'conversion', {
+        send_to: ADS_LEAD_CONVERSION_SEND_TO,
+        value: 1.0,
+        currency: 'KRW'
+      });
+      return true;
+    } catch (err) {
+      console.warn('[PurpleLease] ads conversion failed:', err);
+      return false;
+    }
+  }
+
   async function submitInquiry(payload) {
     var client = getClient();
     if (!client) throw new Error('Supabase not configured');
@@ -806,6 +824,7 @@
     };
     var res = await client.from('inquiries').insert([row]);
     if (res.error) throw res.error;
+    trackLeadConversion();
     return res.data;
   }
 
@@ -826,6 +845,7 @@
     if (!row.name || !row.phone) throw new Error('성함과 연락처를 입력해 주세요.');
     var res = await client.from('lease_quotes').insert([row]);
     if (res.error) throw res.error;
+    trackLeadConversion();
     return res.data;
   }
 
@@ -842,6 +862,7 @@
     if (!row.name || !row.phone) throw new Error('성함과 연락처를 입력해 주세요.');
     var res = await client.from('lease_calculator_inquiries').insert([row]);
     if (res.error) throw res.error;
+    trackLeadConversion();
     return res.data;
   }
 
@@ -866,6 +887,7 @@
     if (!row.listing_id) throw new Error('차량 정보를 확인할 수 없습니다.');
     var res = await client.from('used_car_inquiries').insert([row]);
     if (res.error) throw res.error;
+    trackLeadConversion();
     return res.data;
   }
 
