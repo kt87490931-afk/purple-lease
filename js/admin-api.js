@@ -497,7 +497,8 @@
       var row = {
         video_id: vid,
         title: sn.title || '',
-        description: (sn.description || '').slice(0, 500),
+        // 이모지(서로게이트 쌍)가 잘리면 PostgREST가 "Empty or invalid json"으로 거부 → 문자 단위로 자름
+        description: Array.from(sn.description || '').slice(0, 500).join(''),
         external_url: youtubeWatchUrl(vid),
         duration: (window.YoutubeUtils && window.YoutubeUtils.formatIsoDuration)
           ? window.YoutubeUtils.formatIsoDuration(item.contentDetails.duration)
