@@ -515,6 +515,74 @@
     }
   }
 
+  async function loadUsedCarVisibilityForm() {
+    var cb = document.getElementById('usedCarVisible');
+    if (!cb) return;
+    var statusEl = document.getElementById('usedCarVisibilityStatus');
+    try {
+      var s = await API.getSiteVisibilitySettings();
+      cb.checked = !!s.used_car_visible;
+      var upd = document.getElementById('usedCarVisibilityUpdatedAt');
+      if (upd) {
+        upd.textContent = (s.used_car_visible ? '현재: 노출 중' : '현재: 숨김') +
+          (s.updated_at ? ' · 마지막 저장: ' + fmtAdminDateTime(s.updated_at) : '');
+      }
+      if (statusEl) statusEl.textContent = '';
+    } catch (err) {
+      console.warn('[Admin] site visibility settings:', err);
+      if (statusEl) {
+        statusEl.style.color = '#b91c1c';
+        statusEl.textContent = err.message || String(err);
+      }
+    }
+  }
+
+  async function saveUsedCarVisibilityForm() {
+    var cb = document.getElementById('usedCarVisible');
+    var btn = document.getElementById('btnSaveUsedCarVisibility');
+    var statusEl = document.getElementById('usedCarVisibilityStatus');
+    if (!cb || !btn || btn.disabled) return;
+    var visible = cb.checked;
+    var ask = visible
+      ? '중고차 메뉴·메인 섹션을 다시 노출할까요?'
+      : '중고차 메뉴·메인 섹션을 숨길까요?\n/used-cars·매물 상세 주소로 들어오면 메인으로 이동합니다.';
+    if (!confirm(ask)) return;
+    var prev = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '저장 중…';
+    if (statusEl) { statusEl.style.color = 'var(--ink-400)'; statusEl.textContent = ''; }
+    try {
+      var row = await API.saveSiteVisibilitySettings({ used_car_visible: visible });
+      var upd = document.getElementById('usedCarVisibilityUpdatedAt');
+      if (upd) {
+        upd.textContent = (row.used_car_visible ? '현재: 노출 중' : '현재: 숨김') +
+          ' · 마지막 저장: ' + fmtAdminDateTime(row.updated_at);
+      }
+      var msg = '저장되었습니다. 사이트 새로고침 후 반영됩니다.';
+      try {
+        if (statusEl) statusEl.textContent = '저장됨 — 사이트맵 갱신 중…';
+        var sm = await API.generateSitemap();
+        msg += ' 사이트맵도 갱신했습니다(' + sm.count + '개 URL, 서버 반영 최대 5분).';
+      } catch (smErr) {
+        console.warn('[Admin] sitemap regenerate after visibility save:', smErr);
+        msg += ' 단, 사이트맵 자동 갱신은 실패했습니다 — SEO 메뉴의 「사이트맵 생성」을 눌러 주세요.';
+      }
+      if (statusEl) {
+        statusEl.style.color = '#059669';
+        statusEl.textContent = msg;
+      }
+    } catch (err) {
+      showError(err);
+      if (statusEl) {
+        statusEl.style.color = '#b91c1c';
+        statusEl.textContent = err.message || String(err);
+      }
+    } finally {
+      btn.disabled = false;
+      btn.textContent = prev || '저장';
+    }
+  }
+
   async function saveFloatConsultSettingsForm(e) {
     if (e && e.preventDefault) e.preventDefault();
     var btn = document.getElementById('btnSaveFloatConsult');
@@ -3240,6 +3308,9 @@
         if (item.dataset.panel === 'timesale') {
           await loadTimeSaleSettingsForm();
         }
+        if (item.dataset.panel === 'usedcars') {
+          await loadUsedCarVisibilityForm();
+        }
         if (item.dataset.panel === 'hero' && window.PurpleAdminHero) {
           await window.PurpleAdminHero.load();
         }
@@ -3833,6 +3904,7 @@
       timeSaleForm.addEventListener('submit', saveTimeSaleSettingsForm);
     }
     bindOptionalClick('btnSaveFooter', saveFooterPanel);
+    bindOptionalClick('btnSaveUsedCarVisibility', saveUsedCarVisibilityForm);
     bindOptionalClick('btnSavePaidTransfer', savePaidTransferPanel);
 
     bindOptionalClick('btnAddReviewTab', function () {

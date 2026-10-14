@@ -38,9 +38,12 @@ async function main() {
   var leaseTransfers = await sbGet('lease_transfers', 'select=listing_id,id,updated_at,created_at&is_active=eq.true&order=listing_id.asc');
   var parts = await sbGet('parts', 'select=listing_id,id,updated_at,created_at&is_active=eq.true&order=listing_id.asc');
   var youtubeVideos = await sbGet('youtube_videos', 'select=id,updated_at,published_at,created_at&is_active=eq.true&order=sort_order.desc');
+  var visibility = await sbGet('site_visibility_settings', 'select=used_car_visible&id=eq.1');
+  var hideUsedCars = !!(visibility && visibility[0] && visibility[0].used_car_visible === false);
 
   var xml = await SitemapBuilder.buildXml({
     siteUrl: SITE_URL,
+    hideUsedCars: hideUsedCars,
     pageMeta: pageMeta,
     reviews: reviews,
     usedCars: cars,
@@ -50,7 +53,7 @@ async function main() {
   });
 
   fs.writeFileSync(OUT, xml, 'utf8');
-  console.log('[sitemap] wrote ' + OUT + ' (' + SitemapBuilder.urlCount(xml) + ' URLs)');
+  console.log('[sitemap] wrote ' + OUT + ' (' + SitemapBuilder.urlCount(xml) + ' URLs' + (hideUsedCars ? ', used-cars hidden' : '') + ')');
 }
 
 main().catch(function (e) {

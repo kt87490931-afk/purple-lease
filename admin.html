@@ -909,6 +909,21 @@ body.admin-nav-open { overflow:hidden; }
       </section>
 
       <section class="panel" id="panel-usedcars">
+        <div id="usedCarVisibilityBox" style="background:#fff;border-radius:var(--radius-md);padding:16px 20px;box-shadow:var(--shadow-sm);margin-bottom:14px;">
+          <label style="display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;">
+            <input type="checkbox" id="usedCarVisible" checked> 중고차 노출
+          </label>
+          <p style="font-size:12px;color:var(--ink-500);margin:8px 0 12px;line-height:1.65;">
+            체크 해제 후 저장하면 상단·모바일 메뉴, 하단 탭바, 푸터, 메인 「중고차 매물리스트」, 배너의 중고차 버튼이 숨겨지고,
+            <code>/used-cars</code>·매물 상세 주소로 들어오면 메인으로 이동합니다. 사이트맵에서도 제외됩니다. 매물 동기화는 계속 동작합니다.
+            (<code>migration-site-visibility.sql</code> 최초 1회 실행)
+          </p>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <button type="button" class="btn btn-primary" id="btnSaveUsedCarVisibility">저장</button>
+            <span id="usedCarVisibilityStatus" style="font-size:12px;color:var(--ink-400);"></span>
+          </div>
+          <p id="usedCarVisibilityUpdatedAt" style="font-size:11.5px;color:var(--ink-400);margin:8px 0 0;"></p>
+        </div>
         <div class="toolbar">
           <div class="toolbar-left">등록된 매물 <b id="usedcarsCount">0</b>대 — swautopia 동기화 매물은 <code>listing_id</code> = 오토피아 ID</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -1713,16 +1728,16 @@ body.admin-nav-open { overflow:hidden; }
 <script src="/js/purple-image.js?v=20260703a"></script>
 <script src="/js/part-utils.js"></script>
 <script src="/js/used-car-filters.js"></script>
-<script src="/js/sitemap-builder.js?v=20260627e"></script>
+<script src="/js/sitemap-builder.js?v=20261014a"></script>
 <script src="/js/seo-static-meta.js?v=20260627e"></script>
 <script src="/js/admin-auth.js?v=20260630d"></script>
 <script src="/js/review-topics.js?v=20260930a"></script>
 <script src="/js/paid-transfer-page.js?v=20260721a"></script>
-<script src="/js/admin-api.js?v=20261012a"></script>
+<script src="/js/admin-api.js?v=20261014a"></script>
 <script src="/js/admin-hero.js?v=20260819a"></script>
 <script src="/js/admin-partners.js?v=20260703a"></script>
 <script src="/js/lease-catalog-map.js"></script>
-<script src="/js/admin-app.js?v=20260930a"></script>
+<script src="/js/admin-app.js?v=20261014a"></script>
 <script>
 /* 퍼플오토 어드민 — 견적서 작성 (부품 / 장기렌트·리스) : #panel-estimate 자체 초기화 */
 (function () {

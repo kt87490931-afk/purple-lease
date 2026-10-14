@@ -2222,6 +2222,51 @@
     return row;
   }
 
+  var SITE_VISIBILITY_MIGRATION_MSG = 'DB 설정 테이블이 아직 없습니다. Supabase SQL Editor에서 supabase/migration-site-visibility.sql 을 먼저 실행해 주세요.';
+
+  function isMissingTableError(err) {
+    var msg = String((err && (err.message || err.details)) || '');
+    var code = String((err && err.code) || '');
+    return code === '42P01' || code === 'PGRST205' || (/site_visibility_settings/.test(msg) && /exist|find|schema cache/i.test(msg));
+  }
+
+  async function getSiteVisibilitySettings() {
+    var res = await db().from('site_visibility_settings').select('*').eq('id', 1).maybeSingle();
+    if (res.error) {
+      if (isMissingTableError(res.error)) throw new Error(SITE_VISIBILITY_MIGRATION_MSG);
+      throw res.error;
+    }
+    return {
+      used_car_visible: !(res.data && res.data.used_car_visible === false),
+      updated_at: res.data ? res.data.updated_at : null
+    };
+  }
+
+  async function saveSiteVisibilitySettings(payload) {
+    var row = {
+      id: 1,
+      used_car_visible: !!payload.used_car_visible,
+      updated_at: new Date().toISOString()
+    };
+    var res = await db().from('site_visibility_settings').upsert(row, { onConflict: 'id' });
+    if (res.error) {
+      if (isMissingTableError(res.error)) throw new Error(SITE_VISIBILITY_MIGRATION_MSG);
+      throw res.error;
+    }
+    return row;
+  }
+
+  /** 사이트맵용 — 테이블이 없거나 오류면 노출(true)로 간주 */
+  async function isUsedCarVisibleForSitemap() {
+    try {
+      var s = await getSiteVisibilitySettings();
+      return s.used_car_visible;
+    } catch (e) {
+      console.warn('[sitemap] site visibility check skipped:', e && e.message ? e.message : e);
+      return true;
+    }
+  }
+
   var SEO_PATCH_REQUEST_PATH = 'seo/patch-request.json';
 
   async function queueStaticSeoPatch() {
@@ -2312,8 +2357,11 @@
       .order('listing_id', { ascending: true });
     if (partsRes.error) throw partsRes.error;
 
+    var usedCarVisible = await isUsedCarVisibleForSitemap();
+
     var xml = await builder.buildXml({
       siteUrl: siteUrl,
+      hideUsedCars: !usedCarVisible,
       pageMeta: pageMetaRes.data || [],
       reviews: reviewsRes.data || [],
       usedCars: carsRes.data || [],
@@ -2335,6 +2383,7 @@
 
     return {
       count: count,
+      usedCarsHidden: !usedCarVisible,
       storageUrl: storagePublicUrl(SITEMAP_STORAGE_PATH),
       liveUrl: siteUrl.replace(/\/$/, '') + '/sitemap.xml'
     };
@@ -2846,6 +2895,8 @@
     uploadFooterCertificate: uploadFooterCertificate,
     getTimeSaleSettings: getTimeSaleSettings,
     saveTimeSaleSettings: saveTimeSaleSettings,
+    getSiteVisibilitySettings: getSiteVisibilitySettings,
+    saveSiteVisibilitySettings: saveSiteVisibilitySettings,
     listSeoPageMeta: listSeoPageMeta,
     saveSeoPageMetaRows: saveSeoPageMetaRows,
     generateSitemap: generateSitemap,
