@@ -806,6 +806,18 @@
     }
   }
 
+  /** ChatGPT 광고 "lead_created" — DB 저장 성공 직후에만 호출. 개인정보는 보내지 않음 */
+  function trackChatGptLead() {
+    try {
+      if (typeof window.oaiq !== 'function') return false;
+      window.oaiq('measure', 'lead_created', { type: 'customer_action' });
+      return true;
+    } catch (err) {
+      console.warn('[PurpleLease] chatgpt lead measure failed:', err);
+      return false;
+    }
+  }
+
   async function submitInquiry(payload) {
     var client = getClient();
     if (!client) throw new Error('Supabase not configured');
@@ -825,6 +837,7 @@
     var res = await client.from('inquiries').insert([row]);
     if (res.error) throw res.error;
     trackLeadConversion();
+    trackChatGptLead();
     return res.data;
   }
 
@@ -846,6 +859,7 @@
     var res = await client.from('lease_quotes').insert([row]);
     if (res.error) throw res.error;
     trackLeadConversion();
+    trackChatGptLead();
     return res.data;
   }
 
@@ -863,6 +877,7 @@
     var res = await client.from('lease_calculator_inquiries').insert([row]);
     if (res.error) throw res.error;
     trackLeadConversion();
+    trackChatGptLead();
     return res.data;
   }
 
@@ -888,6 +903,7 @@
     var res = await client.from('used_car_inquiries').insert([row]);
     if (res.error) throw res.error;
     trackLeadConversion();
+    trackChatGptLead();
     return res.data;
   }
 
