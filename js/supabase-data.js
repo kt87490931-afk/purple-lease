@@ -806,16 +806,28 @@
     }
   }
 
-  /** ChatGPT 광고 "lead_created" — DB 저장 성공 직후에만 호출. 개인정보는 보내지 않음 */
-  function trackChatGptLead() {
+  /**
+   * OpenAI Ads lead_created — DB 저장 성공 확인 후에만.
+   * 공통 추적: window.trackPurpleAutoLead (openai-ads-pixel.js)
+   * 전환 범위: 리스·렌트·매입 상담 (중고차 매물 문의는 제외)
+   */
+  function fireOpenAiLead(inquiryId) {
     try {
-      if (typeof window.oaiq !== 'function') return false;
-      window.oaiq('measure', 'lead_created', { type: 'customer_action' });
-      return true;
+      if (typeof window.trackPurpleAutoLead === 'function') {
+        window.trackPurpleAutoLead(inquiryId);
+        return true;
+      }
+      return false;
     } catch (err) {
-      console.warn('[PurpleLease] chatgpt lead measure failed:', err);
+      console.warn('[PurpleLease] openai lead track failed:', err);
       return false;
     }
+  }
+
+  function isMissingRpcError(err) {
+    var msg = String((err && (err.message || err.details || err.hint)) || '');
+    var code = String((err && err.code) || '');
+    return code === 'PGRST202' || /Could not find the function|schema cache/i.test(msg);
   }
 
   async function submitInquiry(payload) {
@@ -834,11 +846,31 @@
       source_page: payload.source_page || 'index',
       is_read: false
     };
-    var res = await client.from('inquiries').insert([row]);
-    if (res.error) throw res.error;
+
+    var inquiryId = null;
+    var rpc = await client.rpc('insert_inquiry_return_id', {
+      p_name: row.name,
+      p_phone: row.phone,
+      p_brand: row.brand,
+      p_usage_method: row.usage_method,
+      p_consult_type: row.consult_type,
+      p_car_type: row.car_type,
+      p_message: row.message,
+      p_source_page: row.source_page
+    });
+    if (rpc.error && isMissingRpcError(rpc.error)) {
+      var res = await client.from('inquiries').insert([row]);
+      if (res.error) throw res.error;
+      inquiryId = 'fallback_inq_' + Date.now();
+    } else if (rpc.error) {
+      throw rpc.error;
+    } else {
+      inquiryId = rpc.data;
+    }
+
     trackLeadConversion();
-    trackChatGptLead();
-    return res.data;
+    fireOpenAiLead(inquiryId);
+    return { id: inquiryId };
   }
 
   async function submitLeaseQuote(payload) {
@@ -856,11 +888,30 @@
       is_read: false
     };
     if (!row.name || !row.phone) throw new Error('성함과 연락처를 입력해 주세요.');
-    var res = await client.from('lease_quotes').insert([row]);
-    if (res.error) throw res.error;
+
+    var inquiryId = null;
+    var rpc = await client.rpc('insert_lease_quote_return_id', {
+      p_name: row.name,
+      p_phone: row.phone,
+      p_origin: row.origin,
+      p_brand_name: row.brand_name,
+      p_model_name: row.model_name,
+      p_quote_json: row.quote_json,
+      p_source_page: row.source_page
+    });
+    if (rpc.error && isMissingRpcError(rpc.error)) {
+      var res = await client.from('lease_quotes').insert([row]);
+      if (res.error) throw res.error;
+      inquiryId = 'fallback_lq_' + Date.now();
+    } else if (rpc.error) {
+      throw rpc.error;
+    } else {
+      inquiryId = rpc.data;
+    }
+
     trackLeadConversion();
-    trackChatGptLead();
-    return res.data;
+    fireOpenAiLead(inquiryId);
+    return { id: inquiryId };
   }
 
   async function submitLeaseCalculatorInquiry(payload) {
@@ -874,11 +925,27 @@
       is_read: false
     };
     if (!row.name || !row.phone) throw new Error('성함과 연락처를 입력해 주세요.');
-    var res = await client.from('lease_calculator_inquiries').insert([row]);
-    if (res.error) throw res.error;
+
+    var inquiryId = null;
+    var rpc = await client.rpc('insert_lease_calc_inquiry_return_id', {
+      p_name: row.name,
+      p_phone: row.phone,
+      p_calc_json: row.calc_json,
+      p_source_page: row.source_page
+    });
+    if (rpc.error && isMissingRpcError(rpc.error)) {
+      var res = await client.from('lease_calculator_inquiries').insert([row]);
+      if (res.error) throw res.error;
+      inquiryId = 'fallback_lc_' + Date.now();
+    } else if (rpc.error) {
+      throw rpc.error;
+    } else {
+      inquiryId = rpc.data;
+    }
+
     trackLeadConversion();
-    trackChatGptLead();
-    return res.data;
+    fireOpenAiLead(inquiryId);
+    return { id: inquiryId };
   }
 
   async function submitUsedCarInquiry(payload) {
@@ -902,8 +969,8 @@
     if (!row.listing_id) throw new Error('차량 정보를 확인할 수 없습니다.');
     var res = await client.from('used_car_inquiries').insert([row]);
     if (res.error) throw res.error;
+    // Google Ads만 — 전환명「리스렌트_매입상담」과 구분해 중고차 매물 문의는 OpenAI lead_created 제외
     trackLeadConversion();
-    trackChatGptLead();
     return res.data;
   }
 
