@@ -815,6 +815,8 @@
     try {
       if (typeof window.trackPurpleAutoLead === 'function') {
         if (inquiryId == null || inquiryId === '') return false;
+        // The server uses the saved DB ID. A fallback timestamp cannot deduplicate.
+        if (String(inquiryId).indexOf('fallback_') === 0) return false;
         window.trackPurpleAutoLead(source + '_' + String(inquiryId));
         return true;
       }
