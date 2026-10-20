@@ -1,0 +1,30 @@
+name: OpenAI Conversion Delivery Check
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read conversion service and acknowledged delivery state
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -eu
+            systemctl is-active purple-openai-conversions.service
+            journalctl -u purple-openai-conversions.service --since '30 minutes ago' --no-pager -o cat | grep -E '^\[openai-conversions\]' || true
+            node <<'NODE'
+            const fs = require('node:fs');
+            const state = JSON.parse(fs.readFileSync('/var/lib/purple-openai-conversions/state.json', 'utf8'));
+            const records = Object.values(state.tables).flatMap(t => Object.values(t.sent));
+            console.log(JSON.stringify({
+              startedUTC: new Date(state.started).toISOString(),
+              acknowledgedEvents: records.length,
+              latestAcknowledgedActionUTC: records.length ? new Date(Math.max(...records)).toISOString() : null,
+              latestDatabasePollUTC: new Date(Math.min(...Object.values(state.tables).map(t => t.since))).toISOString()
+            }));
+            NODE
