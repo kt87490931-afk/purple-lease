@@ -34,11 +34,12 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
+          OPENAI_CONVERSIONS_API_KEY: ${{ secrets.OPENAI_CONVERSIONS_API_KEY }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY,SUPABASE_ANON_KEY,SUPABASE_DB_PASSWORD,GEMINI_API_KEY,TELEGRAM_BOT_TOKEN,TELEGRAM_CHAT_ID,TELEGRAM_WEBHOOK_SECRET
+          envs: SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY,SUPABASE_ANON_KEY,SUPABASE_DB_PASSWORD,GEMINI_API_KEY,TELEGRAM_BOT_TOKEN,TELEGRAM_CHAT_ID,TELEGRAM_WEBHOOK_SECRET,OPENAI_CONVERSIONS_API_KEY
           script: |
             rm -f /var/www/purple-lease/used-cars_1.html /var/www/purple-lease/Easyquote.html
             chmod 644 /var/www/purple-lease/robots.txt 2>/dev/null || true
@@ -64,6 +65,7 @@ jobs:
             bash /var/www/purple-lease/deploy/install-review-gen-api.sh 2>&1 || echo "[deploy] review-gen api skipped"
             chmod +x /var/www/purple-lease/deploy/install-inquiry-telegram-api.sh 2>/dev/null || true
             bash /var/www/purple-lease/deploy/install-inquiry-telegram-api.sh 2>&1 || echo "[deploy] inquiry-telegram api skipped"
+            bash /var/www/purple-lease/deploy/install-openai-conversions.sh
             if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
               chmod +x /var/www/purple-lease/deploy/sync-telegram-webhook-secret.sh 2>/dev/null || true
               bash /var/www/purple-lease/deploy/sync-telegram-webhook-secret.sh 2>&1 || echo "[deploy] telegram secret sync skipped"
