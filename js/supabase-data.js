@@ -811,10 +811,11 @@
    * 공통 추적: window.trackPurpleAutoLead (openai-ads-pixel.js)
    * 전환 범위: 리스·렌트·매입 상담 (중고차 매물 문의는 제외)
    */
-  function fireOpenAiLead(inquiryId) {
+  function fireOpenAiLead(inquiryId, source) {
     try {
       if (typeof window.trackPurpleAutoLead === 'function') {
-        window.trackPurpleAutoLead(inquiryId);
+        if (inquiryId == null || inquiryId === '') return false;
+        window.trackPurpleAutoLead(source + '_' + String(inquiryId));
         return true;
       }
       return false;
@@ -869,7 +870,7 @@
     }
 
     trackLeadConversion();
-    fireOpenAiLead(inquiryId);
+    fireOpenAiLead(inquiryId, 'inquiries');
     return { id: inquiryId };
   }
 
@@ -910,7 +911,7 @@
     }
 
     trackLeadConversion();
-    fireOpenAiLead(inquiryId);
+    fireOpenAiLead(inquiryId, 'lease_quotes');
     return { id: inquiryId };
   }
 
@@ -944,7 +945,7 @@
     }
 
     trackLeadConversion();
-    fireOpenAiLead(inquiryId);
+    fireOpenAiLead(inquiryId, 'lease_calculator_inquiries');
     return { id: inquiryId };
   }
 
