@@ -2206,56 +2206,30 @@ body.admin-nav-open { overflow:hidden; }
   }
 
   function buildPartsContent(d) {
-    var c = d.companyInfo;
+    var c = d.companyInfo || {};
     var supply = d.parts.reduce(function (s, r) { return s + (r.amount || 0); }, 0);
-    var vat = Math.round(supply * 0.1), total = supply + vat, rows = d.parts.slice(), rowsHtml = '', count = Math.max(rows.length, 8);
-    for (var i = 0; i < count; i++) {
-      var r = rows[i], bg = (i % 2 === 0) ? 'bg-white' : 'bg-stone-50/40';
-      if (r) {
-        rowsHtml += '<tr class="border-b border-stone-100 ' + bg + '">' +
-          '<td class="py-3 px-4 text-center text-stone-400 text-[11px] font-light">' + (i + 1) + '</td>' +
-          '<td class="py-3 px-4 text-stone-700 text-[11px]">' + (esc(r.partNo) || '-') + '</td>' +
-          '<td class="py-3 px-4 text-stone-800 text-[11px] font-semibold">' + (esc(r.partName) || '-') + '</td>' +
-          '<td class="py-3 px-4 text-stone-600 text-[11px]">' + (esc(r.spec) || '-') + '</td>' +
-          '<td class="py-3 px-4 text-center text-stone-700 text-[11px] font-medium">' + (r.quantity || 0) + '</td>' +
-          '<td class="py-3 px-4 text-right text-stone-700 text-[11px] font-mono">' + (r.unitPrice > 0 ? fmt(r.unitPrice) : '-') + '</td>' +
-          '<td class="py-3 px-4 text-right text-stone-800 text-[11px] font-bold font-mono">' + (r.amount > 0 ? fmt(r.amount) : '-') + '</td>' +
-          '<td class="py-3 px-4 text-center text-stone-400 text-[11px] font-light">' + esc(r.remark) + '</td></tr>';
-      } else {
-        rowsHtml += '<tr class="border-b border-stone-100 ' + bg + '"><td class="py-3 px-4 text-center text-stone-300 text-[11px] font-light">' + (i + 1) + '</td><td class="py-3 px-4"></td><td class="py-3 px-4"></td><td class="py-3 px-4"></td><td class="py-3 px-4"></td><td class="py-3 px-4"></td><td class="py-3 px-4"></td><td class="py-3 px-4"></td></tr>';
-      }
+    var vat = Math.round(supply * 0.1), total = supply + vat;
+    var rows = '';
+    for (var i = 0; i < Math.max(d.parts.length, 12); i++) {
+      var r = d.parts[i];
+      rows += '<tr><td>' + (i + 1) + '</td>' + (r ?
+        '<td>' + esc(r.partNo) + '</td><td>' + esc(r.partName) + '</td><td>' + esc(r.spec) + '</td><td>' + esc(r.quantity) + '</td><td class="num">' + fmt(r.unitPrice || 0) + '</td><td class="num amount">' + fmt(r.amount || 0) + '</td><td>' + esc(r.remark) + '</td>' :
+        '<td></td><td></td><td></td><td></td><td></td><td></td><td></td>') + '</tr>';
     }
-    var notesBlock = d.notes ? ('<div class="px-12 pt-6"><div class="rounded-lg border border-stone-200 bg-stone-50/60 px-5 py-4"><div class="flex items-center gap-2.5 mb-2"><div class="w-5 h-5 rounded-md bg-purple-50 flex items-center justify-center border border-purple-100"><i class="ri-information-line text-purple-500 text-[11px]"></i></div><h4 class="text-[11px] font-bold text-stone-500 tracking-wider">비 고</h4></div><p class="text-[11px] text-stone-600 leading-relaxed whitespace-pre-wrap font-light">' + esc(d.notes) + '</p></div></div>') : '';
-    var partsMetaHtml =
-      '<div style="display:flex;align-items:center;justify-content:flex-end;gap:16px;font-size:11px;margin-bottom:8px;">' +
-        '<span style="color:#a8a29e;font-weight:300;letter-spacing:0.05em;">NO.</span>' +
-        '<span style="font-weight:600;color:#44403c;min-width:170px;text-align:left;background:#faf5ff;padding:4px 16px;border-radius:6px;letter-spacing:0.05em;">' + esc(d.estimateNumber) + '</span>' +
-      '</div>' +
-      '<div style="display:flex;align-items:center;justify-content:flex-end;gap:16px;font-size:11px;">' +
-        '<span style="color:#a8a29e;font-weight:300;letter-spacing:0.05em;">견적일자</span>' +
-        '<span style="font-weight:500;color:#57534e;min-width:170px;text-align:left;letter-spacing:0.05em;">' + (fmtDateKo(d.estimateDate) || '-') + '</span>' +
-      '</div>';
-    return '<div id="estimate-parts-content" class="bg-white" style="width:1120px;font-family:\'Noto Sans KR\',sans-serif;">' +
-      estHeadB(c, partsMetaHtml) +
-      '<div class="px-12 py-6"><div class="grid grid-cols-3 gap-10">' +
-        '<div><div class="flex items-center gap-2.5 mb-4"><div class="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center border border-purple-100"><i class="ri-user-3-line text-purple-600 text-[13px]"></i></div><h4 class="text-xs font-bold text-stone-600 tracking-[0.08em]">거 래 처</h4></div><div class="space-y-2.5"><div class="flex"><span class="text-stone-400 w-10 flex-shrink-0 text-[11px] font-light">상호</span><span class="font-semibold text-stone-800 text-[11px]">' + (esc(d.customerName) || '-') + '</span></div></div></div>' +
-        '<div><div class="flex items-center gap-2.5 mb-4"><div class="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center border border-purple-100"><i class="ri-car-line text-purple-600 text-[13px]"></i></div><h4 class="text-xs font-bold text-stone-600 tracking-[0.08em]">차 량 정 보</h4></div><div class="space-y-2.5"><div class="flex"><span class="text-stone-400 w-[52px] flex-shrink-0 text-[11px] font-light">차종</span><span class="font-semibold text-stone-800 text-[11px]">' + (esc(d.carModel) || '-') + '</span></div><div class="flex"><span class="text-stone-400 w-[52px] flex-shrink-0 text-[11px] font-light">차대번호</span><span class="font-medium text-stone-700 tracking-wider text-[11px]">' + (esc(d.vin) || '-') + '</span></div></div></div>' +
-        '<div><div class="flex items-center gap-2.5 mb-4"><div class="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center border border-purple-100"><i class="ri-building-4-line text-purple-600 text-[13px]"></i></div><h4 class="text-xs font-bold text-stone-600 tracking-[0.08em]">공 급 자</h4></div><div class="space-y-2.5"><div class="flex"><span class="text-stone-400 w-10 flex-shrink-0 text-[11px] font-light">상호</span><span class="font-bold text-stone-800 text-[11px]">' + (esc(c.name) || '퍼플오토') + '</span></div><div class="flex"><span class="text-stone-400 w-10 flex-shrink-0 text-[11px] font-light">주소</span><span class="font-medium text-stone-700 text-[11px] leading-snug">' + (esc(c.address) || '-') + '</span></div><div class="flex"><span class="text-stone-400 w-10 flex-shrink-0 text-[11px] font-light">연락처</span><span class="font-medium text-stone-700 text-[11px]">' + (esc(c.phone) || '-') + '</span></div></div></div>' +
-      '</div></div>' +
-      '<div class="px-12 pt-2 pb-3"><div class="flex items-center gap-2 mb-3"><div class="w-1 h-4 rounded-full bg-purple-500"></div><h4 class="text-xs font-bold text-stone-600 tracking-[0.06em]">부 품 명 세</h4></div>' +
-        '<div class="overflow-hidden rounded-lg border border-stone-200"><table class="w-full text-[11px] border-collapse"><thead><tr class="bg-stone-50">' +
-          '<th class="py-3 px-4 text-[11px] font-bold text-stone-500 text-center w-10 border-b border-stone-200">NO.</th><th class="py-3 px-4 text-[11px] font-bold text-stone-500 text-left border-b border-stone-200">품번</th><th class="py-3 px-4 text-[11px] font-bold text-stone-500 text-left border-b border-stone-200">품명</th><th class="py-3 px-4 text-[11px] font-bold text-stone-500 text-left border-b border-stone-200">규격</th><th class="py-3 px-4 text-[11px] font-bold text-stone-500 text-center w-[60px] border-b border-stone-200">수량</th><th class="py-3 px-4 text-[11px] font-bold text-stone-500 text-right w-[110px] border-b border-stone-200">단가</th><th class="py-3 px-4 text-[11px] font-bold text-stone-500 text-right w-[120px] border-b border-stone-200">공급가액</th><th class="py-3 px-4 text-[11px] font-bold text-stone-500 text-center w-[80px] border-b border-stone-200">비고</th>' +
-        '</tr></thead><tbody>' + rowsHtml + '</tbody></table></div></div>' +
-      '<div class="px-12 pt-4"><div class="flex justify-end"><div class="w-[280px] rounded-lg border border-stone-200 overflow-hidden">' +
-        '<div class="flex justify-between items-center px-5 py-3 bg-white border-b border-stone-100"><span class="text-[11px] text-stone-500 font-medium tracking-wider">공 급 가 액</span><span class="text-[12px] font-semibold text-stone-700 font-mono">' + fmt(supply) + '</span></div>' +
-        '<div class="flex justify-between items-center px-5 py-3 bg-white border-b border-stone-100"><span class="text-[11px] text-stone-500 font-medium tracking-wider">부 가 세</span><span class="text-[12px] font-semibold text-stone-700 font-mono">' + fmt(vat) + '</span></div>' +
-        '<div class="flex justify-between items-center px-5 py-3.5 bg-purple-50"><span class="text-[13px] font-bold text-stone-800 tracking-wider">합 계</span><span class="text-[15px] font-black text-purple-700 font-mono">' + fmt(total) + '</span></div>' +
-      '</div></div><div class="flex justify-end mt-2"><div class="w-[280px] text-right"><span class="text-[10px] text-stone-400 font-light tracking-wider">(부가세 포함)</span></div></div></div>' +
-      notesBlock +
-      '<div class="px-12 pt-8 pb-10"><div class="flex justify-between items-end"><div class="text-[10px] text-stone-400 font-light space-y-0.5">' + (c.address ? '<p>' + esc(c.address) + '</p>' : '') + (c.phone ? '<p>TEL. ' + esc(c.phone) + '</p>' : '') + '</div>' +
-        '<div class="text-center"><p class="text-[11px] text-stone-400 font-light mb-5 tracking-wide">위와 같이 견적합니다.</p><p class="text-[11px] text-stone-400 font-light mb-4 tracking-wide">' + (fmtDateKo(d.estimateDate) || '-') + '</p>' +
-        '<div class="relative inline-block"><p class="text-[14px] font-bold text-stone-800 mb-1">' + (esc(c.name) || '퍼플오토') + (c.ceo ? ' <span class="font-medium text-stone-500">대표 ' + esc(c.ceo) + '</span>' : '') + '</p><div class="absolute -right-8 top-1/2 flex items-center justify-center" style="width:68px;height:68px;border:2px solid rgba(139,47,224,.3);border-radius:9999px;transform:translateY(-50%) rotate(-15deg);opacity:.55;"><span class="text-[10px] font-bold text-center leading-tight" style="color:rgba(139,47,224,.5);">확인</span></div></div></div></div></div>' +
-    '</div>';
+    return '<style>' +
+      '#estimate-parts-content{width:794px;flex-shrink:0;min-height:1123px;background:#fff;color:#252333;padding:42px 40px 30px;box-sizing:border-box;font-family:"Noto Sans KR",sans-serif;font-size:11px;line-height:1.65;border-top:6px solid #6529bf;}' +
+      '#estimate-parts-content *{box-sizing:border-box;}#estimate-parts-content .ep-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;gap:24px;}#estimate-parts-content .ep-logo{width:215px;max-height:60px;object-fit:contain;object-position:left center;}#estimate-parts-content h1{font-size:30px;letter-spacing:10px;margin:0;color:#302047;font-weight:800;}#estimate-parts-content .ep-meta{color:#777184;font-size:10px;margin-top:8px;text-align:right;}' +
+      '#estimate-parts-content .ep-info{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-bottom:22px;}#estimate-parts-content .ep-customer{font-size:20px;font-weight:700;border-bottom:2px solid #302047;padding:9px 0;margin-bottom:12px;overflow-wrap:anywhere;}#estimate-parts-content .ep-customer small{font-size:12px;font-weight:400;margin-left:8px;}#estimate-parts-content .ep-label{font-size:10px;color:#82758f;letter-spacing:1px;font-weight:600;}#estimate-parts-content dl{display:grid;grid-template-columns:57px 1fr;gap:6px 10px;margin:8px 0;}#estimate-parts-content dt{color:#81788a;}#estimate-parts-content dd{margin:0;overflow-wrap:anywhere;}#estimate-parts-content .ep-supplier{background:#f8f6fc;border:1px solid #e9e2f2;padding:16px 18px;border-radius:8px;}#estimate-parts-content .ep-supplier strong{font-size:15px;color:#422165;}' +
+      '#estimate-parts-content .ep-total{display:flex;justify-content:space-between;align-items:center;background:#f2ecfa;border-top:2px solid #6529bf;padding:14px 18px;margin:20px 0;}#estimate-parts-content .ep-total strong{font-size:24px;color:#54219a;letter-spacing:-.5px;}#estimate-parts-content .ep-total small{color:#7d718a;font-size:10px;}#estimate-parts-content .ep-caption{display:flex;justify-content:space-between;margin:18px 0 8px;font-size:11px;font-weight:700;}#estimate-parts-content .ep-caption span{font-weight:400;font-size:10px;color:#8a8192;}' +
+      '#estimate-parts-content table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10px;}#estimate-parts-content th{background:#432066;color:#fff;font-weight:500;padding:9px 5px;border-right:1px solid #6a4d85;}#estimate-parts-content td{padding:8px 5px;height:34px;border:1px solid #e5dfeb;vertical-align:middle;overflow-wrap:anywhere;}#estimate-parts-content td:first-child,#estimate-parts-content td:nth-child(5){text-align:center;}#estimate-parts-content tbody tr:nth-child(even){background:#fcfaff;}#estimate-parts-content .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}#estimate-parts-content .amount{font-weight:700;}' +
+      '#estimate-parts-content .ep-bottom{display:grid;grid-template-columns:1fr 255px;gap:25px;margin-top:18px;break-inside:avoid;}#estimate-parts-content .ep-notes{white-space:pre-wrap;color:#776d80;font-size:10px;overflow-wrap:anywhere;}#estimate-parts-content .ep-sums div{display:flex;justify-content:space-between;padding:6px 0;}#estimate-parts-content .ep-sums .ep-grand{border-top:2px solid #6529bf;margin-top:4px;font-size:15px;font-weight:800;color:#54219a;}#estimate-parts-content .ep-foot{border-top:1px solid #e5dfeb;margin-top:32px;padding-top:16px;display:flex;justify-content:space-between;align-items:end;color:#8b8194;font-size:10px;gap:20px;}#estimate-parts-content .ep-sign{text-align:right;color:#44354e;}#estimate-parts-content .ep-sign strong{display:block;font-size:13px;margin-top:8px;}' +
+      '@media print{@page{size:A4 portrait;margin:10mm;}body{background:white!important;}.est-doc{display:block!important;padding:0!important;overflow:visible!important;}#estimate-parts-content{width:100%!important;min-height:0;padding:18px 12px!important;border-top-width:4px;}#estimate-parts-content thead{display:table-header-group;}#estimate-parts-content tr{break-inside:avoid;}#estimate-parts-content *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}' +
+      '</style><div id="estimate-parts-content"><header class="ep-head"><img class="ep-logo" src="' + esc(c.logoUrl || 'https://purpleauto.co.kr/assets/brand-logos/purple-logo.png') + '" alt="퍼플오토"><div><h1>견적서</h1><div class="ep-meta">NO. ' + esc(d.estimateNumber || '-') + '<br>견적일자 ' + esc(fmtDateKo(d.estimateDate) || '-') + '</div></div></header>' +
+      '<div class="ep-info"><section><div class="ep-label">CUSTOMER · 고객 / 차량 정보</div><div class="ep-customer">' + esc(d.customerName || '-') + '<small>귀하</small></div><dl><dt>차종</dt><dd>' + esc(d.carModel || '-') + '</dd><dt>차대번호</dt><dd>' + esc(d.vin || '-') + '</dd></dl></section><section class="ep-supplier"><div class="ep-label">SUPPLIER · 공급자</div><strong>' + esc(c.name || '퍼플오토') + '</strong><dl><dt>대표자</dt><dd>' + esc(c.ceo || '-') + '</dd><dt>주소</dt><dd>' + esc(c.address || '-') + '</dd><dt>전화</dt><dd>' + esc(c.phone || '-') + '</dd>' + (c.fax ? '<dt>팩스</dt><dd>' + esc(c.fax) + '</dd>' : '') + '</dl></section></div>' +
+      '<div class="ep-total"><div><b>총 견적금액</b><br><small>부가세 포함 · KRW</small></div><strong>₩ ' + fmt(total) + '</strong></div>' +
+      '<div class="ep-caption">부품 견적 명세<span>금액 단위: 원</span></div><table><colgroup><col style="width:5%"><col style="width:17%"><col style="width:24%"><col style="width:10%"><col style="width:6%"><col style="width:13%"><col style="width:15%"><col style="width:10%"></colgroup><thead><tr><th>No.</th><th>품번</th><th>품명</th><th>규격</th><th>수량</th><th>단가</th><th>공급가액</th><th>비고</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<div class="ep-bottom"><div><div class="ep-label">비고 / 안내사항</div><div class="ep-notes">' + esc(d.notes || '-') + '</div></div><div class="ep-sums"><div><span>공급가액</span><b>' + fmt(supply) + ' 원</b></div><div><span>부가세 (10%)</span><b>' + fmt(vat) + ' 원</b></div><div class="ep-grand"><span>합계</span><span>' + fmt(total) + ' 원</span></div></div></div>' +
+      '<footer class="ep-foot"><div>PURPLE AUTO<br>' + esc(c.address || '') + '<br>' + (c.phone ? 'TEL. ' + esc(c.phone) : '') + '</div><div class="ep-sign">위와 같이 견적합니다.<strong>' + esc(c.name || '퍼플오토') + (c.ceo ? ' · 대표 ' + esc(c.ceo) : '') + '</strong></div></footer></div>';
   }
 
   function estRentalLogo(c) {
@@ -2383,7 +2357,7 @@ body.admin-nav-open { overflow:hidden; }
 
   function downloadDoc(kind, contentHtml) {
     var widthCss = (kind === 'parts')
-      ? '#estimate-parts-content{transform:none !important;width:1120px !important;}'
+      ? '#estimate-parts-content{transform:none !important;width:794px !important;}'
       : '#estimate-rental-content{width:794px !important;margin:0 auto !important;}';
     var title = (kind === 'parts') ? '부품 견적서 | 퍼플오토' : '장기렌트/리스 견적서 | 퍼플오토';
     var name = (kind === 'parts') ? '부품견적서.html' : '장기렌트리스견적서.html';
