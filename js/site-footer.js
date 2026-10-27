@@ -236,7 +236,7 @@
     legal.innerHTML =
       '<button type="button" class="footer-legal-link" data-footer-modal="terms">' + esc(settings.label_terms) + '</button>' +
       '<span class="footer-legal-sep" aria-hidden="true">/</span>' +
-      '<button type="button" class="footer-legal-link" data-footer-modal="privacy">' + esc(settings.label_privacy) + '</button>' +
+      '<a class="footer-legal-link" href="/privacy">' + esc(settings.label_privacy) + '</a>' +
       '<span class="footer-legal-sep" aria-hidden="true">/</span>' +
       '<button type="button" class="footer-legal-link" data-footer-modal="certificate">' + esc(settings.label_certificate) + '</button>';
 
