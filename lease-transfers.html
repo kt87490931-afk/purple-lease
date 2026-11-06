@@ -496,6 +496,15 @@ input, select { font-family: inherit; }
   }
 
   function priceFmt(n) { return (n || 0).toLocaleString('ko-KR') + '만원'; }
+  function monthlyPaymentFmt(value) {
+    var text = String(value || '').trim();
+    if (!text) return '문의';
+    var match = text.replace(/,/g, '').match(/^([0-9]+(?:\.[0-9]+)?)\s*(만\s*원|원)?$/);
+    if (!match) return text;
+    var amount = Number(match[1]);
+    var inManwon = match[2] && match[2].replace(/\s/g, '') === '만원' ? amount : amount / 10000;
+    return Math.round(inManwon).toLocaleString('ko-KR') + '만원';
+  }
   function kmFmt(n) { return (n || 0).toLocaleString('ko-KR') + 'km'; }
 
   function renderGrid() {
@@ -521,7 +530,7 @@ input, select { font-family: inherit; }
           <div class="uname">${escapeHtml(c.name)}</div>
           <div class="umeta">${c.year ? c.year + '년식' : '-'} · ${kmFmt(c.mileage)} · ${escapeHtml(c.fuel || '-')}</div>
           <div class="uprice"><span class="price-label">차량가액</span> ${priceFmt(c.price)}</div>
-          <div class="umonthly"><span class="price-label">월납입료</span> ${escapeHtml(c.monthlyPayment || '문의')}</div>
+          <div class="umonthly"><span class="price-label">월납입료</span> ${escapeHtml(monthlyPaymentFmt(c.monthlyPayment))}</div>
           <div class="utags">${(c.tags || []).slice(0,3).map(t=>`<span class="utag">${escapeHtml(t)}</span>`).join('')}</div>
         </div>
       </a>
