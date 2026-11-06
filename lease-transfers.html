@@ -529,7 +529,6 @@ input, select { font-family: inherit; }
         <div class="usedcar-body">
           <div class="uname">${escapeHtml(c.name)}</div>
           <div class="umeta">${c.year ? c.year + '년식' : '-'} · ${kmFmt(c.mileage)} · ${escapeHtml(c.fuel || '-')}</div>
-          <div class="uprice"><span class="price-label">차량가액</span> ${priceFmt(c.price)}</div>
           <div class="umonthly"><span class="price-label">월납입료</span> ${escapeHtml(monthlyPaymentFmt(c.monthlyPayment))}</div>
           <div class="utags">${(c.tags || []).slice(0,3).map(t=>`<span class="utag">${escapeHtml(t)}</span>`).join('')}</div>
         </div>
