@@ -2803,6 +2803,91 @@
     if (res.error) throw res.error;
   }
 
+  var IP_BLOCK_MIGRATION_MSG = 'IP 관리 테이블이 없습니다. Supabase SQL Editor에서 supabase/migration-ip-block.sql 을 실행해 주세요.';
+
+  function isMissingIpSchemaError(err) {
+    var msg = String((err && (err.message || err.details || err.hint)) || '');
+    var code = String((err && err.code) || '');
+    return code === '42703' || code === '42P01' || code === 'PGRST204' || code === 'PGRST205' ||
+      (/client_ip|blocked_ips/.test(msg) && /exist|find|schema cache|column/i.test(msg));
+  }
+
+  function normalizeAdminIp(raw) {
+    var s = String(raw || '').trim().toLowerCase().replace(/^::ffff:/, '');
+    var v4port = s.match(/^(\d{1,3}(?:\.\d{1,3}){3}):\d+$/);
+    if (v4port) s = v4port[1];
+    return s;
+  }
+
+  function isValidAdminIp(ip) {
+    if (/^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/.test(ip)) return true;
+    return ip.indexOf(':') >= 0 && /^[0-9a-f:.]{2,45}$/.test(ip) && ip.split(':').length >= 3;
+  }
+
+  async function listInquiryIpSamples() {
+    var specs = [
+      ['inquiries', '일반문의'],
+      ['lease_quotes', '신차문의'],
+      ['lease_calculator_inquiries', '계산기문의'],
+      ['used_car_inquiries', '중고차문의']
+    ];
+    var rows = [];
+    for (var i = 0; i < specs.length; i++) {
+      var res = await db().from(specs[i][0])
+        .select('id,client_ip,name,phone,source_page,created_at')
+        .order('created_at', { ascending: false })
+        .limit(400);
+      if (res.error) {
+        if (isMissingIpSchemaError(res.error)) throw new Error(IP_BLOCK_MIGRATION_MSG);
+        throw res.error;
+      }
+      (res.data || []).forEach(function (row) {
+        rows.push({
+          kind: specs[i][1],
+          client_ip: String(row.client_ip || '').trim(),
+          name: row.name || '',
+          phone: row.phone || '',
+          source_page: row.source_page || '',
+          created_at: row.created_at || ''
+        });
+      });
+    }
+    return rows;
+  }
+
+  async function listBlockedIps() {
+    var res = await db().from('blocked_ips').select('*').order('updated_at', { ascending: false });
+    if (res.error) {
+      if (isMissingIpSchemaError(res.error)) throw new Error(IP_BLOCK_MIGRATION_MSG);
+      throw res.error;
+    }
+    return res.data || [];
+  }
+
+  async function saveBlockedIp(ip, mode) {
+    var normalized = normalizeAdminIp(ip);
+    if (!isValidAdminIp(normalized)) throw new Error('IP 형식이 올바르지 않습니다.');
+    if (mode !== 'inquiry' && mode !== 'site') throw new Error('차단 방식이 올바르지 않습니다.');
+    var now = new Date().toISOString();
+    var res = await db().from('blocked_ips').upsert({
+      ip_address: normalized,
+      block_mode: mode,
+      updated_at: now
+    }, { onConflict: 'ip_address' });
+    if (res.error) {
+      if (isMissingIpSchemaError(res.error)) throw new Error(IP_BLOCK_MIGRATION_MSG);
+      throw res.error;
+    }
+    return { ip_address: normalized, block_mode: mode };
+  }
+
+  async function deleteBlockedIp(ip) {
+    var normalized = normalizeAdminIp(ip);
+    if (!normalized) throw new Error('IP가 없습니다.');
+    var res = await db().from('blocked_ips').delete().eq('ip_address', normalized);
+    if (res.error) throw res.error;
+  }
+
   window.PurpleAdminAPI = {
     fmtDate: fmtDate,
     parseDotDate: parseDotDate,
@@ -2884,6 +2969,10 @@
     countUnreadLeaseCalculatorInquiries: countUnreadLeaseCalculatorInquiries,
     markAllLeaseCalculatorInquiriesRead: markAllLeaseCalculatorInquiriesRead,
     deleteLeaseCalculatorInquiries: deleteLeaseCalculatorInquiries,
+    listInquiryIpSamples: listInquiryIpSamples,
+    listBlockedIps: listBlockedIps,
+    saveBlockedIp: saveBlockedIp,
+    deleteBlockedIp: deleteBlockedIp,
     getSeoSettings: getSeoSettings,
     saveSeoSettings: saveSeoSettings,
     getFloatConsultSettings: getFloatConsultSettings,

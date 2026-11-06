@@ -3281,6 +3281,131 @@
       if (window.innerWidth > 860) closeAdminSidebar();
     });
 
+    function escIpAdmin(s) {
+      return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function ipBlockModeLabel(mode) {
+      return mode === 'site' ? '문의·접속 차단' : '문의만 차단';
+    }
+
+    function groupInquiryIps(rows) {
+      var map = {};
+      (rows || []).forEach(function (row) {
+        var ip = String(row.client_ip || '').trim();
+        if (!ip) return;
+        if (!map[ip]) {
+          map[ip] = { ip: ip, count: 0, lastAt: '', name: '', phone: '', kind: '', kinds: {} };
+        }
+        var item = map[ip];
+        item.count += 1;
+        item.kinds[row.kind] = (item.kinds[row.kind] || 0) + 1;
+        if (!item.lastAt || String(row.created_at) > String(item.lastAt)) {
+          item.lastAt = row.created_at;
+          item.name = row.name;
+          item.phone = row.phone;
+          item.kind = row.kind;
+        }
+      });
+      return Object.keys(map).map(function (ip) { return map[ip]; }).sort(function (a, b) {
+        if (b.count !== a.count) return b.count - a.count;
+        return String(b.lastAt).localeCompare(String(a.lastAt));
+      });
+    }
+
+    function ipActionButtons(ip) {
+      return '<button type="button" class="btn btn-outline" data-ip-action="inquiry" data-ip="' + escIpAdmin(ip) + '">해당IP문의만차단</button>' +
+        '<button type="button" class="btn btn-outline" data-ip-action="site" data-ip="' + escIpAdmin(ip) + '" style="color:#b91c1c;border-color:#fecaca;">아이피/문의/접속 차단</button>';
+    }
+
+    async function loadIpAdminPanel() {
+      var statusEl = document.getElementById('ipAdminStatus');
+      var recentBody = document.getElementById('ipAdminRecentBody');
+      var blockedBody = document.getElementById('ipAdminBlockedBody');
+      if (!recentBody || !blockedBody) return;
+      if (statusEl) { statusEl.style.color = 'var(--ink-500)'; statusEl.textContent = '불러오는 중…'; }
+      try {
+        var samples = await API.listInquiryIpSamples();
+        var blocked = await API.listBlockedIps();
+        var grouped = groupInquiryIps(samples);
+        var blockedMap = {};
+        blocked.forEach(function (row) { blockedMap[row.ip_address] = row.block_mode; });
+
+        if (!grouped.length) {
+          recentBody.innerHTML = '<tr><td colspan="6">IP가 기록된 문의가 아직 없습니다. SQL 적용 이후 접수부터 표시됩니다.</td></tr>';
+        } else {
+          recentBody.innerHTML = grouped.map(function (item) {
+            var kinds = Object.keys(item.kinds).map(function (k) { return k + ' ' + item.kinds[k]; }).join(', ');
+            var state = blockedMap[item.ip] ? ipBlockModeLabel(blockedMap[item.ip]) : '허용';
+            return '<tr><td>' + escIpAdmin(item.ip) + '</td><td>' + item.count + '</td><td>' + escIpAdmin(kinds) + '</td><td>' +
+              escIpAdmin(item.name) + '<br><span style="color:var(--ink-400);">' + escIpAdmin(item.phone) + '</span></td><td>' +
+              escIpAdmin(fmtAdminDateTime(item.lastAt)) + '<br><span style="color:var(--ink-400);">' + escIpAdmin(state) + '</span></td><td style="white-space:nowrap;">' +
+              ipActionButtons(item.ip) + '</td></tr>';
+          }).join('');
+        }
+
+        if (!blocked.length) {
+          blockedBody.innerHTML = '<tr><td colspan="4">차단 중인 IP가 없습니다.</td></tr>';
+        } else {
+          blockedBody.innerHTML = blocked.map(function (row) {
+            return '<tr><td>' + escIpAdmin(row.ip_address) + '</td><td>' + escIpAdmin(ipBlockModeLabel(row.block_mode)) + '</td><td>' +
+              escIpAdmin(fmtAdminDateTime(row.updated_at || row.created_at)) + '</td><td>' +
+              '<button type="button" class="btn btn-outline" data-ip-action="unblock" data-ip="' + escIpAdmin(row.ip_address) + '">해제</button></td></tr>';
+          }).join('');
+        }
+        if (statusEl) statusEl.textContent = '문의 IP ' + grouped.length + '개 · 차단 ' + blocked.length + '개';
+      } catch (err) {
+        if (statusEl) {
+          statusEl.style.color = '#b91c1c';
+          statusEl.textContent = err.message || String(err);
+        }
+        recentBody.innerHTML = '<tr><td colspan="6">목록을 불러오지 못했습니다.</td></tr>';
+      }
+    }
+
+    async function runIpAdminAction(action, ip) {
+      var normalized = String(ip || '').trim();
+      if (action === 'unblock') {
+        if (!confirm(normalized + ' 차단을 해제할까요?')) return;
+        await API.deleteBlockedIp(normalized);
+        return;
+      }
+      var ask = action === 'site'
+        ? normalized + '\n문의 저장과 사이트 접속을 차단할까요?'
+        : normalized + '\n이 IP의 새 문의만 차단할까요?';
+      if (!confirm(ask)) return;
+      await API.saveBlockedIp(normalized, action === 'site' ? 'site' : 'inquiry');
+    }
+
+    function bindIpAdminPanel() {
+      var panel = document.getElementById('panel-ipadmin');
+      if (!panel || panel.dataset.bound) return;
+      panel.dataset.bound = '1';
+      panel.addEventListener('click', async function (e) {
+        var btn = e.target.closest('[data-ip-action]');
+        if (!btn || btn.disabled) return;
+        var action = btn.getAttribute('data-ip-action');
+        var ip = btn.getAttribute('data-ip') || '';
+        if (!ip) {
+          var input = document.getElementById('ipAdminManual');
+          ip = input ? input.value : '';
+        }
+        btn.disabled = true;
+        try {
+          await runIpAdminAction(action, ip);
+          var inputEl = document.getElementById('ipAdminManual');
+          if (inputEl && !btn.getAttribute('data-ip')) inputEl.value = '';
+          await loadIpAdminPanel();
+        } catch (err) {
+          showError(err);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    }
+
+    bindIpAdminPanel();
+
     document.querySelectorAll('.admin-nav-item').forEach(function (item) {
       item.addEventListener('click', async function () {
         document.querySelectorAll('.admin-nav-item').forEach(function (i) { i.classList.remove('active'); });
@@ -3292,6 +3417,9 @@
         closeAdminSidebar();
         if (item.dataset.panel === 'inquiries') {
           await openInquiriesPanel();
+        }
+        if (item.dataset.panel === 'ipadmin') {
+          await loadIpAdminPanel();
         }
         if (item.dataset.panel === 'seo') {
           await loadSeoPanel();

@@ -833,7 +833,20 @@
     return code === 'PGRST202' || /Could not find the function|schema cache/i.test(msg);
   }
 
+  function throwInquiryError(err) {
+    var msg = String((err && (err.message || err.details || err.hint)) || err || '');
+    if (/inquiry_ip_blocked/.test(msg) || window.__paInquiryBlocked) {
+      throw new Error('접수할 수 없습니다.');
+    }
+    throw err;
+  }
+
+  function assertInquiryAllowed() {
+    if (window.__paInquiryBlocked) throw new Error('접수할 수 없습니다.');
+  }
+
   async function submitInquiry(payload) {
+    assertInquiryAllowed();
     var client = getClient();
     if (!client) throw new Error('Supabase not configured');
     var consultType = String(payload.consult_type || payload.consultType || 'lease_rent').trim();
@@ -863,10 +876,10 @@
     });
     if (rpc.error && isMissingRpcError(rpc.error)) {
       var res = await client.from('inquiries').insert([row]);
-      if (res.error) throw res.error;
+      if (res.error) throwInquiryError(res.error);
       inquiryId = 'fallback_inq_' + Date.now();
     } else if (rpc.error) {
-      throw rpc.error;
+      throwInquiryError(rpc.error);
     } else {
       inquiryId = rpc.data;
     }
@@ -877,6 +890,7 @@
   }
 
   async function submitLeaseQuote(payload) {
+    assertInquiryAllowed();
     var client = getClient();
     if (!client) throw new Error('Supabase not configured');
     var quote = payload.quote || {};
@@ -904,10 +918,10 @@
     });
     if (rpc.error && isMissingRpcError(rpc.error)) {
       var res = await client.from('lease_quotes').insert([row]);
-      if (res.error) throw res.error;
+      if (res.error) throwInquiryError(res.error);
       inquiryId = 'fallback_lq_' + Date.now();
     } else if (rpc.error) {
-      throw rpc.error;
+      throwInquiryError(rpc.error);
     } else {
       inquiryId = rpc.data;
     }
@@ -918,6 +932,7 @@
   }
 
   async function submitLeaseCalculatorInquiry(payload) {
+    assertInquiryAllowed();
     var client = getClient();
     if (!client) throw new Error('Supabase not configured');
     var row = {
@@ -938,10 +953,10 @@
     });
     if (rpc.error && isMissingRpcError(rpc.error)) {
       var res = await client.from('lease_calculator_inquiries').insert([row]);
-      if (res.error) throw res.error;
+      if (res.error) throwInquiryError(res.error);
       inquiryId = 'fallback_lc_' + Date.now();
     } else if (rpc.error) {
-      throw rpc.error;
+      throwInquiryError(rpc.error);
     } else {
       inquiryId = rpc.data;
     }
@@ -970,8 +985,9 @@
     };
     if (!row.name || !row.phone) throw new Error('성함과 연락처를 입력해 주세요.');
     if (!row.listing_id) throw new Error('차량 정보를 확인할 수 없습니다.');
+    assertInquiryAllowed();
     var res = await client.from('used_car_inquiries').insert([row]);
-    if (res.error) throw res.error;
+    if (res.error) throwInquiryError(res.error);
     // Google Ads만 — 전환명「리스렌트_매입상담」과 구분해 중고차 매물 문의는 OpenAI lead_created 제외
     trackLeadConversion();
     return res.data;

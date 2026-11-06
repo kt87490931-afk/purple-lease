@@ -437,6 +437,10 @@ body.admin-nav-open { overflow:hidden; }
         <span class="nav-label">견적문의</span>
         <span class="nav-badge" id="inquiryNavBadge" aria-label="미확인 견적문의"></span>
       </a>
+      <a class="admin-nav-item" data-panel="ipadmin">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10"/><path d="M7 13h6"/></svg>
+        <span class="nav-label">아이피관리</span>
+      </a>
       <a class="admin-nav-item" data-panel="estimate">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><line x1="9" y1="9" x2="10" y2="9"/></svg>
         <span class="nav-label">견적서</span>
@@ -1200,6 +1204,35 @@ body.admin-nav-open { overflow:hidden; }
         </div>
       </section>
 
+      <section class="panel" id="panel-ipadmin">
+        <div style="background:#fff;border-radius:var(--radius-md);padding:18px 20px;box-shadow:var(--shadow-sm);margin-bottom:14px;">
+          <p style="margin:0 0 12px;font-size:12.5px;color:var(--ink-500);line-height:1.65;">
+            SQL 적용 이후 접수된 문의부터 IP가 기록됩니다. 예전 문의는 IP가 없습니다.
+            <b>해당IP문의만차단</b>은 새 문의 저장만 거절합니다.
+            <b>아이피/문의/접속 차단</b>은 문의 거절에 더해 공개 페이지 접속을 막습니다.
+            접속 차단은 브라우저에서 적용되며, 자바스크립트를 끄면 페이지가 열릴 수 있습니다. 문의 저장은 서버에서 막습니다.
+            통신사·공용 IP는 정상 고객도 함께 막힐 수 있습니다.
+            (<code>migration-ip-block.sql</code> 최초 1회 실행)
+          </p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <input type="text" id="ipAdminManual" placeholder="직접 입력 예: 203.0.113.10" style="min-width:240px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;">
+            <button type="button" class="btn btn-outline" data-ip-action="inquiry">해당IP문의만차단</button>
+            <button type="button" class="btn btn-outline" data-ip-action="site" style="color:#b91c1c;border-color:#fecaca;">아이피/문의/접속 차단</button>
+          </div>
+          <p id="ipAdminStatus" style="margin:10px 0 0;font-size:12px;color:var(--ink-500);min-height:18px;"></p>
+        </div>
+        <h3 style="font-size:14px;margin:0 0 8px;">차단 중인 IP</h3>
+        <table class="data-table" style="margin-bottom:18px;">
+          <thead><tr><th>IP</th><th>차단</th><th>저장 시각</th><th></th></tr></thead>
+          <tbody id="ipAdminBlockedBody"></tbody>
+        </table>
+        <h3 style="font-size:14px;margin:0 0 8px;">문의 IP</h3>
+        <table class="data-table">
+          <thead><tr><th>IP</th><th>횟수</th><th>문의 종류</th><th>최근 문의</th><th>최근 시각</th><th></th></tr></thead>
+          <tbody id="ipAdminRecentBody"></tbody>
+        </table>
+      </section>
+
       <section class="panel" id="panel-footer">
         <div class="seo-basic-panel" style="max-width:860px">
           <p class="seo-note" style="margin-bottom:16px;">전 페이지 푸터에 표시되는 회사정보(상호 · 대표 · 주소 · 사업자등록번호 · 대표번호) · 메뉴 링크 이름 · 이용약관 · 개인정보처리방침 · 등록증 · 금융 고지문을 수정합니다. 링크 클릭 시 별도 페이지 이동 없이 모달로 표시됩니다.</p>
@@ -1733,11 +1766,11 @@ body.admin-nav-open { overflow:hidden; }
 <script src="/js/admin-auth.js?v=20260630d"></script>
 <script src="/js/review-topics.js?v=20260930a"></script>
 <script src="/js/paid-transfer-page.js?v=20260721a"></script>
-<script src="/js/admin-api.js?v=20261014a"></script>
+<script src="/js/admin-api.js?v=20261106a"></script>
 <script src="/js/admin-hero.js?v=20260819a"></script>
 <script src="/js/admin-partners.js?v=20260703a"></script>
 <script src="/js/lease-catalog-map.js"></script>
-<script src="/js/admin-app.js?v=20261014a"></script>
+<script src="/js/admin-app.js?v=20261106a"></script>
 <script>
 /* 퍼플오토 어드민 — 견적서 작성 (부품 / 장기렌트·리스) : #panel-estimate 자체 초기화 */
 (function () {
@@ -2205,268 +2238,3 @@ body.admin-nav-open { overflow:hidden; }
     };
   }
 
-  function buildPartsContent(d) {
-    var c = d.companyInfo || {};
-    var supply = d.parts.reduce(function (s, r) { return s + (r.amount || 0); }, 0);
-    var vat = Math.round(supply * 0.1), total = supply + vat;
-    var rows = '';
-    for (var i = 0; i < Math.max(d.parts.length, 12); i++) {
-      var r = d.parts[i];
-      rows += '<tr><td>' + (i + 1) + '</td>' + (r ?
-        '<td>' + esc(r.partNo) + '</td><td>' + esc(r.partName) + '</td><td>' + esc(r.quantity) + '</td><td class="num">' + fmt(r.unitPrice || 0) + '</td><td class="num amount">' + fmt(r.amount || 0) + '</td><td>' + esc(r.remark) + '</td>' :
-        '<td></td><td></td><td></td><td></td><td></td><td></td>') + '</tr>';
-    }
-    return '<style>' +
-      '#estimate-parts-content{width:794px;flex-shrink:0;min-height:1123px;background:#fff;color:#252333;padding:28px 28px 24px;box-sizing:border-box;font-family:"Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",sans-serif;font-size:15px;line-height:1.5;border-top:6px solid #6529bf;}' +
-      '#estimate-parts-content *{box-sizing:border-box;}#estimate-parts-content .ep-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;gap:24px;}#estimate-parts-content .ep-logo{width:215px;max-height:60px;object-fit:contain;object-position:left center;}#estimate-parts-content h1{font-size:30px;letter-spacing:10px;margin:0;color:#302047;font-weight:800;}#estimate-parts-content .ep-meta{color:#5c5366;font-size:14px;margin-top:8px;text-align:right;}' +
-      '#estimate-parts-content .ep-info{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:18px;}#estimate-parts-content .ep-customer{font-size:20px;font-weight:700;border-bottom:2px solid #302047;padding:9px 0;margin-bottom:12px;overflow-wrap:anywhere;}#estimate-parts-content .ep-customer small{font-size:14px;font-weight:400;margin-left:8px;}#estimate-parts-content .ep-label{font-size:14px;color:#62546e;letter-spacing:1px;font-weight:600;}#estimate-parts-content dl{display:grid;grid-template-columns:65px 1fr;gap:6px 10px;margin:8px 0;}#estimate-parts-content dt{color:#62546e;}#estimate-parts-content dd{margin:0;overflow-wrap:anywhere;}#estimate-parts-content .ep-supplier{background:#f8f6fc;border:1px solid #e9e2f2;padding:16px 18px;border-radius:8px;}#estimate-parts-content .ep-supplier strong{font-size:18px;color:#422165;}#estimate-parts-content .ep-business{font-size:14px;font-weight:700;margin-top:6px;color:#43364d;white-space:nowrap;}' +
-      '#estimate-parts-content .ep-total{display:flex;justify-content:space-between;align-items:center;background:#f2ecfa;border-top:2px solid #6529bf;padding:14px 18px;margin:20px 0;}#estimate-parts-content .ep-total strong{font-size:28px;color:#54219a;letter-spacing:-.5px;}#estimate-parts-content .ep-total small{color:#7d718a;font-size:14px;}#estimate-parts-content .ep-caption{display:flex;justify-content:space-between;margin:18px 0 8px;font-size:15px;font-weight:700;}#estimate-parts-content .ep-caption span{font-weight:400;font-size:14px;color:#8a8192;}' +
-      '#estimate-parts-content table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:14px;}#estimate-parts-content th{background:#432066;color:#fff;font-weight:500;padding:9px 5px;border-right:1px solid #6a4d85;}#estimate-parts-content td{padding:5px 5px;height:31px;border:1px solid #e5dfeb;vertical-align:middle;overflow-wrap:anywhere;}#estimate-parts-content td:first-child,#estimate-parts-content td:nth-child(4){text-align:center;}#estimate-parts-content tbody tr:nth-child(even){background:#fcfaff;}#estimate-parts-content .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}#estimate-parts-content .amount{font-weight:700;}' +
-      '#estimate-parts-content .ep-bottom{display:grid;grid-template-columns:1fr 255px;gap:25px;margin-top:18px;break-inside:avoid;}#estimate-parts-content .ep-notes{white-space:pre-wrap;color:#5a5063;font-size:14px;overflow-wrap:anywhere;}#estimate-parts-content .ep-sums div{display:flex;justify-content:space-between;padding:6px 0;}#estimate-parts-content .ep-sums .ep-grand{border-top:2px solid #6529bf;margin-top:4px;font-size:15px;font-weight:800;color:#54219a;}#estimate-parts-content .ep-foot{border-top:1px solid #e5dfeb;margin-top:32px;padding-top:16px;display:flex;justify-content:space-between;align-items:end;color:#65596f;font-size:14px;gap:20px;}#estimate-parts-content .ep-account{background:#f5f0fc;border:1px solid #ded2ec;border-radius:6px;padding:12px 15px;margin-top:16px;font-size:15px;break-inside:avoid;}#estimate-parts-content .ep-account b{font-size:16px;color:#432066;font-variant-numeric:tabular-nums;}#estimate-parts-content .ep-policy{max-width:325px;text-align:right;font-weight:700;color:#432066;font-size:15px;word-break:keep-all;}' +
-      '@media print{@page{size:A4 portrait;margin:7mm;}html,body{margin:0!important;padding:0!important;background:white!important;}body{display:block!important;min-height:0!important;}.est-bar{display:none!important;}.est-doc{display:block!important;margin:0!important;padding:0!important;overflow:visible!important;}#estimate-parts-content{width:100%!important;min-height:0!important;margin:0!important;padding:0!important;border-top-width:3px;line-height:1.35;}#estimate-parts-content .ep-head{margin:10px 0 12px;gap:16px;}#estimate-parts-content .ep-logo{max-height:42px;}#estimate-parts-content .ep-meta{margin-top:3px;}#estimate-parts-content .ep-info{gap:18px;margin-bottom:10px;}#estimate-parts-content .ep-customer{padding:4px 0;margin-bottom:6px;}#estimate-parts-content .ep-supplier{padding:8px 12px;}#estimate-parts-content dl{gap:3px 8px;margin:4px 0;}#estimate-parts-content .ep-business{margin-top:3px;}#estimate-parts-content .ep-total{margin:10px 0;padding:8px 12px;}#estimate-parts-content .ep-caption{margin:10px 0 5px;}#estimate-parts-content th{padding:6px 4px;}#estimate-parts-content td{padding:3px 4px;height:27px;}#estimate-parts-content .ep-bottom{gap:20px;margin-top:10px;}#estimate-parts-content .ep-sums div{padding:4px 0;}#estimate-parts-content .ep-account{margin-top:8px;padding:7px 10px;}#estimate-parts-content .ep-foot{margin-top:12px;padding-top:8px;gap:16px;}#estimate-parts-content thead{display:table-header-group;}#estimate-parts-content tr,#estimate-parts-content .ep-info,#estimate-parts-content .ep-bottom,#estimate-parts-content .ep-foot{break-inside:avoid;}#estimate-parts-content *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}' +
-      '</style><div id="estimate-parts-content"><header class="ep-head"><img class="ep-logo" src="' + esc(c.logoUrl || 'https://purpleauto.co.kr/assets/brand-logos/purple-logo.png') + '" alt="퍼플오토"><div><h1>견적서</h1><div class="ep-meta">NO. ' + esc(d.estimateNumber || '-') + '<br>견적일자 ' + esc(fmtDateKo(d.estimateDate) || '-') + '</div></div></header>' +
-      '<div class="ep-info"><section><div class="ep-label">CUSTOMER · 고객 / 차량 정보</div><div class="ep-customer">' + esc(d.customerName || '-') + '<small>귀하</small></div><dl><dt>차종</dt><dd>' + esc(d.carModel || '-') + '</dd><dt>차대번호</dt><dd>' + esc(d.vin || '-') + '</dd></dl></section><section class="ep-supplier"><div class="ep-label">SUPPLIER · 공급자</div><strong>' + esc(c.name || '퍼플오토') + '</strong><div class="ep-business">사업자등록번호 885-68-00449</div><dl><dt>대표자</dt><dd>' + esc(c.ceo || '-') + '</dd><dt>주소</dt><dd>' + esc(c.address || '-') + '</dd><dt>전화</dt><dd>' + esc(c.phone || '-') + '</dd>' + (c.fax ? '<dt>팩스</dt><dd>' + esc(c.fax) + '</dd>' : '') + '</dl></section></div>' +
-      '<div class="ep-total"><div><b>총 견적금액</b><br><small>부가세 포함 · KRW</small></div><strong>₩ ' + fmt(total) + '</strong></div>' +
-      '<div class="ep-caption">부품 견적 명세<span>금액 단위: 원</span></div><table><colgroup><col style="width:5%"><col style="width:17%"><col style="width:26%"><col style="width:6%"><col style="width:16%"><col style="width:18%"><col style="width:12%"></colgroup><thead><tr><th>No.</th><th>품번</th><th>품명</th><th>수량</th><th>단가</th><th>공급가액</th><th>비고</th></tr></thead><tbody>' + rows + '</tbody></table>' +
-      '<div class="ep-bottom"><div><div class="ep-label">비고 / 안내사항</div><div class="ep-notes">' + esc(d.notes || '-') + '</div><div class="ep-account"><span>입금계좌 · 카카오뱅크</span><br><b>3333331946289</b><br>※이호준(the purple auto)</div></div><div class="ep-sums"><div><span>공급가액</span><b>' + fmt(supply) + ' 원</b></div><div><span>부가세 (10%)</span><b>' + fmt(vat) + ' 원</b></div><div class="ep-grand"><span>합계</span><span>' + fmt(total) + ' 원</span></div></div></div>' +
-      '<footer class="ep-foot"><div>PURPLE AUTO<br>' + esc(c.address || '') + '<br>' + (c.phone ? 'TEL. ' + esc(c.phone) : '') + '</div><div class="ep-policy">수입차 부품 특성상 주문시 반품 및 환불은 불가</div></footer></div>';
-  }
-
-  function estRentalLogo(c) {
-    var url = (c && c.logoUrl) ? String(c.logoUrl).trim() : '';
-    if (url) {
-      return '<img src="' + esc(url) + '" alt="퍼플오토" style="height:34px;width:auto;max-width:150px;display:block;object-fit:contain;">';
-    }
-    return estBrandA(0.82);
-  }
-
-  function estRentalMetaLine() {
-    var d = new Date();
-    var estNo = 'EST-' + d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0') + '-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
-    return esc(estNo) + ' · ' + fmtDateKo(todayStr());
-  }
-
-  function estRentalStyles() {
-    return '<style>' +
-      '#estimate-rental-content{--est-purple:#3c24a0;--est-purple-700:#5B2FD6;--est-text:#1a1a1a;--est-mute:#6b6b76;width:794px;margin:0 auto;background:#fff;font-family:\'Noto Sans KR\',-apple-system,sans-serif;color:var(--est-text);}' +
-      '#estimate-rental-content *{box-sizing:border-box;}' +
-      '#estimate-rental-content .est-rt-head{background:var(--est-purple);padding:18px 36px 16px;}' +
-      '#estimate-rental-content .est-rt-logo{margin-bottom:8px;}' +
-      '#estimate-rental-content .est-rt-title{color:#fff;font-size:22px;font-weight:800;letter-spacing:-0.3px;line-height:1.25;}' +
-      '#estimate-rental-content .est-rt-sub{color:rgba(255,255,255,.85);font-size:13px;margin-top:5px;}' +
-      '#estimate-rental-content .est-rt-body{padding:30px 36px 24px;}' +
-      '#estimate-rental-content .est-rt-grid{display:table;width:calc(100% + 40px);table-layout:fixed;border-spacing:20px 0;margin-left:-20px;}' +
-      '#estimate-rental-content .est-rt-col{display:table-cell;width:50%;vertical-align:top;}' +
-      '#estimate-rental-content .est-rt-section{font-size:16px;font-weight:700;color:var(--est-purple-700);margin-bottom:12px;display:flex;align-items:center;gap:8px;}' +
-      '#estimate-rental-content .est-rt-section::before{content:\'\';width:5px;height:16px;background:var(--est-purple);border-radius:2px;}' +
-      '#estimate-rental-content .est-rt-info-block{width:100%;margin-bottom:9px;border-radius:8px;overflow:hidden;border:1px solid #ECE7F5;}' +
-      '#estimate-rental-content .est-rt-info-label{background:var(--est-purple);color:#fff;font-size:13px;font-weight:700;text-align:center;height:28px;display:flex;align-items:center;justify-content:center;padding:0 8px;}' +
-      '#estimate-rental-content .est-rt-note{font-size:10px;font-weight:500;opacity:.85;margin-left:4px;}' +
-      '#estimate-rental-content .est-rt-info-value{background:#fff;font-size:15px;font-weight:700;text-align:center;min-height:50px;display:flex;align-items:center;justify-content:center;line-height:1.35;padding:6px 10px;word-break:keep-all;}' +
-      '#estimate-rental-content .est-rt-info-value .est-rt-small{font-size:13px;font-weight:600;}' +
-      '#estimate-rental-content .est-rt-info-value .est-rt-muted{color:var(--est-mute);font-weight:500;font-size:12.5px;}' +
-      '#estimate-rental-content .est-rt-info-value .est-rt-highlight{color:var(--est-purple-700);font-weight:800;font-size:18px;}' +
-      '#estimate-rental-content .est-rt-unit{font-size:13px;font-weight:600;}' +
-      '#estimate-rental-content .est-rt-compare{margin-top:22px;}' +
-      '#estimate-rental-content .est-rt-table{width:100%;border-collapse:collapse;border:1px solid #ECE7F5;border-radius:8px;overflow:hidden;}' +
-      '#estimate-rental-content .est-rt-table th{background:var(--est-purple);color:#fff;font-size:14px;font-weight:700;padding:10px 14px;text-align:left;}' +
-      '#estimate-rental-content .est-rt-table th:first-child{width:22%;}' +
-      '#estimate-rental-content .est-rt-table th:last-child{width:22%;text-align:right;}' +
-      '#estimate-rental-content .est-rt-table td{padding:12px 14px;font-size:14px;border-top:1px solid #ECE7F5;vertical-align:middle;}' +
-      '#estimate-rental-content .est-rt-table td:first-child{font-weight:700;color:var(--est-purple-700);background:#FAF5FF;}' +
-      '#estimate-rental-content .est-rt-table td:last-child{text-align:right;font-weight:800;font-size:16px;}' +
-      '#estimate-rental-content .est-rt-table .plus{color:#1DAA5C;}' +
-      '#estimate-rental-content .est-rt-table .minus{color:#E0395B;}' +
-      '#estimate-rental-content .est-rt-table .row-remark td{font-size:12.5px;color:var(--est-mute);line-height:1.65;}' +
-      '#estimate-rental-content .est-rt-notice{background:#F5F0FC;border-radius:8px;padding:14px 16px;font-size:12.5px;color:var(--est-purple-700);line-height:1.65;margin-top:18px;}' +
-      '#estimate-rental-content .est-rt-foot{padding:16px 36px 22px;font-size:11.5px;color:var(--est-mute);line-height:1.75;border-top:1px solid #EEE;}' +
-      '#estimate-rental-content .est-rt-foot b{color:var(--est-text);}' +
-      '@media print{#estimate-rental-content{width:100%;}#estimate-rental-content *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}' +
-      '</style>';
-  }
-
-  function rtInfoBlock(label, innerHtml, note) {
-    return '<div class="est-rt-info-block"><div class="est-rt-info-label">' + esc(label) +
-      (note ? '<span class="est-rt-note">' + note + '</span>' : '') +
-      '</div><div class="est-rt-info-value">' + innerHtml + '</div></div>';
-  }
-
-  function rtMoneyCell(n, highlight) {
-    if (!n) return '<span class="est-rt-muted">-</span>';
-    if (highlight) return '<span class="est-rt-highlight">' + fmt(n) + '<span class="est-rt-unit">원</span></span>';
-    return fmt(n) + '<span class="est-rt-unit">원</span>';
-  }
-
-  function rtCompareAmt(n, positiveGreen) {
-    if (!n) return '-';
-    var prefix = (positiveGreen && n > 0) ? '+' : '';
-    var cls = (positiveGreen && n > 0) ? 'plus' : (n > 0 ? 'minus' : '');
-    return '<span class="' + cls + '">' + prefix + fmt(n) + '원</span>';
-  }
-
-  function buildRentalContent(d) {
-    var c = d.companyInfo || {};
-    var footParts = [];
-    if (c.name) footParts.push('<b>' + esc(c.name) + '</b>');
-    if (c.address) footParts.push(esc(c.address));
-    var telFax = [];
-    if (c.phone) telFax.push('TEL. ' + esc(c.phone));
-    if (c.ceo) telFax.push('대표 ' + esc(c.ceo));
-    if (telFax.length) footParts.push(telFax.join(' · '));
-
-    return estRentalStyles() +
-      '<div id="estimate-rental-content">' +
-        '<div class="est-rt-head">' +
-          '<div class="est-rt-logo">' + estRentalLogo(c) + '</div>' +
-          '<div class="est-rt-title">오토리스 &amp; 장기렌트 비교분석 견적서</div>' +
-          '<div class="est-rt-sub">' + estRentalMetaLine() + '</div>' +
-        '</div>' +
-        '<div class="est-rt-body">' +
-          '<div class="est-rt-grid">' +
-            '<div class="est-rt-col">' +
-              '<div class="est-rt-section">차량 정보</div>' +
-              rtInfoBlock('차량번호', esc(d.plateNumber) || '<span class="est-rt-muted">-</span>') +
-              rtInfoBlock('차량명', d.carName ? '<span class="est-rt-small">' + esc(d.carName) + '</span>' : '<span class="est-rt-muted">-</span>') +
-              rtInfoBlock('연식', esc(d.year) || '<span class="est-rt-muted">-</span>') +
-              rtInfoBlock('주행거리', esc(d.mileage) || '<span class="est-rt-muted">-</span>') +
-              rtInfoBlock('사고유무', '<span class="est-rt-muted">' + (esc(d.accident) || '-') + '</span>') +
-            '</div>' +
-            '<div class="est-rt-col">' +
-              '<div class="est-rt-section">금액 정보</div>' +
-              rtInfoBlock('종류', esc(d.category) || '<span class="est-rt-muted">-</span>') +
-              rtInfoBlock('(a) 시세산출', rtMoneyCell(d.marketValue, true)) +
-              rtInfoBlock('(b) 송개수수료', rtMoneyCell(d.transferFee)) +
-              rtInfoBlock('(b) 실손비용', rtMoneyCell(d.actualLoss)) +
-              rtInfoBlock('(c) 보증금', d.deposit > 0 ? rtMoneyCell(d.deposit) : '<span class="est-rt-muted">-</span>') +
-              rtInfoBlock('(d) 해지금', rtMoneyCell(d.terminationFee, true)) +
-            '</div>' +
-          '</div>' +
-          '<div class="est-rt-compare">' +
-            '<div class="est-rt-section">비교 견적</div>' +
-            '<table class="est-rt-table"><tr><th>비교견적</th><th>내용</th><th>금액</th></tr>' +
-              '<tr><td>퍼플오토 이용 시</td><td>' + (esc(d.purpleAutoDesc) || '-') + '</td><td>' + rtCompareAmt(d.purpleAutoAmount, true) + '</td></tr>' +
-              '<tr><td>캐피탈 반납 시</td><td>' + (esc(d.returnDesc) || '-') + '</td><td>' + (d.returnAmount > 0 ? rtCompareAmt(d.returnAmount, false) : '-') + '</td></tr>' +
-              (d.notes ? '<tr class="row-remark"><td>비 고</td><td colspan="2">' + esc(d.notes).replace(/\n/g, '<br>') + '</td></tr>' : '') +
-            '</table>' +
-          '</div>' +
-          '<div class="est-rt-notice">※ 진행 시 승계확정날짜(인수 날짜)에 재산정하므로 소폭 변동될 수 있음</div>' +
-        '</div>' +
-        '<div class="est-rt-foot">' + (footParts.join(' · ') || '<b>퍼플오토</b>') + '</div>' +
-      '</div>';
-  }
-
-  function downloadDoc(kind, contentHtml) {
-    var widthCss = (kind === 'parts')
-      ? '#estimate-parts-content{transform:none !important;width:794px !important;}'
-      : '#estimate-rental-content{width:794px !important;margin:0 auto !important;}';
-    var title = (kind === 'parts') ? '부품 견적서 | 퍼플오토' : '장기렌트/리스 견적서 | 퍼플오토';
-    var name = (kind === 'parts') ? '부품견적서.html' : '장기렌트리스견적서.html';
-    var headExtra = (kind === 'parts')
-      ? '<scr' + 'ipt src="' + TAILWIND_CDN + '"></scr' + 'ipt><link href="' + REMIXICON_CDN + '" rel="stylesheet">'
-      : '';
-    var full = '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>' + title + '</title>' +
-      headExtra +
-      '<link href="' + FONT_CDN + '" rel="stylesheet">' +
-      '<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:\'Noto Sans KR\',sans-serif;background:#e7e5e4;display:flex;justify-content:center;padding:40px 20px;min-height:100vh;}' + widthCss + '</style>' +
-      '</head><body>' + contentHtml + '</body></html>';
-    var blob = new Blob([full], { type: 'text/html;charset=utf-8' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url; a.download = name;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-  }
-
-  function openPreview(kind) {
-    var contentHtml;
-    if (kind === 'parts') contentHtml = buildPartsContent(collectPartsData());
-    else contentHtml = buildRentalContent(collectRentalData());
-
-    var win = window.open('', '_blank', 'width=1200,height=900,scrollbars=yes');
-    if (!win) { alert('팝업이 차단되었습니다. 이 사이트의 팝업을 허용해 주세요.'); return; }
-
-    var previewHead = (kind === 'parts')
-      ? '<scr' + 'ipt src="' + TAILWIND_CDN + '"></scr' + 'ipt><link href="' + REMIXICON_CDN + '" rel="stylesheet">'
-      : '';
-    var doc = '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>견적서 미리보기 | 퍼플오토</title>' +
-      previewHead +
-      '<link href="' + FONT_CDN + '" rel="stylesheet">' +
-      '<style>body{margin:0;font-family:\'Noto Sans KR\',sans-serif;background:#e7e5e4;}' +
-        '.est-bar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.95);backdrop-filter:blur(6px);border-bottom:1px solid #d6d3d1;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 18px;}' +
-        '.est-bar .t{font-size:13px;font-weight:700;color:#44403c;}.est-bar .btns{display:flex;gap:8px;}' +
-        '.est-bar button{font-size:13px;font-weight:700;border:none;border-radius:8px;padding:9px 16px;cursor:pointer;}' +
-        '.est-bar .dl{background:#7c3aed;color:#fff;}.est-bar .dl:hover{background:#6d28d9;}.est-bar .pr,.est-bar .cl{background:#f5f5f4;color:#44403c;}' +
-        '.est-doc{display:flex;justify-content:center;padding:34px 16px;overflow-x:auto;}@media print{.est-bar{display:none;}}' +
-      '</style></head><body>' +
-      '<div class="est-bar"><span class="t">견적서 미리보기</span><div class="btns">' +
-        '<button class="pr" id="estPrintBtn">인쇄</button><button class="cl" id="estCloseBtn">닫기</button>' +
-      '</div></div><div class="est-doc">' + contentHtml + '</div></body></html>';
-
-    win.document.open(); win.document.write(doc); win.document.close();
-
-    try {
-      var dl = win.document.getElementById('estDlBtn');
-      if (dl) dl.onclick = function () { downloadDoc(kind, contentHtml); };
-      var pr = win.document.getElementById('estPrintBtn');
-      if (pr) pr.onclick = function () { win.focus(); win.print(); };
-      var cl = win.document.getElementById('estCloseBtn');
-      if (cl) cl.onclick = function () { win.close(); };
-    } catch (e) { /* cross-window timing */ }
-  }
-
-  function bindPanel() {
-    var panel = document.getElementById('panel-estimate');
-    if (!panel || panel.dataset.estBound) return;
-    panel.dataset.estBound = '1';
-    panel.addEventListener('click', function (e) {
-      var openBtn = e.target.closest('[data-est-open]');
-      if (openBtn) {
-        var v = openBtn.dataset.estOpen;
-        if (v === 'parts' || v === 'rental') { editingId = null; editingKind = null; }
-        showView(v); return;
-      }
-      var saveBtn = e.target.closest('[data-est-save]');
-      if (saveBtn) { saveEstimate(saveBtn.dataset.estSave); return; }
-      var loadBtn = e.target.closest('[data-est-load]');
-      if (loadBtn) { loadEstimate(loadBtn.dataset.estLoad); return; }
-      var delSaved = e.target.closest('[data-est-del-saved]');
-      if (delSaved) { deleteSavedEstimate(delSaved.dataset.estDelSaved); return; }
-      var previewBtn = e.target.closest('[data-est-preview]');
-      if (previewBtn) { openPreview(previewBtn.dataset.estPreview); return; }
-      if (e.target.closest('[data-est-addrow]')) {
-        var tbody = document.getElementById('partsRows');
-        if (tbody) { tbody.insertAdjacentHTML('beforeend', partsRowHtml({ quantity: 1, unitPrice: 0 })); recalcParts(); }
-        return;
-      }
-      var delBtn = e.target.closest('[data-est-delrow]');
-      if (delBtn) {
-        var tb = document.getElementById('partsRows'), tr = delBtn.closest('tr');
-        if (tb && tr && tb.querySelectorAll('tr[data-row]').length > 1) { tr.remove(); recalcParts(); }
-        return;
-      }
-    });
-    panel.addEventListener('input', function (e) {
-      if (e.target.matches('#partsRows [data-f="quantity"], #partsRows [data-f="unitPrice"]')) recalcParts();
-    });
-  }
-
-  function boot() {
-    if (booted) return;
-    var root = document.getElementById('estimateRoot');
-    if (!root) return;
-    booted = true;
-    injectStyle();
-    bindPanel();
-    renderHub(root);
-  }
-
-  window.PurpleAdminEstimate = { load: boot, init: boot };
-
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
-  else boot();
-})();
-</script>
-<script>PurpleAdminApp.init();</script>
-
-</body>
-</html>
