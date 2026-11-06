@@ -1261,6 +1261,7 @@
 
     var lc = (payload && payload.leaseConditions) || {};
     dj.leaseConditions = {
+      monthlyPayment: String(lc.monthlyPayment || '').trim(),
       priceInfo: String(lc.priceInfo || '').trim(),
       priceNote: String(lc.priceNote || '').trim(),
       initialCost: String(lc.initialCost || '').trim(),

@@ -326,6 +326,7 @@
       var row = mapUsedCarsListRows([r])[0];
       row.lastSyncedAt = '';
       var dj = r.detail_json || {};
+      row.monthlyPayment = String((dj.leaseConditions || {}).monthlyPayment || '').trim();
       var photos = (dj.photos && dj.photos.length) ? dj.photos : [];
       if (!row.thumb && photos.length) row.thumb = photos[0];
       if (!row.photoCount && row.thumb) row.photoCount = 1;

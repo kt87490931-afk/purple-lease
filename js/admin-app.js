@@ -265,7 +265,7 @@
   }
 
   function clearLtDetailFields() {
-    ['ltLcPriceInfo', 'ltLcPriceNote', 'ltLcInitialCost', 'ltLcPaymentMethod', 'ltLcTotalCost', 'ltLcLastUpdate',
+    ['ltLcMonthlyPayment', 'ltLcPriceInfo', 'ltLcPriceNote', 'ltLcInitialCost', 'ltLcPaymentMethod', 'ltLcTotalCost', 'ltLcLastUpdate',
       'ltVcFirstReg', 'ltVcInsuranceOwn', 'ltVcInsuranceThird', 'ltVcInsuranceHistory',
       'ltVcCurrentStatus', 'ltVcStatusDetail', 'ltPlate', 'ltColor', 'ltDescription', 'ltOptions'].forEach(function (id) {
       var el = document.getElementById(id);
@@ -295,6 +295,7 @@
     lc = lc || {};
     vc = vc || {};
     extra = extra || {};
+    document.getElementById('ltLcMonthlyPayment').value = lc.monthlyPayment || '';
     document.getElementById('ltLcPriceInfo').value = lc.priceInfo || '';
     document.getElementById('ltLcPriceNote').value = lc.priceNote || '';
     document.getElementById('ltLcInitialCost').value = lc.initialCost || '';
@@ -320,6 +321,7 @@
       description: document.getElementById('ltDescription').value.trim(),
       options: parseOptionsTextarea(document.getElementById('ltOptions').value),
       leaseConditions: {
+        monthlyPayment: document.getElementById('ltLcMonthlyPayment').value.trim(),
         priceInfo: document.getElementById('ltLcPriceInfo').value.trim(),
         priceNote: document.getElementById('ltLcPriceNote').value.trim(),
         initialCost: document.getElementById('ltLcInitialCost').value.trim(),
