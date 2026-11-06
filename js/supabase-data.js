@@ -321,12 +321,26 @@
     }, d, { photos: photos, seller: null });
   }
 
+  function leaseTransferMonthlyPayment(detail) {
+    var lc = detail.leaseConditions || {};
+    var explicit = String(lc.monthlyPayment || '').trim();
+    if (explicit) return explicit;
+    // Read the contractual payment before any support-adjusted promotional amounts.
+    var sources = [lc.paymentMethod, lc.priceNote, lc.totalCost, lc.priceInfo, detail.description];
+    var pattern = /(?:월\s*(?:납입(?:금|료)?|렌트료|리스료)|납입(?:금|료))\s*[:：]?\s*([0-9][0-9,]*(?:\.[0-9]+)?\s*(?:만\s*원|원))/;
+    for (var i = 0; i < sources.length; i++) {
+      var match = String(sources[i] || '').match(pattern);
+      if (match) return match[1].replace(/\s+/g, '');
+    }
+    return '';
+  }
+
   function mapLeaseTransfersListRows(data) {
     return (data || []).map(function (r) {
       var row = mapUsedCarsListRows([r])[0];
       row.lastSyncedAt = '';
       var dj = r.detail_json || {};
-      row.monthlyPayment = String((dj.leaseConditions || {}).monthlyPayment || '').trim();
+      row.monthlyPayment = leaseTransferMonthlyPayment(dj);
       var photos = (dj.photos && dj.photos.length) ? dj.photos : [];
       if (!row.thumb && photos.length) row.thumb = photos[0];
       if (!row.photoCount && row.thumb) row.photoCount = 1;
