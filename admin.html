@@ -1905,6 +1905,46 @@ body.admin-nav-open { overflow:hidden; }
       '#panel-estimate .est-back:hover{color:var(--purple-600);}',
       '#panel-estimate [data-est-addrow]{padding:6px 12px;font-size:12px;}',
       '#panel-estimate .est-hint{font-size:12px;color:var(--ink-400);margin:0 0 16px;line-height:1.6;}'
+      ,
+      '#panel-estimate .est-builder{max-width:1200px;padding:0;border-radius:0;border:1px solid #b6beca;background:#fff;box-shadow:0 2px 8px #172b4d12;}',
+      '#panel-estimate .est-toolbar,#panel-estimate .est-builder-foot{max-width:1200px;}',
+      '#panel-estimate .est-builder .est-section{padding:0;}',
+      '#panel-estimate .est-builder .est-section-title{margin:0;padding:10px 12px;background:#edf1f5;border-bottom:1px solid #cbd2dc;font-size:13px;}',
+      '#panel-estimate .est-builder .est-divider{margin:0;border-color:#b6beca;}',
+      '#panel-estimate .est-builder .est-grid{gap:0;}',
+      '#panel-estimate .est-builder .est-field{gap:0;border-right:1px solid #d6dce4;border-bottom:1px solid #d6dce4;}',
+      '#panel-estimate .est-builder .est-field label{padding:5px 9px;background:#f2f5f8;color:#536174;border-bottom:1px solid #e0e5ec;}',
+      '#panel-estimate .est-builder .est-field input,#panel-estimate .est-builder .est-field textarea{border:0;border-radius:0;background:#fff;padding:9px;font-size:13px;box-shadow:none;}',
+      '#panel-estimate .est-builder input:focus,#panel-estimate .est-builder textarea:focus{outline:2px solid #217346;outline-offset:-2px;background:#f6fff9;}',
+      '#panel-estimate .est-sheet-scroll{overflow:auto;}',
+      '#panel-estimate .est-sheet{width:100%;min-width:850px;border-collapse:collapse;table-layout:fixed;font-size:13px;}',
+      '#panel-estimate .est-sheet td,#panel-estimate .est-sheet th{border:1px solid #d6dce4;padding:0;height:34px;}',
+      '#panel-estimate .est-sheet .sheet-axis{background:#edf1f5;text-align:center;font-weight:500;color:#647286;font-size:11px;}',
+      '#panel-estimate .est-sheet .sheet-title{background:#217346;color:#fff;padding:12px 14px;font-size:17px;font-weight:700;}',
+      '#panel-estimate .est-sheet .sheet-label{background:#f2f5f8;padding:7px 9px;color:#536174;font-weight:600;text-align:left;}',
+      '#panel-estimate .est-sheet input,#panel-estimate .est-sheet textarea{display:block;width:100%;height:100%;min-height:34px;padding:7px 9px;border:0;border-radius:0;background:#fff;font:inherit;color:#182433;box-sizing:border-box;}',
+      '#panel-estimate .est-sheet textarea{resize:vertical;min-height:66px;}',
+      '#panel-estimate .est-sheet .num{text-align:right;font-variant-numeric:tabular-nums;}',
+      '#panel-estimate .est-parts-table{min-width:850px;table-layout:fixed;counter-reset:sheetrow;}',
+      '#panel-estimate .est-parts-table tbody tr{counter-increment:sheetrow;}',
+      '#panel-estimate .est-parts-table tbody .sheet-row-number::before{content:counter(sheetrow);}',
+      '#panel-estimate .est-parts-table th{background:#edf1f5;text-align:center;padding:8px 4px;border:1px solid #cbd2dc;color:#536174;font-weight:600;}',
+      '#panel-estimate .est-parts-table td{padding:0;border:1px solid #d6dce4;height:34px;background:#fff;}',
+      '#panel-estimate .est-parts-table td.sheet-row-number{background:#f2f5f8;text-align:center;font-size:11px;color:#647286;}',
+      '#panel-estimate .est-parts-table input{border:0;border-radius:0;background:transparent;padding:8px;height:34px;min-width:0;}',
+      '#panel-estimate .est-parts-table .est-amount{padding:7px 8px;background:#f3f6f9;color:#48566a;font-weight:500;}',
+      '#panel-estimate .sheet-tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#f8fafb;padding:9px 12px;border-bottom:1px solid #d6dce4;font-size:12px;}',
+      '#panel-estimate .sheet-tools label{display:flex;align-items:center;gap:6px;}',
+      '#panel-estimate .sheet-tools .sheet-help{color:#637386;}',
+      '#panel-estimate .sheet-summary{display:grid;grid-template-columns:1fr minmax(240px,340px);border-top:1px solid #b6beca;}',
+      '#panel-estimate .sheet-summary .est-totals{margin:0;display:block;}',
+      '#panel-estimate .sheet-summary .est-totals-box{width:100%;border:0;border-left:1px solid #d6dce4;border-radius:0;}',
+      '#panel-estimate .sheet-summary .est-totals-box .row{padding:10px 12px;}',
+      '#panel-estimate .sheet-summary .est-totals-box .row.total{background:#e8f3ec;}',
+      '#panel-estimate .sheet-summary .est-totals-box .row.total .v{color:#217346;}',
+      '#panel-estimate .sheet-note-label{padding:7px 10px;background:#f2f5f8;font-size:12px;color:#536174;}',
+      '#panel-estimate #partsNotes{width:100%;min-height:95px;resize:vertical;border:0;padding:10px;font:inherit;font-size:13px;box-sizing:border-box;}',
+      '@media(max-width:640px){#panel-estimate .sheet-summary{grid-template-columns:1fr;}#panel-estimate .sheet-summary .est-totals-box{border-left:0;border-top:1px solid #d6dce4;}}',
     ].join('');
     var style = document.createElement('style');
     style.id = 'estimateScopedStyle';
@@ -1973,7 +2013,7 @@ body.admin-nav-open { overflow:hidden; }
     var tbody = document.getElementById('partsRows');
     if (tbody) {
       var rows = (d.parts && d.parts.length) ? d.parts : [{ quantity: 1, unitPrice: 0 }];
-      tbody.innerHTML = rows.map(function (r) { return partsRowHtml(r); }).join('');
+      tbody.innerHTML = rows.map(function (r) { return partsRowHtml(r); }).join('') + blankPartsRows(Math.max(0,12 - rows.length));
     }
     setVal('partsNotes', d.notes);
     document.getElementById('partsHidePartNo').checked = !!d.hidePartNo;
@@ -2113,6 +2153,7 @@ body.admin-nav-open { overflow:hidden; }
     var id = 'pr' + (++partsSeq);
     var amount = num(row.quantity) * num(row.unitPrice);
     return '<tr data-row="' + id + '">' +
+      '<td class="sheet-row-number" aria-label="행 번호"></td>' +
       '<td><input type="text" data-f="partNo" value="' + esc(row.partNo) + '" placeholder="품번"></td>' +
       '<td><input type="text" data-f="partName" value="' + esc(row.partName) + '" placeholder="품명"></td>' +
       '<td hidden><input type="hidden" data-f="spec" value="' + esc(row.spec) + '"></td>' +
@@ -2122,42 +2163,50 @@ body.admin-nav-open { overflow:hidden; }
       '<td><input type="text" data-f="remark" value="' + esc(row.remark) + '" placeholder="비고"></td>' +
       '<td><button type="button" class="est-row-del" data-est-delrow title="삭제"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></td></tr>';
   }
+
+  function sheetInput(id, label, value, type) {
+    return '<input id="' + id + '" aria-label="' + esc(label) + '" type="' + (type || 'text') + '" value="' + esc(value || '') + '">';
+  }
+  function sheetInfoRow(number, aLabel, aId, aValue, bLabel, bId, bValue, aType, bType) {
+    return '<tr><td class="sheet-axis">' + number + '</td><th class="sheet-label">' + aLabel + '</th><td colspan="2">' + sheetInput(aId,aLabel,aValue,aType) +
+      '</td><th class="sheet-label">' + bLabel + '</th><td colspan="2">' + sheetInput(bId,bLabel,bValue,bType) + '</td></tr>';
+  }
+  function blankPartsRows(count) {
+    return Array.from({length:count},function() { return partsRowHtml({quantity:'',unitPrice:''}); }).join('');
+  }
   function renderPartsBuilder(root) {
     partsSeq = 0;
     root.innerHTML =
       '<div class="est-toolbar"><button type="button" class="est-back" data-est-open="hub">← 견적서 유형 선택</button>' +
         '<div class="est-toolbar-actions"><button type="button" class="btn btn-outline" data-est-save="parts">저장</button>' +
-        '<button type="button" class="btn btn-outline" data-est-excel="parts">엑셀 다운로드</button><button type="button" class="btn btn-primary" data-est-preview="parts">미리보기</button></div></div>' +
-      '<div class="est-builder">' +
-        '<div class="est-section"><div class="est-section-title">공급자 정보</div>' + companyFieldsHtml('parts') + '</div>' +
-        '<div class="est-divider"></div>' +
-        '<div class="est-section"><div class="est-section-title">견적 정보 / 거래처 / 차량</div><div class="est-grid cols-3">' +
-          field('partsEstNo', '견적번호', '', '', 'text', '비우면 자동생성') +
-          field('partsEstDate', '견적일자', todayStr(), '', 'date') +
-          field('partsCustomer', '고객사명', '', '', 'text', '고객사명') +
-          field('partsCarModel', '차종', '', '', 'text', '예: 그랜저 IG') +
-          field('partsVin', '차대번호', '', '', 'text', '차대번호') +
-        '</div></div>' +
-        '<div class="est-divider"></div>' +
-        '<div class="est-section"><div class="est-section-title" style="justify-content:space-between;"><span>부품 목록</span>' +
-          '<button type="button" class="btn btn-outline" data-est-addrow>+ 항목 추가</button></div>' +
-          '<label style="display:block;margin:10px 0;font-size:13px;"><input type="checkbox" id="partsHidePartNo"> 부품번호 가리기 (미리보기·인쇄·엑셀·복사)</label>' +
-          '<p class="est-hint">엑셀의 품번 · 품명 · 수량 · 단가 · 비고 열을 복사한 뒤 첫 칸에 Ctrl+V 하세요. 여러 행이 자동 추가됩니다. 공급가액·No. 열이 포함된 다운로드 파일도 붙여넣을 수 있습니다.</p>' +
-          '<button type="button" class="btn btn-outline" data-est-copy style="margin-bottom:10px;">엑셀에 붙여넣기용 복사</button>' +
-          '<div style="overflow-x:auto;"><table class="est-parts-table"><thead><tr>' +
-            '<th style="min-width:90px;">품번</th><th style="min-width:120px;">품명</th>' +
-            '<th style="width:66px;">수량</th><th style="width:100px;">단가</th><th style="width:110px;text-align:right;">공급가액</th>' +
-            '<th style="min-width:80px;">비고</th><th style="width:34px;"></th></tr></thead>' +
-            '<tbody id="partsRows">' + partsRowHtml({ quantity: 1, unitPrice: 0 }) + '</tbody></table></div>' +
-          '<div class="est-totals"><div class="est-totals-box">' +
-            '<div class="row"><span>공급가액</span><span class="v" id="partsSupply">0</span></div>' +
-            '<div class="row"><span>부가세 (10%)</span><span class="v" id="partsVat">0</span></div>' +
-            '<div class="row total"><span>합계</span><span class="v" id="partsTotal">0</span></div>' +
-          '</div></div></div>' +
-        '<div class="est-divider"></div>' +
-        '<div class="est-section"><div class="est-section-title">비고</div><div class="est-field"><textarea id="partsNotes" rows="3" placeholder="특이사항을 입력하세요"></textarea></div></div>' +
-      '</div>' +
-      '<div class="est-builder-foot"><button type="button" class="btn btn-outline" data-est-preview="parts">미리보기</button>' +
+        '<button type="button" class="btn btn-outline" data-est-excel="parts">엑셀 다운로드</button>' +
+        '<button type="button" class="btn btn-primary" data-est-preview="parts">미리보기 / 출력</button></div></div>' +
+      '<div class="est-builder"><div class="est-sheet-scroll"><table class="est-sheet" aria-label="부품 견적서 입력 시트">' +
+        '<colgroup><col style="width:42px"><col style="width:13%"><col style="width:27%"><col style="width:9%"><col style="width:13%"><col style="width:19%"><col></colgroup>' +
+        '<thead><tr><th class="sheet-axis"></th><th class="sheet-axis">A</th><th class="sheet-axis">B</th><th class="sheet-axis">C</th><th class="sheet-axis">D</th><th class="sheet-axis">E</th><th class="sheet-axis">F</th></tr></thead><tbody>' +
+        '<tr><td class="sheet-axis">1</td><td colspan="6" class="sheet-title">자동차 부품 견적서 · 입력 시트</td></tr>' +
+        sheetInfoRow(2,'상호명','partsCoName',COMPANY.name,'대표자','partsCoCeo',COMPANY.ceo) +
+        '<tr><td class="sheet-axis">3</td><th class="sheet-label">주소</th><td colspan="5">' + sheetInput('partsCoAddr','주소',COMPANY.address) + '</td></tr>' +
+        sheetInfoRow(4,'전화번호','partsCoPhone',COMPANY.phone,'팩스','partsCoFax',COMPANY.fax) +
+        '<tr><td class="sheet-axis">5</td><th class="sheet-label">로고 URL</th><td colspan="5">' + sheetInput('partsCoLogo','로고 URL',COMPANY.logoUrl) + '</td></tr>' +
+        sheetInfoRow(6,'견적번호','partsEstNo','','견적일자','partsEstDate',todayStr(),'text','date') +
+        sheetInfoRow(7,'고객사명','partsCustomer','','차종','partsCarModel','') +
+        '<tr><td class="sheet-axis">8</td><th class="sheet-label">차대번호</th><td colspan="5">' + sheetInput('partsVin','차대번호','') + '</td></tr>' +
+        '</tbody></table></div>' +
+        '<div class="sheet-tools"><button type="button" class="btn btn-outline" data-est-addrow>+ 행 추가</button>' +
+        '<label><input type="checkbox" id="partsHidePartNo"> 부품번호 가리기</label>' +
+        '<button type="button" class="btn btn-outline" data-est-copy>엑셀용 복사</button>' +
+        '<span class="sheet-help">Enter: 아래 셀 · Tab: 다음 셀 · Alt+방향키: 셀 이동 · Ctrl+V: 여러 셀 붙여넣기</span></div>' +
+        '<div class="est-sheet-scroll"><table class="est-parts-table" aria-label="부품 입력 시트">' +
+        '<colgroup><col style="width:42px"><col style="width:17%"><col style="width:25%"><col style="width:8%"><col style="width:13%"><col style="width:15%"><col><col style="width:34px"></colgroup>' +
+        '<thead><tr><th></th><th>A · 품번</th><th>B · 품명</th><th>C · 수량</th><th>D · 단가</th><th>E · 공급가액</th><th>F · 비고</th><th></th></tr></thead>' +
+        '<tbody id="partsRows">' + blankPartsRows(12) + '</tbody></table></div>' +
+        '<div class="sheet-summary"><div><div class="sheet-note-label">비고</div><textarea id="partsNotes" aria-label="견적서 비고" placeholder="특이사항을 입력하세요"></textarea></div>' +
+        '<div class="est-totals"><div class="est-totals-box">' +
+        '<div class="row"><span>공급가액</span><span class="v" id="partsSupply">0</span></div>' +
+        '<div class="row"><span>부가세 (10%)</span><span class="v" id="partsVat">0</span></div>' +
+        '<div class="row total"><span>합계</span><span class="v" id="partsTotal">0</span></div></div></div></div></div>' +
+        '<div class="est-builder-foot"><button type="button" class="btn btn-outline" data-est-preview="parts">미리보기 / 출력</button>' +
         '<button type="button" class="btn btn-primary" data-est-save="parts">저장</button></div>';
     recalcParts();
   }
@@ -2166,6 +2215,7 @@ body.admin-nav-open { overflow:hidden; }
     document.querySelectorAll('#partsRows tr[data-row]').forEach(function (tr) {
       function f(name) { var el = tr.querySelector('[data-f="' + name + '"]'); return el ? el.value : ''; }
       var q = num(f('quantity')), u = num(f('unitPrice'));
+      if (!f('partNo').trim() && !f('partName').trim() && !f('remark').trim() && !f('spec').trim() && !q && !u) return;
       rows.push({ partNo: f('partNo').trim(), partName: f('partName').trim(), spec: f('spec').trim(), quantity: q, unitPrice: u, amount: q * u, remark: f('remark').trim() });
     });
     return rows;
@@ -2649,6 +2699,38 @@ body.admin-nav-open { overflow:hidden; }
         var tb = document.getElementById('partsRows'), tr = delBtn.closest('tr');
         if (tb && tr && tb.querySelectorAll('tr[data-row]').length > 1) { tr.remove(); recalcParts(); }
         return;
+      }
+    });
+    panel.addEventListener('keydown', function(e) {
+      var input = e.target.closest('.est-builder input:not([type="checkbox"]), .est-builder textarea');
+      if (!input || e.isComposing || e.ctrlKey || e.metaKey) return;
+      var row = input.closest('#partsRows tr');
+      if (row) {
+        var fields = ['partNo','partName','quantity','unitPrice','remark'];
+        var col = fields.indexOf(input.dataset.f);
+        var tr = row, nextCol = col;
+        if (e.altKey && /^Arrow/.test(e.key)) e.preventDefault();
+        if (e.key === 'Enter' || (e.altKey && e.key === 'ArrowDown')) tr = e.shiftKey ? row.previousElementSibling : row.nextElementSibling;
+        else if (e.altKey && e.key === 'ArrowUp') tr = row.previousElementSibling;
+        else if (e.altKey && e.key === 'ArrowLeft') nextCol--;
+        else if (e.altKey && e.key === 'ArrowRight') nextCol++;
+        else if (e.key === 'Tab') {
+          nextCol += e.shiftKey ? -1 : 1;
+          if (nextCol >= fields.length) { nextCol=0; tr=row.nextElementSibling; }
+          if (nextCol < 0) { nextCol=fields.length-1; tr=row.previousElementSibling; }
+        } else return;
+        if (!tr && !e.shiftKey && (e.key === 'Enter' || e.key === 'Tab' || e.key === 'ArrowDown')) {
+          row.parentElement.insertAdjacentHTML('beforeend', blankPartsRows(1)); tr=row.nextElementSibling;
+        }
+        if (tr && nextCol >= 0 && nextCol < fields.length) {
+          e.preventDefault();
+          var next=tr.querySelector('[data-f="' + fields[nextCol] + '"]');
+          next.focus(); next.select();
+        }
+      } else if (e.key === 'Enter' && input.tagName !== 'TEXTAREA') {
+        var inputs=Array.from(panel.querySelectorAll('.est-builder input:not([type="checkbox"]):not([type="hidden"]), .est-builder textarea'));
+        var index=inputs.indexOf(input)+(e.shiftKey ? -1 : 1);
+        if(inputs[index]) { e.preventDefault(); inputs[index].focus(); }
       }
     });
     panel.addEventListener('paste', function(e) {
