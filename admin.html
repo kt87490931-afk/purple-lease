@@ -2635,10 +2635,74 @@ body.admin-nav-open { overflow:hidden; }
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
   }
 
+
+  function loadEstimateImageModule(win) {
+    if (win.htmlToImage) return Promise.resolve(win.htmlToImage);
+    if (win.estimateImageModulePromise) return win.estimateImageModulePromise;
+    win.estimateImageModulePromise = new Promise(function(resolve, reject) {
+      var script = win.document.createElement('script');
+      var timer = win.setTimeout(function() { fail('이미지 모듈 로딩 시간이 초과되었습니다. 다시 시도해 주세요.'); }, 20000);
+      function fail(message) {
+        win.clearTimeout(timer); script.remove(); win.estimateImageModulePromise = null;
+        reject(new Error(message));
+      }
+      script.src = 'https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.js';
+      script.onload = function() {
+        if (!win.htmlToImage) { fail('이미지 모듈을 불러오지 못했습니다.'); return; }
+        win.clearTimeout(timer); resolve(win.htmlToImage);
+      };
+      script.onerror = function() { fail('이미지 모듈 다운로드에 실패했습니다. 인터넷 연결을 확인해 주세요.'); };
+      win.document.head.appendChild(script);
+    });
+    return win.estimateImageModulePromise;
+  }
+  async function downloadEstimateImage(win, kind, data, button) {
+    if (button.disabled) return;
+    button.disabled = true;
+    var original = button.textContent;
+    button.textContent = '이미지 생성 중…';
+    try {
+      var module = await loadEstimateImageModule(win);
+      if (win.document.fonts && win.document.fonts.ready) await win.document.fonts.ready;
+      var target = win.document.getElementById(kind === 'parts' ? 'estimate-parts-content' : 'estimate-rental-content');
+      if (!target) throw new Error('견적서 내용을 찾을 수 없습니다.');
+      await Promise.all(Array.from(target.querySelectorAll('img')).map(function(img) {
+        if (img.complete) {
+          if (!img.naturalWidth) throw new Error('로고 또는 QR 이미지를 불러오지 못했습니다.');
+          return Promise.resolve();
+        }
+        return new Promise(function(resolve, reject) {
+          var timer = win.setTimeout(function() { cleanup(); reject(new Error('로고 또는 QR 로딩 시간이 초과되었습니다.')); },15000);
+          function cleanup() { win.clearTimeout(timer); img.removeEventListener('load',loaded); img.removeEventListener('error',failed); }
+          function loaded() { cleanup(); resolve(); }
+          function failed() { cleanup(); reject(new Error('로고 또는 QR 이미지를 불러오지 못했습니다.')); }
+          img.addEventListener('load',loaded); img.addEventListener('error',failed);
+        });
+      }));
+      var width = Math.max(794, target.scrollWidth, target.offsetWidth);
+      var height = Math.max(target.scrollHeight, target.offsetHeight);
+      var blob = await module.toBlob(target, {
+        backgroundColor:'#ffffff', pixelRatio:2, skipFonts:true,
+        width:width, height:height, canvasWidth:width, canvasHeight:height,
+        style:{transform:'none',margin:'0',width:width+'px',height:height+'px',overflow:'visible',maxWidth:'none',maxHeight:'none'}
+      });
+      if (!blob || !blob.size) throw new Error('이미지가 생성되지 않았습니다.');
+      var url = win.URL.createObjectURL(blob);
+      var link = win.document.createElement('a');
+      var label = kind === 'parts' ? (data.customerName || '부품') : (data.carName || '장기렌트리스');
+      link.download = ('견적서_' + label + '_' + (data.estimateDate || todayStr())).replace(/[\\/:*?"<>|]/g,'_') + '.png';
+      link.href = url; win.document.body.appendChild(link); link.click(); link.remove();
+      win.setTimeout(function() { win.URL.revokeObjectURL(url); },30000);
+    } catch(error) {
+      win.alert('이미지 다운로드 실패: ' + (error.message || error));
+    } finally {
+      button.disabled = false; button.textContent = original;
+    }
+  }
+
   function openPreview(kind) {
-    var contentHtml;
-    if (kind === 'parts') contentHtml = buildPartsContent(collectPartsData());
-    else contentHtml = buildRentalContent(collectRentalData());
+    var data = kind === 'parts' ? collectPartsData() : collectRentalData();
+    var contentHtml = kind === 'parts' ? buildPartsContent(data) : buildRentalContent(data);
 
     var win = window.open('', '_blank', 'width=1200,height=900,scrollbars=yes');
     if (!win) { alert('팝업이 차단되었습니다. 이 사이트의 팝업을 허용해 주세요.'); return; }
@@ -2657,12 +2721,14 @@ body.admin-nav-open { overflow:hidden; }
         '.est-doc{display:flex;justify-content:center;padding:34px 16px;overflow-x:auto;}@media print{.est-bar{display:none;}}' +
       '</style></head><body>' +
       '<div class="est-bar"><span class="t">견적서 미리보기</span><div class="btns">' +
-        '<button class="pr" id="estPrintBtn">인쇄</button><button class="cl" id="estCloseBtn">닫기</button>' +
+        '<button class="dl" id="estImageBtn">이미지 다운로드</button><button class="pr" id="estPrintBtn">인쇄</button><button class="cl" id="estCloseBtn">닫기</button>' +
       '</div></div><div class="est-doc">' + contentHtml + '</div></body></html>';
 
     win.document.open(); win.document.write(doc); win.document.close();
 
     try {
+      var imageBtn = win.document.getElementById('estImageBtn');
+      if (imageBtn) imageBtn.onclick = function () { downloadEstimateImage(win,kind,data,imageBtn); };
       var dl = win.document.getElementById('estDlBtn');
       if (dl) dl.onclick = function () { downloadDoc(kind, contentHtml); };
       var pr = win.document.getElementById('estPrintBtn');
