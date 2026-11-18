@@ -2465,7 +2465,7 @@ body.admin-nav-open { overflow:hidden; }
     var rows = '';
     for (var i = 0; i < Math.max(d.parts.length, 12); i++) {
       var r = d.parts[i];
-      rows += '<tr><td>' + (i + 1) + '</td>' + (r ?
+      rows += (r ? '<tr>' : '<tr class="ep-empty">') + '<td>' + (i + 1) + '</td>' + (r ?
         '<td>' + esc(d.hidePartNo ? '' : r.partNo) + '</td><td>' + esc(r.partName) + '</td><td>' + esc(r.quantity) + '</td><td class="num">' + fmt(r.unitPrice || 0) + '</td><td class="num amount">' + fmt(r.amount || 0) + '</td><td>' + esc(r.remark) + '</td>' :
         '<td></td><td></td><td></td><td></td><td></td><td></td>') + '</tr>';
     }
@@ -2500,6 +2500,25 @@ body.admin-nav-open { overflow:hidden; }
       '#estimate-parts-content .ep-contact .ep-account{margin-top:7px;padding-top:5px;}' +
       '#estimate-parts-content .ep-contact .ep-account-line{white-space:normal;overflow-wrap:anywhere;}' +
       '#estimate-parts-content .ep-policy{margin-top:6px;padding-top:5px;}' +
+      '}' +
+      '#estimate-parts-content{font-family:"Malgun Gothic","Noto Sans KR","Apple SD Gothic Neo",sans-serif;font-size:16px;font-weight:500;color:#111827;}' +
+      '#estimate-parts-content .ep-meta,#estimate-parts-content .ep-label,#estimate-parts-content .ep-party-title,#estimate-parts-content .ep-business,#estimate-parts-content .ep-tagline,#estimate-parts-content .ep-caption,#estimate-parts-content .ep-notes{font-size:16px;}' +
+      '#estimate-parts-content .ep-party dl,#estimate-parts-content table,#estimate-parts-content td:nth-child(2),#estimate-parts-content .ep-sums,#estimate-parts-content .ep-contact .ep-account-line{font-size:16px;}' +
+      '#estimate-parts-content .ep-party dd,#estimate-parts-content td,#estimate-parts-content td:nth-child(3){font-weight:500;}' +
+      '#estimate-parts-content .ep-party-title span,#estimate-parts-content .ep-total small,#estimate-parts-content .ep-caption span,#estimate-parts-content .ep-contact-links span,#estimate-parts-content .ep-contact-links a,#estimate-parts-content .ep-account-title,#estimate-parts-content .ep-channel figcaption,#estimate-parts-content .ep-policy{font-size:14px;font-weight:600;color:#292333;}' +
+      '#estimate-parts-content .ep-contact-links span,#estimate-parts-content .ep-account-title,#estimate-parts-content .ep-channel figcaption{color:#51208c;font-weight:700;}' +
+      '#estimate-parts-content .ep-sums .ep-grand{font-size:19px;}' +
+      '@media print{' +
+      '#estimate-parts-content{zoom:1;line-height:1.2;}' +
+      '#estimate-parts-content .ep-party dl{line-height:1.25;}' +
+      '#estimate-parts-content td{height:23px;line-height:1.15;}' +
+      '#estimate-parts-content tr.ep-empty{display:none;}' +
+      '#estimate-parts-content table,#estimate-parts-content td:nth-child(2){font-size:15px;}' +
+      '#estimate-parts-content col:nth-child(2){width:16%!important;}' +
+      '#estimate-parts-content col:nth-child(3){width:32%!important;}' +
+      '#estimate-parts-content col:nth-child(5){width:14%!important;}' +
+      '#estimate-parts-content col:nth-child(6){width:16%!important;}' +
+      '#estimate-parts-content col:nth-child(7){width:11%!important;}' +
       '}' +
       '</style><div id="estimate-parts-content"><header class="ep-head"><div class="ep-brand"><img class="ep-logo" src="' + esc(c.logoUrl || 'https://purpleauto.co.kr/assets/brand-logos/purple-logo.png') + '" alt="퍼플오토"><div class="ep-tagline">자동차에 인생을 담다</div></div><div><h1>견적서</h1><div class="ep-meta">NO. ' + esc(d.estimateNumber || '-') + '<br>견적일자 ' + esc(fmtDateKo(d.estimateDate) || '-') + '</div></div></header>' +
       '<div class="ep-info"><section class="ep-party ep-customer-panel"><div class="ep-party-title">CUSTOMER <span>고객 / 차량 정보</span></div><dl><dt>고객사명</dt><dd><b>' + esc(d.customerName || '-') + '</b> 귀하</dd><dt>견적일자</dt><dd>' + esc(fmtDateKo(d.estimateDate) || '-') + '</dd><dt>차종</dt><dd>' + esc(d.carModel || '-') + '</dd><dt>차대번호</dt><dd>' + esc(d.vin || '-') + '</dd></dl></section><section class="ep-party ep-supplier"><div class="ep-party-title">SUPPLIER <span>공급자 정보</span></div><dl><dt>상호</dt><dd><b>' + esc(c.name || '더퍼플오토') + '</b></dd><dt>등록번호</dt><dd>885-68-00449</dd><dt>대표자</dt><dd>' + esc(c.ceo || '-') + '</dd><dt>주소</dt><dd>' + esc(c.address || '-') + '</dd><dt>전화</dt><dd>' + esc(c.phone || '-') + '</dd>' + (c.fax ? '<dt>팩스</dt><dd>' + esc(c.fax) + '</dd>' : '') + '</dl></section></div>' +
