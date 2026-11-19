@@ -2433,29 +2433,122 @@ body.admin-nav-open { overflow:hidden; }
     }
     return rows;
   }
-  async function exportEstimateExcel(kind) {
-    var d = kind === 'parts' ? collectPartsData() : collectRentalData();
+  var estimateExcelJsLoading;
+  function loadEstimateExcelJs() {
+    if (!estimateExcelJsLoading) {
+      estimateExcelJsLoading = new Promise(function(resolve, reject) {
+        var script = document.createElement('script');
+        var timer = setTimeout(fail, 20000);
+        function fail() {
+          clearTimeout(timer); script.remove(); estimateExcelJsLoading = null;
+          reject(new Error('견적서 엑셀 모듈을 불러오지 못했습니다. 다시 시도해 주세요.'));
+        }
+        script.src = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+        script.onload = function() {
+          if (!window.ExcelJS) { fail(); return; }
+          clearTimeout(timer); resolve(window.ExcelJS);
+        };
+        script.onerror = fail;
+        document.head.appendChild(script);
+      });
+    }
+    return estimateExcelJsLoading;
+  }
+
+  async function capturePartsForExcel(data) {
+    var frame = document.createElement('iframe');
+    frame.setAttribute('aria-hidden','true');
+    frame.tabIndex = -1;
+    frame.style.cssText = 'position:fixed;left:-2000px;top:0;width:1200px;height:900px;border:0;pointer-events:none';
     try {
+      await new Promise(function(resolve, reject) {
+        var timer = setTimeout(function() { reject(new Error('견적서 미리보기 로딩 시간이 초과되었습니다.')); }, 25000);
+        frame.onload = function() { clearTimeout(timer); resolve(); };
+        frame.srcdoc = estimatePreviewDocument('parts', buildPartsContent(data));
+        document.body.appendChild(frame);
+      });
+      var capture = await captureEstimateImage(frame.contentWindow, 'parts');
+      var dataUrl = await new Promise(function(resolve, reject) {
+        var reader = new FileReader();
+        reader.onload = function() { resolve(reader.result); };
+        reader.onerror = function() { reject(new Error('견적서 이미지를 읽지 못했습니다.')); };
+        reader.readAsDataURL(capture.blob);
+      });
+      return {dataUrl:dataUrl,width:capture.width,height:capture.height};
+    } finally {
+      frame.remove();
+    }
+  }
+
+  async function exportPartsEstimateWorkbook(xlsx, sheet, pasteSheet, label, data) {
+    var loaded = await Promise.all([loadEstimateExcelJs(), capturePartsForExcel(data)]);
+    var ExcelJS = loaded[0], capture = loaded[1];
+    var book = new ExcelJS.Workbook();
+    var rowCount = Math.ceil(capture.height / 20);
+    var preview = book.addWorksheet('견적서', {
+      views:[{showGridLines:false}],
+      properties:{defaultRowHeight:15},
+      pageSetup:{paperSize:9,orientation:'portrait',fitToPage:true,fitToWidth:1,fitToHeight:1,printArea:'A1:A' + rowCount}
+    });
+    preview.getColumn(1).width = Math.ceil(capture.width / 7);
+    preview.addImage(book.addImage({base64:capture.dataUrl,extension:'png'}), {
+      tl:{col:0,row:0},ext:{width:capture.width,height:capture.height}
+    });
+
+    [[sheet,'견적 데이터'],[pasteSheet,'붙여넣기용']].forEach(function(entry) {
+      var source = entry[0], dest = book.addWorksheet(entry[1]);
+      var range = xlsx.utils.decode_range(source['!ref']);
+      source['!cols'].forEach(function(col, i) { dest.getColumn(i + 1).width = col.wch; });
+      for (var row = 0; row <= range.e.r; row++) {
+        for (var col = 0; col <= range.e.c; col++) {
+          var value = source[xlsx.utils.encode_cell({r:row,c:col})];
+          if (!value) continue;
+          var cell = dest.getCell(row + 1, col + 1);
+          cell.value = value.f ? {formula:value.f,result:value.v} : value.v;
+          if (value.z) cell.numFmt = value.z;
+        }
+      }
+      (source['!merges'] || []).forEach(function(range) { dest.mergeCells(xlsx.utils.encode_range(range)); });
+      if (source['!autofilter']) dest.autoFilter = source['!autofilter'].ref;
+    });
+
+    var buffer = await book.xlsx.writeBuffer();
+    var blob = new Blob([buffer], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement('a');
+    link.href = url; link.download = label + '.xlsx';
+    document.body.appendChild(link); link.click(); link.remove();
+    setTimeout(function() { URL.revokeObjectURL(url); }, 30000);
+  }
+
+  async function exportEstimateExcel(kind, button) {
+    button.disabled = true;
+    var original = button.textContent;
+    button.textContent = '엑셀 생성 중…';
+    try {
+      var d = kind === 'parts' ? collectPartsData() : collectRentalData();
       var xlsx = await loadEstimateXlsx();
       var sheet = xlsx.utils.aoa_to_sheet(estimateExcelRows(kind, d));
       sheet['!cols'] = kind === 'parts'
         ? [{wch:20},{wch:30},{wch:32},{wch:10},{wch:16},{wch:18},{wch:30}]
         : [{wch:26},{wch:65}];
-      var book = xlsx.utils.book_new();
-      if (kind === 'parts') configureEstimateSheet(xlsx, sheet, d);
-      xlsx.utils.book_append_sheet(book, sheet, '견적서');
+      var label = (kind === 'parts' ? (d.estimateNumber || '부품견적서') : (d.carName || '장기렌트리스견적서')).replace(/[\\/:*?"<>|]/g, '_');
       if (kind === 'parts') {
+        configureEstimateSheet(xlsx, sheet, d);
         var pasteRows = [['품번','품명','수량','단가','비고']];
         d.parts.forEach(function(r) { pasteRows.push([d.hidePartNo ? '' : r.partNo, r.partName, r.quantity, r.unitPrice, r.remark]); });
         var pasteSheet = xlsx.utils.aoa_to_sheet(pasteRows);
         pasteSheet['!cols'] = [{wch:24},{wch:36},{wch:10},{wch:18},{wch:36}];
         pasteSheet['!autofilter'] = {ref:pasteSheet['!ref']};
-        xlsx.utils.book_append_sheet(book, pasteSheet, '붙여넣기용');
+        await exportPartsEstimateWorkbook(xlsx, sheet, pasteSheet, label, d);
+      } else {
+        var book = xlsx.utils.book_new();
+        xlsx.utils.book_append_sheet(book, sheet, '견적서');
+        xlsx.writeFile(book, label + '.xlsx');
       }
-      var label = kind === 'parts' ? (d.estimateNumber || '부품견적서') : (d.carName || '장기렌트리스견적서');
-      xlsx.writeFile(book, label.replace(/[\\/:*?"<>|]/g, '_') + '.xlsx');
       estToast('엑셀 파일을 다운로드했습니다.');
     } catch(e) { estToast('엑셀 다운로드 실패: ' + (e.message || e), true); }
+    finally { button.disabled = false; button.textContent = original; }
   }
 
   function buildPartsContent(d) {
@@ -2728,37 +2821,42 @@ body.admin-nav-open { overflow:hidden; }
     });
     return win.estimateImageModulePromise;
   }
+  async function captureEstimateImage(win, kind) {
+    var module = await loadEstimateImageModule(win);
+    if (win.document.fonts && win.document.fonts.ready) await win.document.fonts.ready;
+    var target = win.document.getElementById(kind === 'parts' ? 'estimate-parts-content' : 'estimate-rental-content');
+    if (!target) throw new Error('견적서 내용을 찾을 수 없습니다.');
+    await Promise.all(Array.from(target.querySelectorAll('img')).map(function(img) {
+      if (img.complete) {
+        if (!img.naturalWidth) throw new Error('로고 또는 QR 이미지를 불러오지 못했습니다.');
+        return Promise.resolve();
+      }
+      return new Promise(function(resolve, reject) {
+        var timer = win.setTimeout(function() { cleanup(); reject(new Error('로고 또는 QR 로딩 시간이 초과되었습니다.')); },15000);
+        function cleanup() { win.clearTimeout(timer); img.removeEventListener('load',loaded); img.removeEventListener('error',failed); }
+        function loaded() { cleanup(); resolve(); }
+        function failed() { cleanup(); reject(new Error('로고 또는 QR 이미지를 불러오지 못했습니다.')); }
+        img.addEventListener('load',loaded); img.addEventListener('error',failed);
+      });
+    }));
+    var width = Math.max(794, target.scrollWidth, target.offsetWidth);
+    var height = Math.max(target.scrollHeight, target.offsetHeight);
+    var blob = await module.toBlob(target, {
+      backgroundColor:'#ffffff', pixelRatio:2, skipFonts:true,
+      width:width, height:height, canvasWidth:width, canvasHeight:height,
+      style:{transform:'none',margin:'0',width:width+'px',height:height+'px',overflow:'visible',maxWidth:'none',maxHeight:'none'}
+    });
+    if (!blob || !blob.size) throw new Error('이미지가 생성되지 않았습니다.');
+    return {blob:blob,width:width,height:height};
+  }
+
   async function downloadEstimateImage(win, kind, data, button) {
     if (button.disabled) return;
     button.disabled = true;
     var original = button.textContent;
     button.textContent = '이미지 생성 중…';
     try {
-      var module = await loadEstimateImageModule(win);
-      if (win.document.fonts && win.document.fonts.ready) await win.document.fonts.ready;
-      var target = win.document.getElementById(kind === 'parts' ? 'estimate-parts-content' : 'estimate-rental-content');
-      if (!target) throw new Error('견적서 내용을 찾을 수 없습니다.');
-      await Promise.all(Array.from(target.querySelectorAll('img')).map(function(img) {
-        if (img.complete) {
-          if (!img.naturalWidth) throw new Error('로고 또는 QR 이미지를 불러오지 못했습니다.');
-          return Promise.resolve();
-        }
-        return new Promise(function(resolve, reject) {
-          var timer = win.setTimeout(function() { cleanup(); reject(new Error('로고 또는 QR 로딩 시간이 초과되었습니다.')); },15000);
-          function cleanup() { win.clearTimeout(timer); img.removeEventListener('load',loaded); img.removeEventListener('error',failed); }
-          function loaded() { cleanup(); resolve(); }
-          function failed() { cleanup(); reject(new Error('로고 또는 QR 이미지를 불러오지 못했습니다.')); }
-          img.addEventListener('load',loaded); img.addEventListener('error',failed);
-        });
-      }));
-      var width = Math.max(794, target.scrollWidth, target.offsetWidth);
-      var height = Math.max(target.scrollHeight, target.offsetHeight);
-      var blob = await module.toBlob(target, {
-        backgroundColor:'#ffffff', pixelRatio:2, skipFonts:true,
-        width:width, height:height, canvasWidth:width, canvasHeight:height,
-        style:{transform:'none',margin:'0',width:width+'px',height:height+'px',overflow:'visible',maxWidth:'none',maxHeight:'none'}
-      });
-      if (!blob || !blob.size) throw new Error('이미지가 생성되지 않았습니다.');
+      var blob = (await captureEstimateImage(win, kind)).blob;
       var url = win.URL.createObjectURL(blob);
       var link = win.document.createElement('a');
       var label = kind === 'parts' ? (data.customerName || '부품') : (data.carName || '장기렌트리스');
@@ -2772,17 +2870,11 @@ body.admin-nav-open { overflow:hidden; }
     }
   }
 
-  function openPreview(kind) {
-    var data = kind === 'parts' ? collectPartsData() : collectRentalData();
-    var contentHtml = kind === 'parts' ? buildPartsContent(data) : buildRentalContent(data);
-
-    var win = window.open('', '_blank', 'width=1200,height=900,scrollbars=yes');
-    if (!win) { alert('팝업이 차단되었습니다. 이 사이트의 팝업을 허용해 주세요.'); return; }
-
+  function estimatePreviewDocument(kind, contentHtml) {
     var previewHead = (kind === 'parts')
       ? '<scr' + 'ipt src="' + TAILWIND_CDN + '"></scr' + 'ipt><link href="' + REMIXICON_CDN + '" rel="stylesheet">'
       : '';
-    var doc = '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>견적서 미리보기 | 퍼플오토</title>' +
+    return '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>견적서 미리보기 | 퍼플오토</title>' +
       previewHead +
       '<link href="' + FONT_CDN + '" rel="stylesheet">' +
       '<style>body{margin:0;font-family:\'Noto Sans KR\',sans-serif;background:#e7e5e4;}' +
@@ -2795,7 +2887,16 @@ body.admin-nav-open { overflow:hidden; }
       '<div class="est-bar"><span class="t">견적서 미리보기</span><div class="btns">' +
         '<button class="dl" id="estImageBtn">이미지 다운로드</button><button class="pr" id="estPrintBtn">인쇄</button><button class="cl" id="estCloseBtn">닫기</button>' +
       '</div></div><div class="est-doc">' + contentHtml + '</div></body></html>';
+  }
 
+  function openPreview(kind) {
+    var data = kind === 'parts' ? collectPartsData() : collectRentalData();
+    var contentHtml = kind === 'parts' ? buildPartsContent(data) : buildRentalContent(data);
+
+    var win = window.open('', '_blank', 'width=1200,height=900,scrollbars=yes');
+    if (!win) { alert('팝업이 차단되었습니다. 이 사이트의 팝업을 허용해 주세요.'); return; }
+
+    var doc = estimatePreviewDocument(kind, contentHtml);
     win.document.open(); win.document.write(doc); win.document.close();
 
     try {
@@ -2829,7 +2930,7 @@ body.admin-nav-open { overflow:hidden; }
       if (delSaved) { deleteSavedEstimate(delSaved.dataset.estDelSaved); return; }
       if (e.target.closest('[data-est-copy]')) { copyEstimateForExcel(); return; }
       var excelBtn = e.target.closest('[data-est-excel]');
-      if (excelBtn) { exportEstimateExcel(excelBtn.dataset.estExcel); return; }
+      if (excelBtn) { exportEstimateExcel(excelBtn.dataset.estExcel, excelBtn); return; }
       var previewBtn = e.target.closest('[data-est-preview]');
       if (previewBtn) { openPreview(previewBtn.dataset.estPreview); return; }
       if (e.target.closest('[data-est-addrow]')) {
