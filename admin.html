@@ -2367,30 +2367,6 @@ body.admin-nav-open { overflow:hidden; }
       estToast(copied ? '복사했습니다. 엑셀에 Ctrl+V 하세요.' : '복사 권한을 허용한 뒤 다시 시도해 주세요.', !copied);
     }
   }
-  function configureEstimateSheet(xlsx, sheet, d) {
-    var range = xlsx.utils.decode_range(sheet['!ref']);
-    var headerRow = -1;
-    for (var r = 0; r <= range.e.r; r++) {
-      if ((sheet['A' + (r + 1)] || {}).v === 'No.') { headerRow = r + 1; break; }
-    }
-    if (headerRow < 0) return;
-    var first = headerRow + 1, last = first + d.parts.length - 1;
-    d.parts.forEach(function(part, i) {
-      var row = first + i;
-      sheet['F' + row] = {t:'n', f:'D' + row + '*E' + row, v:part.quantity * part.unitPrice, z:'#,##0'};
-      ['D','E'].forEach(function(col) { sheet[col + row].z = '#,##0.########'; });
-    });
-    for (var j = last + 1; j <= range.e.r + 1; j++) {
-      var label = (sheet['A' + j] || {}).v;
-      if (label === '공급가액') sheet['B' + j] = {t:'n', f:d.parts.length ? 'SUM(F' + first + ':F' + last + ')' : '0', v:sheet['B' + j].v, z:'#,##0'};
-      if (label === '부가세 (10%)') sheet['B' + j] = {t:'n', f:'ROUND(B' + (j-1) + '*10%,0)', v:sheet['B' + j].v, z:'#,##0'};
-      if (label === '합계') sheet['B' + j] = {t:'n', f:'SUM(B' + (j-2) + ':B' + (j-1) + ')', v:sheet['B' + j].v, z:'#,##0'};
-    }
-    sheet['!merges'] = [xlsx.utils.decode_range('A1:G1')];
-    sheet['!autofilter'] = {ref:'A' + headerRow + ':G' + Math.max(headerRow,last)};
-    sheet['!margins'] = {left:0.3,right:0.3,top:0.4,bottom:0.4,header:0.2,footer:0.2};
-  }
-
   var estimateXlsxLoading;
   function loadEstimateXlsx() {
     if (window.XLSX) return Promise.resolve(window.XLSX);
@@ -2406,31 +2382,17 @@ body.admin-nav-open { overflow:hidden; }
     });
     return estimateXlsxLoading;
   }
-  function estimateExcelRows(kind, d) {
+  function rentalEstimateExcelRows(d) {
     var c = d.companyInfo || {};
-    var rows = [[kind === 'parts' ? '자동차 부품 견적서' : '장기렌트카 / 리스 견적서'],
+    var rows = [['장기렌트카 / 리스 견적서'],
       ['상호', c.name], ['대표자', c.ceo], ['주소', c.address], ['전화', c.phone], ['팩스', c.fax]];
-    if (kind === 'parts') {
-      rows.push(['견적번호', d.estimateNumber], ['견적일자', d.estimateDate], ['고객사명', d.customerName],
-        ['차종', d.carModel], ['차대번호', d.vin], [],
-        ['No.', '품번', '품명', '수량', '단가', '공급가액', '비고']);
-      var supply = 0;
-      d.parts.forEach(function(r, i) {
-        var amount = r.quantity * r.unitPrice;
-        supply += amount;
-        rows.push([i + 1, d.hidePartNo ? '' : r.partNo, r.partName, r.quantity, r.unitPrice, amount, r.remark]);
-      });
-      var vat = Math.round(supply * 0.1);
-      rows.push([], ['공급가액', supply], ['부가세 (10%)', vat], ['합계', supply + vat], ['비고', d.notes]);
-    } else {
-      [['차량번호','plateNumber'],['차량명','carName'],['연식','year'],['주행거리','mileage'],
+    [['차량번호','plateNumber'],['차량명','carName'],['연식','year'],['주행거리','mileage'],
        ['사고유무','accident'],['종류','category'],['시세산출액','marketValue'],['승계수수료','transferFee'],
        ['실손비용','actualLoss'],['보증금','deposit'],['해지금','terminationFee'],
        ['퍼플오토 이용시 내용','purpleAutoDesc'],['퍼플오토 이용시 금액','purpleAutoAmount'],
        ['반납 내용','returnDesc'],['반납 금액','returnAmount'],['비고','notes']].forEach(function(pair) {
-         rows.push([pair[0], d[pair[1]]]);
-       });
-    }
+      rows.push([pair[0], d[pair[1]]]);
+    });
     return rows;
   }
   var estimateExcelJsLoading;
@@ -2455,63 +2417,142 @@ body.admin-nav-open { overflow:hidden; }
     return estimateExcelJsLoading;
   }
 
-  async function capturePartsForExcel(data) {
-    var frame = document.createElement('iframe');
-    frame.setAttribute('aria-hidden','true');
-    frame.tabIndex = -1;
-    frame.style.cssText = 'position:fixed;left:-2000px;top:0;width:1200px;height:900px;border:0;pointer-events:none';
-    try {
-      await new Promise(function(resolve, reject) {
-        var timer = setTimeout(function() { reject(new Error('견적서 미리보기 로딩 시간이 초과되었습니다.')); }, 25000);
-        frame.onload = function() { clearTimeout(timer); resolve(); };
-        frame.srcdoc = estimatePreviewDocument('parts', buildPartsContent(data));
-        document.body.appendChild(frame);
-      });
-      var capture = await captureEstimateImage(frame.contentWindow, 'parts');
-      var dataUrl = await new Promise(function(resolve, reject) {
-        var reader = new FileReader();
-        reader.onload = function() { resolve(reader.result); };
-        reader.onerror = function() { reject(new Error('견적서 이미지를 읽지 못했습니다.')); };
-        reader.readAsDataURL(capture.blob);
-      });
-      return {dataUrl:dataUrl,width:capture.width,height:capture.height};
-    } finally {
-      frame.remove();
-    }
-  }
-
-  async function exportPartsEstimateWorkbook(xlsx, sheet, pasteSheet, label, data) {
-    var loaded = await Promise.all([loadEstimateExcelJs(), capturePartsForExcel(data)]);
-    var ExcelJS = loaded[0], capture = loaded[1];
+  function buildEditablePartsWorkbook(ExcelJS, data) {
     var book = new ExcelJS.Workbook();
-    var rowCount = Math.ceil(capture.height / 20);
-    var preview = book.addWorksheet('견적서', {
+    book.calcProperties.fullCalcOnLoad = true;
+    var company = data.companyInfo || {};
+    var sheet = book.addWorksheet('견적서', {
       views:[{showGridLines:false}],
-      properties:{defaultRowHeight:15},
-      pageSetup:{paperSize:9,orientation:'portrait',fitToPage:true,fitToWidth:1,fitToHeight:1,printArea:'A1:A' + rowCount}
+      properties:{defaultRowHeight:20},
+      pageSetup:{paperSize:9,orientation:'portrait',fitToPage:true,fitToWidth:1,fitToHeight:0,
+        margins:{left:0.27,right:0.27,top:0.35,bottom:0.35,header:0.15,footer:0.15},printTitlesRow:'13:13'}
     });
-    preview.getColumn(1).width = Math.ceil(capture.width / 7);
-    preview.addImage(book.addImage({base64:capture.dataUrl,extension:'png'}), {
-      tl:{col:0,row:0},ext:{width:capture.width,height:capture.height}
-    });
+    var widths = [5,19,28,8,14,16,17];
+    widths.forEach(function(width, i) { sheet.getColumn(i + 1).width = width; });
+    var purple = 'FF6529BF', ink = 'FF111827', gray = 'FFF1F2F4', lilac = 'FFF2ECFA';
+    var edge = {style:'thin',color:{argb:'FF9CA3AF'}};
+    var money = '#,##0.########';
+    var won = '#,##0" 원"';
+    var first = 14;
+    var last = first + Math.max(5, data.parts.length + 2) - 1;
+    var summary = last + 2;
+    var footer = summary + 4;
+    var columns = 'ABCDEFG';
 
-    [[sheet,'견적 데이터'],[pasteSheet,'붙여넣기용']].forEach(function(entry) {
-      var source = entry[0], dest = book.addWorksheet(entry[1]);
-      var range = xlsx.utils.decode_range(source['!ref']);
-      source['!cols'].forEach(function(col, i) { dest.getColumn(i + 1).width = col.wch; });
-      for (var row = 0; row <= range.e.r; row++) {
-        for (var col = 0; col <= range.e.c; col++) {
-          var value = source[xlsx.utils.encode_cell({r:row,c:col})];
-          if (!value) continue;
-          var cell = dest.getCell(row + 1, col + 1);
-          cell.value = value.f ? {formula:value.f,result:value.v} : value.v;
-          if (value.z) cell.numFmt = value.z;
+    function field(range, value, style) {
+      style = style || {};
+      var bounds = range.split(':');
+      if (bounds.length === 2) sheet.mergeCells(range);
+      var cell = sheet.getCell(bounds[0]);
+      cell.value = value === '' || value == null ? null : value;
+      cell.font = {name:'맑은 고딕',size:style.size || 11,bold:!!style.bold,color:{argb:style.color || ink}};
+      cell.alignment = {vertical:'middle',horizontal:style.align || 'left',wrapText:!style.format || style.format === '@',indent:style.indent || 0};
+      if (style.fill) cell.fill = {type:'pattern',pattern:'solid',fgColor:{argb:style.fill}};
+      if (style.format) cell.numFmt = style.format;
+      if (style.border) {
+        var start = sheet.getCell(bounds[0]), end = sheet.getCell(bounds[bounds.length - 1]);
+        for (var row = start.row; row <= end.row; row++) {
+          for (var col = start.col; col <= end.col; col++) {
+            var boundary = sheet.getCell(row, col);
+            boundary.style = Object.assign({}, boundary.style);
+            boundary.border = {
+              top:row === start.row ? edge : undefined, bottom:row === end.row ? edge : undefined,
+              left:col === start.col ? edge : undefined, right:col === end.col ? edge : undefined
+            };
+          }
         }
       }
-      (source['!merges'] || []).forEach(function(range) { dest.mergeCells(xlsx.utils.encode_range(range)); });
-      if (source['!autofilter']) dest.autoFilter = source['!autofilter'].ref;
+    }
+
+    var label = {bold:true,fill:gray,border:true,indent:1};
+    var entry = {border:true,indent:1};
+    field('A1:G1','',{fill:purple});
+    sheet.getRow(1).height = 4;
+    field('A2:C2','PURPLE AUTO',{color:purple,bold:true,size:19});
+    field('D2:G2','자동차 부품 견적서',{bold:true,size:21,align:'right'});
+    sheet.getRow(2).height = 36;
+    field('A3:D3','견적번호  ' + (data.estimateNumber || ''),{bold:true});
+    field('A5:D5','고객·차량 정보',label);
+    field('E5:G5','공급자 정보',label);
+    [
+      ['고객사명',data.customerName,'상호',company.name || '더퍼플오토'],
+      ['견적일자',data.estimateDate,'등록번호','885-68-00449'],
+      ['차종',data.carModel,'대표자',company.ceo],
+      ['차대번호',data.vin,'주소',company.address],
+      ['',null,'전화',company.phone],
+      ['',null,'팩스',company.fax]
+    ].forEach(function(values, i) {
+      var row = i + 6;
+      if (values[0]) {
+        field('A' + row + ':B' + row,values[0],label);
+        field('C' + row + ':D' + row,values[1],entry);
+      }
+      field('E' + row,values[2],label);
+      field('F' + row + ':G' + row,values[3],entry);
+    });
+    sheet.getRow(9).height = 32;
+
+    var supply = data.parts.reduce(function(sum, part) { return sum + part.quantity * part.unitPrice; },0);
+    var vat = Math.round(supply * 0.1);
+    var total = supply + vat;
+    field('A12:D12','총 견적금액 (VAT 포함)',{bold:true,fill:lilac,indent:1,size:13});
+    field('E12:G12',{formula:'G' + (summary+2),result:total},{bold:true,fill:lilac,color:purple,size:16,align:'right',format:won});
+    sheet.getRow(12).height = 31;
+    ['No.','품번','품명','수량','단가','공급가액','비고'].forEach(function(title,i) {
+      field(columns[i] + '13',title,{bold:true,fill:gray,border:true,align:'center'});
+    });
+    sheet.getRow(13).height = 25;
+    for (var row = first; row <= last; row++) {
+      var part = data.parts[row-first];
+      var values = part ? [row-first+1,data.hidePartNo ? '' : part.partNo,part.partName,part.quantity,part.unitPrice,null,part.remark] : [];
+      values[0] = {formula:'IF(COUNTA(B' + row + ':E' + row + ',G' + row + ')=0,"",ROW()-' + (first-1) + ')',result:part ? row-first+1 : ''};
+      values[5] = {formula:'IF(COUNT(D' + row + ':E' + row + ')=2,D' + row + '*E' + row + ',"")',result:part ? part.quantity * part.unitPrice : ''};
+      for (var col = 0; col < columns.length; col++) {
+        field(columns[col] + row,values[col],{
+          border:true,fill:row % 2 ? 'FFFAFAFC' : 'FFFFFFFF',
+          align:col === 0 || col === 3 ? 'center' : col === 4 || col === 5 ? 'right' : 'left',
+          bold:col === 5,format:col >= 3 && col <= 5 ? money : col === 1 ? '@' : undefined
+        });
+      }
+      var longest = Math.max(String(values[1] || '').length / 17,
+        String(values[2] || '').length / 15,String(values[6] || '').length / 9);
+      sheet.getRow(row).height = Math.min(110,Math.max(25,16 * Math.ceil(longest)));
+    }
+
+    field('A' + summary + ':D' + summary,'비고 / 안내사항',label);
+    field('A' + (summary+1) + ':D' + (summary+2),data.notes,{border:true,indent:1,color:'FFB91C1C'});
+    [
+      ['공급가액','SUM(F' + first + ':F' + last + ')',supply],
+      ['부가세 (10%)','ROUND(G' + summary + '*10%,0)',vat],
+      ['합계','SUM(G' + summary + ':G' + (summary+1) + ')',total]
+    ].forEach(function(values,i) {
+      var row = summary + i, fill = i === 2 ? lilac : gray;
+      field('E' + row + ':F' + row,values[0],{bold:true,border:true,indent:1,fill:fill});
+      field('G' + row,{formula:values[1],result:values[2]},{bold:true,border:true,fill:fill,align:'right',format:won});
     });
 
+    field('A' + footer + ':B' + footer,'홈페이지',{bold:true,color:purple});
+    field('C' + footer + ':D' + footer,{text:'purpleauto.co.kr',hyperlink:'https://purpleauto.co.kr'},{color:purple});
+    field('E' + footer,'유튜브',{bold:true,color:purple});
+    field('F' + footer + ':G' + footer,{text:'youtube.com/@purplelease',hyperlink:'https://www.youtube.com/@purplelease'},{color:purple});
+    field('A' + (footer+1) + ':B' + (footer+1),'입금계좌',{bold:true,color:purple,fill:lilac,indent:1});
+    field('C' + (footer+1) + ':G' + (footer+1),'카카오뱅크 3333331946289 예금주: 이호준',{bold:true,fill:lilac,indent:1});
+    field('A' + (footer+2) + ':G' + (footer+2),'수입차 부품 특성상 주문시 반품 및 환불은 불가',{size:10});
+    sheet.pageSetup.printArea = 'A1:G' + (footer+2);
+
+    var paste = book.addWorksheet('붙여넣기용');
+    [24,36,10,18,36].forEach(function(width,i) { paste.getColumn(i+1).width = width; });
+    paste.getColumn(1).numFmt = '@';
+    paste.addRow(['품번','품명','수량','단가','비고']).font = {bold:true};
+    data.parts.forEach(function(part) {
+      paste.addRow([data.hidePartNo ? '' : part.partNo,part.partName,part.quantity,part.unitPrice,part.remark]);
+    });
+    paste.autoFilter = 'A1:E' + (data.parts.length+1);
+    return book;
+  }
+
+  async function exportEditablePartsEstimate(data, label) {
+    var book = buildEditablePartsWorkbook(await loadEstimateExcelJs(), data);
     var buffer = await book.xlsx.writeBuffer();
     var blob = new Blob([buffer], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
     var url = URL.createObjectURL(blob);
@@ -2527,21 +2568,13 @@ body.admin-nav-open { overflow:hidden; }
     button.textContent = '엑셀 생성 중…';
     try {
       var d = kind === 'parts' ? collectPartsData() : collectRentalData();
-      var xlsx = await loadEstimateXlsx();
-      var sheet = xlsx.utils.aoa_to_sheet(estimateExcelRows(kind, d));
-      sheet['!cols'] = kind === 'parts'
-        ? [{wch:20},{wch:30},{wch:32},{wch:10},{wch:16},{wch:18},{wch:30}]
-        : [{wch:26},{wch:65}];
       var label = (kind === 'parts' ? (d.estimateNumber || '부품견적서') : (d.carName || '장기렌트리스견적서')).replace(/[\\/:*?"<>|]/g, '_');
       if (kind === 'parts') {
-        configureEstimateSheet(xlsx, sheet, d);
-        var pasteRows = [['품번','품명','수량','단가','비고']];
-        d.parts.forEach(function(r) { pasteRows.push([d.hidePartNo ? '' : r.partNo, r.partName, r.quantity, r.unitPrice, r.remark]); });
-        var pasteSheet = xlsx.utils.aoa_to_sheet(pasteRows);
-        pasteSheet['!cols'] = [{wch:24},{wch:36},{wch:10},{wch:18},{wch:36}];
-        pasteSheet['!autofilter'] = {ref:pasteSheet['!ref']};
-        await exportPartsEstimateWorkbook(xlsx, sheet, pasteSheet, label, d);
+        await exportEditablePartsEstimate(d, label);
       } else {
+        var xlsx = await loadEstimateXlsx();
+        var sheet = xlsx.utils.aoa_to_sheet(rentalEstimateExcelRows(d));
+        sheet['!cols'] = [{wch:26},{wch:65}];
         var book = xlsx.utils.book_new();
         xlsx.utils.book_append_sheet(book, sheet, '견적서');
         xlsx.writeFile(book, label + '.xlsx');
