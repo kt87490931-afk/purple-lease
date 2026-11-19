@@ -1953,11 +1953,12 @@
       body.innerHTML = '<tr><td colspan="7"><div class="empty-row">등록된 부품이 없습니다.</div></td></tr>';
       return;
     }
+    var partUtils = window.PurplePartUtils;
     body.innerHTML = partsData.map(function (p) {
       return '<tr>' +
         '<td class="thumb-cell"><img src="' + p.thumb + '" onerror="this.style.opacity=0.15"></td>' +
         '<td class="title-cell">' + p.name + '</td>' +
-        '<td>' + (partsBrandLabel[p.brand] || p.brand) + '</td>' +
+        '<td>' + escapeAttr(partUtils && typeof partUtils.brandLabel === 'function' ? partUtils.brandLabel(p.brand) : p.brand) + '</td>' +
         '<td>' + p.category + '</td>' +
         '<td class="num-cell">' + p.price.toLocaleString('ko-KR') + '원</td>' +
         '<td><span class="chip ' + (p.stock === '품절' ? 'out' : 'ok') + '">' + p.stock + '</span></td>' +
